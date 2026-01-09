@@ -1228,7 +1228,7 @@
             
             data.forEach(row => {
                 const monthKey = row.monthKey;
-                const store = (row['Cửa HÀNG'] || '').trim();
+                const store = (row['CỬA HÀNG'] || '').trim();
                 
                 if (!monthKey || !store) return;
                 
@@ -1299,7 +1299,7 @@
             const storeData = {};
             
             data.forEach(row => {
-                const store = (row['Cửa HÀNG'] || '').trim();
+                const store = (row['CỬA HÀNG'] || '').trim();
                 const soHD = row['SO HD'];
                 const vat = row.vat || 0;
                 
