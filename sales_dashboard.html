@@ -629,7 +629,6 @@
             const results = await Promise.all(promises);
             const rawData = results.flat();
             
-            let debugHTML = `<div style="color: green;">✓ Raw data loaded: <strong>${rawData.length}</strong> rows</div>`;
             console.log('Raw data loaded:', rawData.length, 'rows');
             
             // DEDUP theo Excel Power Query: Group by SO HD + NGAY + MÃ HH + TÊN SP + SL
@@ -646,38 +645,31 @@
             });
             
             const afterDedup = Array.from(uniqueMap.values());
-            debugHTML += `<div style="color: blue;">✓ After dedup (keep first): <strong>${afterDedup.length}</strong> rows (removed ${duplicateCount} duplicates)</div>`;
-            console.log('After dedup:', afterDedup.length, 'rows');
+            console.log('After dedup:', afterDedup.length, 'rows (removed', duplicateCount, 'duplicates)');
             
             // LỌC HỆ THỐNG != null (từ CUSTOMERS)
             const afterSystemFilter = afterDedup.filter(row => row['HỆ THỐNG'] !== null);
-            debugHTML += `<div style="color: orange;">✓ Filter HỆ THỐNG not null: <strong>${afterSystemFilter.length}</strong> rows (removed ${afterDedup.length - afterSystemFilter.length} null rows)</div>`;
+            console.log('Filter HỆ THỐNG not null:', afterSystemFilter.length, 'rows');
             
             // LỌC BỎ NHÃN HÀNG = "N/A"
             allData = afterSystemFilter.filter(row => row['NHÃN HÀNG'] !== 'N/A' && row['NHÃN HÀNG'] !== '');
-            debugHTML += `<div style="color: purple;">✓ Filter NHÃN HÀNG (bỏ N/A): <strong>${allData.length}</strong> rows (removed ${afterSystemFilter.length - allData.length} N/A brands)</div>`;
             console.log('After filter NHÃN HÀNG:', allData.length, 'rows');
             
             // Tính tổng VAT để debug
             const totalVAT = allData.reduce((sum, row) => sum + row.vat, 0);
-            debugHTML += `<div style="color: green; font-size: 15px; margin-top: 10px;">💰 Total VAT (all data): <strong>${formatCurrency(totalVAT)}</strong></div>`;
-            console.log('Total VAT (all data):', totalVAT.toLocaleString('vi-VN'), 'VND');
+            console.log('💰 Total VAT (all data):', totalVAT.toLocaleString('vi-VN'), 'VND');
             
             // Debug tháng 11/2025 cụ thể
             const nov2025 = allData.filter(row => row.monthKey === '2025-11');
             const nov2025VAT = nov2025.reduce((sum, row) => sum + row.vat, 0);
-            debugHTML += `<div style="color: red; font-size: 15px; margin-top: 5px;">📅 Nov 2025: <strong>${nov2025.length}</strong> rows, VAT: <strong>${formatCurrency(nov2025VAT)}</strong></div>`;
-            debugHTML += `<div style="color: #666; font-size: 12px; margin-left: 20px;">Expected: 3,230,416,893 VND | Difference: ${formatCurrency(Math.abs(nov2025VAT - 3230416893))}</div>`;
-            console.log('Nov 2025:', nov2025.length, 'rows, VAT:', nov2025VAT.toLocaleString('vi-VN'), 'VND', '(Expected: 3,230,416,893)');
+            console.log('📅 Nov 2025:', nov2025.length, 'rows, VAT:', nov2025VAT.toLocaleString('vi-VN'), 'VND');
             
             // Debug tháng 4/2025 cụ thể
             const apr2025Raw = rawData.filter(row => row.monthKey === '2025-04');
             const apr2025Final = allData.filter(row => row.monthKey === '2025-04');
             const apr2025VAT = apr2025Final.reduce((sum, row) => sum + row.vat, 0);
-            debugHTML += `<div style="color: orange; font-size: 15px; margin-top: 5px;">📅 Apr 2025: Raw: <strong>${apr2025Raw.length}</strong> → Final: <strong>${apr2025Final.length}</strong> rows, VAT: <strong>${formatCurrency(apr2025VAT)}</strong></div>`;
-            console.log('Apr 2025: Raw:', apr2025Raw.length, '→ Final:', apr2025Final.length, 'rows, VAT:', apr2025VAT.toLocaleString('vi-VN'), 'VND');
+            console.log('📅 Apr 2025: Raw:', apr2025Raw.length, '→ Final:', apr2025Final.length, 'rows, VAT:', apr2025VAT.toLocaleString('vi-VN'), 'VND');
             
-            // Hiển thị debug info
             document.getElementById('debugContent').innerHTML = debugHTML;
             document.getElementById('debugLog').style.display = 'block';
             
