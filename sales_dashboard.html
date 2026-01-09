@@ -225,12 +225,94 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                font-size: 16px;
+            }
+            
             .chart-grid {
                 grid-template-columns: 1fr;
             }
             
+            .header {
+                padding: 20px 15px;
+            }
+            
             .header h1 {
-                font-size: 1.8em;
+                font-size: 1.5em;
+            }
+            
+            .header p {
+                font-size: 0.95em;
+            }
+            
+            .kpi-container {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            
+            .kpi-card {
+                padding: 15px;
+            }
+            
+            .kpi-card h3 {
+                font-size: 0.75em;
+            }
+            
+            .kpi-value {
+                font-size: 1.3em;
+            }
+            
+            .filters {
+                padding: 15px;
+                gap: 12px;
+            }
+            
+            .filter-group label {
+                font-size: 0.8em;
+            }
+            
+            select, input[type="month"] {
+                padding: 12px 10px;
+                font-size: 16px;
+            }
+            
+            .chart-card {
+                padding: 15px;
+            }
+            
+            .chart-card h2 {
+                font-size: 1.1em;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
+            
+            .chart-container.tall {
+                height: 350px;
+            }
+            
+            table {
+                font-size: 0.85em;
+            }
+            
+            th, td {
+                padding: 8px 6px;
+            }
+            
+            /* Cải thiện button trên mobile */
+            button {
+                padding: 12px 20px !important;
+                font-size: 1em !important;
+                min-height: 44px;
+            }
+            
+            /* Tăng kích thước clickable area */
+            [onclick] {
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
             }
         }
     </style>
@@ -375,17 +457,20 @@
                 </div>
 
                 <div class="chart-card full-width">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h2 style="margin: 0;">📊 Phân Tích Sản Phẩm Theo Năm & Dự Đoán (Số Lượng)</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <h2 style="margin: 0; flex: 1; min-width: 200px;">📊 Phân Tích Sản Phẩm Theo Năm & Dự Đoán (Số Lượng)</h2>
                         <button id="toggleYearlyTable" onclick="toggleYearlyProductTable()" style="
-                            padding: 8px 16px;
-                            background: #667eea;
+                            padding: 10px 20px;
+                            background: #3b82f6;
                             color: white;
                             border: none;
-                            border-radius: 6px;
+                            border-radius: 8px;
                             cursor: pointer;
-                            font-size: 0.9em;
+                            font-size: 0.95em;
                             transition: background 0.3s ease;
+                            min-height: 44px;
+                            font-weight: 600;
+                        ">
                         ">
                             <span id="toggleIcon">▼</span> Thu gọn
                         </button>
