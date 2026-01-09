@@ -330,8 +330,22 @@
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>� Phân Tích Sản Phẩm Theo Năm & Dự Đoán</h2>
-                    <div class="table-container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h2 style="margin: 0;">📊 Phân Tích Sản Phẩm Theo Năm & Dự Đoán (Số Lượng)</h2>
+                        <button id="toggleYearlyTable" onclick="toggleYearlyProductTable()" style="
+                            padding: 8px 16px;
+                            background: #667eea;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 0.9em;
+                            transition: background 0.3s ease;
+                        ">
+                            <span id="toggleIcon">▼</span> Thu gọn
+                        </button>
+                    </div>
+                    <div id="yearlyTableContainer" class="table-container" style="transition: all 0.3s ease; overflow: hidden;">
                         <table id="yearlyProductTable">
                             <thead>
                                 <tr>
@@ -1175,6 +1189,27 @@
                     <td class="number" style="color: ${growthColor}; font-weight: 600;">${growthIcon} ${product.growthRate.toFixed(1)}%</td>
                 `;
             });
+        }
+
+        // Toggle yearly product table visibility
+        function toggleYearlyProductTable() {
+            const container = document.getElementById('yearlyTableContainer');
+            const icon = document.getElementById('toggleIcon');
+            const button = document.getElementById('toggleYearlyTable');
+            
+            if (container.style.maxHeight === '0px') {
+                // Expand
+                container.style.maxHeight = '2000px';
+                container.style.opacity = '1';
+                icon.textContent = '▼';
+                button.innerHTML = '<span id="toggleIcon">▼</span> Thu gọn';
+            } else {
+                // Collapse
+                container.style.maxHeight = '0px';
+                container.style.opacity = '0';
+                icon.textContent = '▶';
+                button.innerHTML = '<span id="toggleIcon">▶</span> Mở rộng';
+            }
         }
 
         // Update dashboard
