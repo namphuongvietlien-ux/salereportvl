@@ -1445,6 +1445,17 @@
                         const forecast2026VAT = lastYear.vat * (1 + avgGrowth);
                         const forecast2026Qty = lastYear.qty * (1 + avgGrowth);
                         
+                        // Calculate forecast for each SKU based on 2025 data
+                        const forecast2026SKUs = {};
+                        if (lastYear.skus) {
+                            Object.entries(lastYear.skus).forEach(([sku, skuData]) => {
+                                forecast2026SKUs[sku] = {
+                                    vat: skuData.vat * (1 + avgGrowth),
+                                    qty: skuData.qty * (1 + avgGrowth)
+                                };
+                            });
+                        }
+                        
                         yearRows.push({
                             brand: brandData.brand,
                             year: 2026,
@@ -1452,7 +1463,8 @@
                             qty: forecast2026Qty,
                             growthText: `<span style="color: #667eea; font-weight: 600;">🔮 ${(avgGrowth * 100).toFixed(1)}%</span>`,
                             growthRate: avgGrowth * 100,
-                            isForecast: true
+                            isForecast: true,
+                            skus: forecast2026SKUs // Include forecasted SKUs
                         });
                     }
                 }
