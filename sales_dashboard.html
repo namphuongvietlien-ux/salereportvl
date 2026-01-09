@@ -1351,7 +1351,7 @@
 
         // Update Yearly Product Analysis Table with Forecast
         function updateYearlyProductTable(data) {
-            // Group by Brand and Year to get total VAT and quantity per brand per year
+            // Group by Brand > Year > SKU to get detailed breakdown
             const brandYearData = {};
             
             data.forEach(row => {
@@ -1359,18 +1359,31 @@
                 const year = row.year;
                 const vat = row.vat || 0;
                 const quantity = row.soLuong || 0;
+                const fullName = (row['TÊN SP'] || '').trim();
+                const sku = shortenProductName(fullName);
                 
-                if (year < 2023 || year > 2025) return;
+                if (year < 2023 || year > 2025 || !sku) return;
                 
                 if (!brandYearData[brand]) {
                     brandYearData[brand] = {
                         brand: brand,
-                        years: { 2023: { vat: 0, qty: 0 }, 2024: { vat: 0, qty: 0 }, 2025: { vat: 0, qty: 0 } }
+                        years: { 
+                            2023: { vat: 0, qty: 0, skus: {} }, 
+                            2024: { vat: 0, qty: 0, skus: {} }, 
+                            2025: { vat: 0, qty: 0, skus: {} } 
+                        }
                     };
                 }
                 
                 brandYearData[brand].years[year].vat += vat;
                 brandYearData[brand].years[year].qty += quantity;
+                
+                // Track SKU details
+                if (!brandYearData[brand].years[year].skus[sku]) {
+                    brandYearData[brand].years[year].skus[sku] = { vat: 0, qty: 0 };
+                }
+                brandYearData[brand].years[year].skus[sku].vat += vat;
+                brandYearData[brand].years[year].skus[sku].qty += quantity;
             });
             
             // Create rows: each brand gets 3 years + forecast (2026)
@@ -1410,7 +1423,8 @@
                         qty: qty,
                         growthText: growthText,
                         growthRate: growthRate || 0,
-                        isForecast: false
+                        isForecast: false,
+                        skus: yearData.skus // Include SKU details
                     });
                 });
                 
@@ -1484,17 +1498,60 @@
                     
                     const yearLabel = rowData.isForecast ? '2026 (Dự kiến)' : rowData.year;
                     const rowStyle = rowData.isForecast ? 'background: #f0f9ff; font-style: italic;' : '';
+                    const yearId = `${brandId}_${rowData.year}`;
+                    
+                    // Add expand icon for years with SKU data
+                    const hasSkus = rowData.skus && Object.keys(rowData.skus).length > 0;
+                    const expandIcon = hasSkus ? `<span id="icon_${yearId}" style="cursor: pointer; display: inline-block; width: 16px;" onclick="toggleYearSkus('${yearId}'); event.stopPropagation();">▶</span> ` : '';
                     
                     row.innerHTML = `
                         <td style="${rowStyle}">${rowIndex}</td>
                         <td style="padding-left: 30px; ${rowStyle}"></td>
-                        <td style="${rowStyle}">${yearLabel}</td>
+                        <td style="${rowStyle}">${expandIcon}${yearLabel}</td>
                         <td class="number" style="${rowStyle}">${rowData.qty > 0 ? formatNumber(Math.round(rowData.qty)) : '-'}</td>
                         <td class="number" style="background: #fffbeb; font-weight: 600; color: #d97706;">${formatCurrency(rowData.vat)}</td>
                         <td class="number" style="${rowStyle}">${rowData.growthText}</td>
                     `;
+                    
+                    // Add SKU detail rows (hidden by default)
+                    if (hasSkus) {
+                        const skuArray = Object.entries(rowData.skus)
+                            .map(([sku, data]) => ({ sku, ...data }))
+                            .sort((a, b) => b.vat - a.vat);
+                        
+                        skuArray.forEach((skuData) => {
+                            const skuRow = tbody.insertRow();
+                            skuRow.setAttribute('data-year-sku', yearId);
+                            skuRow.style.display = 'none';
+                            rowIndex++;
+                            
+                            skuRow.innerHTML = `
+                                <td style="background: #f9fafb;">${rowIndex}</td>
+                                <td style="padding-left: 50px; background: #f9fafb; color: #666; font-size: 0.9em;" colspan="2">${skuData.sku}</td>
+                                <td class="number" style="background: #f9fafb; color: #666;">${formatNumber(Math.round(skuData.qty))}</td>
+                                <td class="number" style="background: #fef3c7; color: #92400e;">${formatCurrency(skuData.vat)}</td>
+                                <td style="background: #f9fafb;"></td>
+                            `;
+                        });
+                    }
                 });
             });
+        }
+        
+        // Toggle year SKUs visibility
+        function toggleYearSkus(yearId) {
+            const icon = document.getElementById(`icon_${yearId}`);
+            const skuRows = document.querySelectorAll(`tr[data-year-sku="${yearId}"]`);
+            
+            if (icon.textContent === '▶') {
+                // Expand
+                icon.textContent = '▼';
+                skuRows.forEach(row => row.style.display = '');
+            } else {
+                // Collapse
+                icon.textContent = '▶';
+                skuRows.forEach(row => row.style.display = 'none');
+            }
         }
         
         // Toggle individual brand visibility
