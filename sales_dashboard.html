@@ -359,9 +359,9 @@
                                     <th>#</th>
                                     <th>Nhãn Hàng</th>
                                     <th>Năm</th>
+                                    <th class="number">Số Lượng</th>
                                     <th class="number">Tổng Doanh Thu (VAT)</th>
                                     <th class="number">Tăng Trưởng</th>
-                                </tr>
                                 </tr>
                             </thead>
                             <tbody id="yearlyProductTableBody">
@@ -1188,40 +1188,50 @@
 
         // Update Yearly Product Analysis Table with Forecast
         function updateYearlyProductTable(data) {
-            // Group by Brand and Year to get total VAT per brand per year
+            // Group by Brand and Year to get total VAT and quantity per brand per year
             const brandYearData = {};
             
             data.forEach(row => {
                 const brand = (row['NHÃN HÀNG'] || 'N/A').trim();
                 const year = row.year;
                 const vat = row.vat || 0;
+                const quantity = row.soLuong || 0;
                 
                 if (year < 2023 || year > 2025) return;
                 
                 if (!brandYearData[brand]) {
                     brandYearData[brand] = {
                         brand: brand,
-                        years: { 2023: 0, 2024: 0, 2025: 0 }
+                        years: { 2023: { vat: 0, qty: 0 }, 2024: { vat: 0, qty: 0 }, 2025: { vat: 0, qty: 0 } }
                     };
                 }
                 
-                brandYearData[brand].years[year] += vat;
+                brandYearData[brand].years[year].vat += vat;
+                brandYearData[brand].years[year].qty += quantity;
             });
             
-            // Create rows: each brand gets 3 rows (one per year)
-            const allRows = [];
+            // Create rows: each brand gets 3 years + forecast (2026)
+            const brandRows = [];
             Object.values(brandYearData).forEach(brandData => {
                 const years = [2023, 2024, 2025];
+                const yearRows = [];
+                let totalVAT = 0;
+                
                 years.forEach(year => {
-                    const vat = brandData.years[year];
+                    const yearData = brandData.years[year];
+                    const vat = yearData.vat;
+                    const qty = yearData.qty;
+                    
                     if (vat === 0) return; // Skip years with no data
+                    
+                    totalVAT += vat;
                     
                     // Calculate growth vs previous year
                     let growthRate = null;
                     let growthText = '-';
                     if (year > 2023) {
                         const prevYear = year - 1;
-                        const prevVat = brandData.years[prevYear];
+                        const prevVat = brandData.years[prevYear].vat;
                         if (prevVat > 0) {
                             growthRate = ((vat - prevVat) / prevVat) * 100;
                             const growthIcon = growthRate > 0 ? '📈' : '📉';
@@ -1230,56 +1240,97 @@
                         }
                     }
                     
-                    allRows.push({
+                    yearRows.push({
                         brand: brandData.brand,
                         year: year,
                         vat: vat,
+                        qty: qty,
                         growthText: growthText,
-                        growthRate: growthRate || 0
+                        growthRate: growthRate || 0,
+                        isForecast: false
                     });
                 });
+                
+                // Calculate 2026 forecast if we have at least 2 years of data
+                if (yearRows.length >= 2) {
+                    const growthRates = [];
+                    for (let i = 1; i < yearRows.length; i++) {
+                        const prev = yearRows[i-1];
+                        const curr = yearRows[i];
+                        if (prev.vat > 0) {
+                            growthRates.push((curr.vat - prev.vat) / prev.vat);
+                        }
+                    }
+                    
+                    if (growthRates.length > 0) {
+                        const avgGrowth = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+                        const lastYear = yearRows[yearRows.length - 1];
+                        const forecast2026VAT = lastYear.vat * (1 + avgGrowth);
+                        const forecast2026Qty = lastYear.qty * (1 + avgGrowth);
+                        
+                        yearRows.push({
+                            brand: brandData.brand,
+                            year: 2026,
+                            vat: forecast2026VAT,
+                            qty: forecast2026Qty,
+                            growthText: `<span style="color: #667eea; font-weight: 600;">🔮 ${(avgGrowth * 100).toFixed(1)}%</span>`,
+                            growthRate: avgGrowth * 100,
+                            isForecast: true
+                        });
+                    }
+                }
+                
+                if (yearRows.length > 0) {
+                    brandRows.push({
+                        brand: brandData.brand,
+                        totalVAT: totalVAT,
+                        rows: yearRows
+                    });
+                }
             });
             
-            // Sort by brand, then by year
-            const sorted = allRows.sort((a, b) => {
-                if (a.brand !== b.brand) {
-                    return a.brand.localeCompare(b.brand);
-                }
-                return a.year - b.year;
-            });
+            // Sort by brand total VAT descending
+            brandRows.sort((a, b) => b.totalVAT - a.totalVAT);
             
             const tbody = document.getElementById('yearlyProductTableBody');
             tbody.innerHTML = '';
             
-            let lastBrand = '';
             let rowIndex = 0;
-            sorted.forEach((rowData) => {
-                const row = tbody.insertRow();
+            brandRows.forEach((brandGroup) => {
+                const brandId = brandGroup.brand.replace(/[^a-zA-Z0-9]/g, '_');
                 
-                // Show brand with collapse button on first year row
-                let brandDisplay = '';
-                if (rowData.brand !== lastBrand) {
-                    const brandId = rowData.brand.replace(/[^a-zA-Z0-9]/g, '_');
-                    brandDisplay = `
-                        <span onclick="toggleBrand('${brandId}')" style="cursor: pointer; user-select: none;">
-                            <span id="icon_${brandId}" style="display: inline-block; width: 20px;">▼</span>
-                            <strong>${rowData.brand}</strong>
-                        </span>
-                    `;
-                    row.setAttribute('data-brand-header', brandId);
-                    lastBrand = rowData.brand;
-                } else {
-                    row.setAttribute('data-brand-row', rowData.brand.replace(/[^a-zA-Z0-9]/g, '_'));
-                }
-                
+                // First row: Brand header with total
+                const headerRow = tbody.insertRow();
+                headerRow.setAttribute('data-brand-header', brandId);
                 rowIndex++;
-                row.innerHTML = `
+                
+                headerRow.innerHTML = `
                     <td>${rowIndex}</td>
-                    <td style="font-weight: 600; color: #667eea;">${brandDisplay}</td>
-                    <td style="padding-left: ${brandDisplay ? '10px' : '30px'};">${rowData.year}</td>
-                    <td class="number" style="background: #fffbeb; font-weight: 600; color: #d97706;">${formatCurrency(rowData.vat)}</td>
-                    <td class="number">${rowData.growthText}</td>
+                    <td colspan="5" style="font-weight: 700; color: #667eea; cursor: pointer;" onclick="toggleBrand('${brandId}')">
+                        <span id="icon_${brandId}" style="display: inline-block; width: 20px;">▼</span>
+                        ${brandGroup.brand} 
+                        <span style="color: #d97706; font-size: 0.9em;">(Tổng: ${formatCurrency(brandGroup.totalVAT)})</span>
+                    </td>
                 `;
+                
+                // Year rows
+                brandGroup.rows.forEach((rowData) => {
+                    const row = tbody.insertRow();
+                    row.setAttribute('data-brand-row', brandId);
+                    rowIndex++;
+                    
+                    const yearLabel = rowData.isForecast ? '2026 (Dự kiến)' : rowData.year;
+                    const rowStyle = rowData.isForecast ? 'background: #f0f9ff; font-style: italic;' : '';
+                    
+                    row.innerHTML = `
+                        <td style="${rowStyle}">${rowIndex}</td>
+                        <td style="padding-left: 30px; ${rowStyle}"></td>
+                        <td style="${rowStyle}">${yearLabel}</td>
+                        <td class="number" style="${rowStyle}">${rowData.qty > 0 ? formatNumber(Math.round(rowData.qty)) : '-'}</td>
+                        <td class="number" style="background: #fffbeb; font-weight: 600; color: #d97706;">${formatCurrency(rowData.vat)}</td>
+                        <td class="number" style="${rowStyle}">${rowData.growthText}</td>
+                    `;
+                });
             });
         }
         
