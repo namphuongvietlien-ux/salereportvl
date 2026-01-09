@@ -268,6 +268,11 @@
                     <h3>Số Nhãn Hàng</h3>
                     <div class="kpi-value" id="totalBrands">0</div>
                 </div>
+                <div class="kpi-card">
+                    <h3>Cửa Hàng Hoạt Động</h3>
+                    <div class="kpi-value" id="activeStores">0</div>
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">Trung bình: <span id="avgOrdersPerStore">0</span> đơn</div>
+                </div>
             </div>
 
             <div class="filters">
@@ -333,6 +338,33 @@
                     <h2>🔝 Top 20 Sản Phẩm Bán Chạy</h2>
                     <div class="chart-container tall">
                         <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <h2>🏪 Hiệu Suất Cửa Hàng - Số Cửa Hàng Đặt Hàng Theo Tháng</h2>
+                    <div class="chart-container">
+                        <canvas id="storeActivityChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <h2>🏆 Top 30 Cửa Hàng Theo Tần Suất Đặt Hàng</h2>
+                    <div class="table-container">
+                        <table id="storeFrequencyTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Cửa Hàng</th>
+                                    <th class="number">Số Lần Đặt</th>
+                                    <th class="number">Tổng Đơn Hàng</th>
+                                    <th class="number">Tổng Doanh Thu</th>
+                                    <th class="number">TB/Đơn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="storeFrequencyTableBody">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -1184,6 +1216,137 @@
 
             // Update yearly product analysis table
             updateYearlyProductTable(data);
+            
+            // Update store frequency table
+            updateStoreFrequencyTable(data);
+        }
+
+        // Create Store Activity Chart (Active stores per month)
+        function createStoreActivityChart(data) {
+            // Group by month to count unique stores
+            const monthStoreData = {};
+            
+            data.forEach(row => {
+                const monthKey = row.monthKey;
+                const store = (row['Cửa HÀNG'] || '').trim();
+                
+                if (!monthKey || !store) return;
+                
+                if (!monthStoreData[monthKey]) {
+                    monthStoreData[monthKey] = new Set();
+                }
+                
+                monthStoreData[monthKey].add(store);
+            });
+            
+            // Convert to arrays and sort by month
+            const sortedMonths = Object.keys(monthStoreData).sort();
+            const storeCounts = sortedMonths.map(month => monthStoreData[month].size);
+            
+            const ctx = document.getElementById('storeActivityChart').getContext('2d');
+            
+            if (charts.storeActivity) {
+                charts.storeActivity.destroy();
+            }
+            
+            charts.storeActivity = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths,
+                    datasets: [{
+                        label: 'Số cửa hàng hoạt động',
+                        data: storeCounts,
+                        borderColor: '#667eea',
+                        backgroundColor: '#667eea40',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Số cửa hàng: ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Store Frequency Table
+        function updateStoreFrequencyTable(data) {
+            // Group by store
+            const storeData = {};
+            
+            data.forEach(row => {
+                const store = (row['Cửa HÀNG'] || '').trim();
+                const soHD = row['SO HD'];
+                const vat = row.vat || 0;
+                
+                if (!store) return;
+                
+                if (!storeData[store]) {
+                    storeData[store] = {
+                        store: store,
+                        orderDates: new Set(), // Count unique order dates/times
+                        totalOrders: new Set(), // Count unique SO HD
+                        totalSales: 0
+                    };
+                }
+                
+                // Count frequency by unique (SO HD + NGAY) combinations
+                const dateKey = row.monthKey + '_' + soHD;
+                storeData[store].orderDates.add(dateKey);
+                storeData[store].totalOrders.add(soHD);
+                storeData[store].totalSales += vat;
+            });
+            
+            // Convert to array and sort by order frequency
+            const sorted = Object.values(storeData)
+                .map(s => ({
+                    store: s.store,
+                    frequency: s.orderDates.size, // Number of unique orders
+                    totalOrders: s.totalOrders.size,
+                    totalSales: s.totalSales,
+                    avgPerOrder: s.totalOrders.size > 0 ? s.totalSales / s.totalOrders.size : 0
+                }))
+                .sort((a, b) => b.frequency - a.frequency)
+                .slice(0, 30);
+            
+            const tbody = document.getElementById('storeFrequencyTableBody');
+            tbody.innerHTML = '';
+            
+            sorted.forEach((storeInfo, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td style="text-align: left;">${storeInfo.store}</td>
+                    <td class="number" style="font-weight: 600; color: #667eea;">${formatNumber(storeInfo.frequency)}</td>
+                    <td class="number">${formatNumber(storeInfo.totalOrders)}</td>
+                    <td class="number" style="background: #fffbeb; color: #d97706;">${formatCurrency(storeInfo.totalSales)}</td>
+                    <td class="number">${formatCurrency(storeInfo.avgPerOrder)}</td>
+                `;
+            });
         }
 
         // Update Yearly Product Analysis Table with Forecast
@@ -1381,6 +1544,7 @@
             createBrandChart(data);
             createYearComparisonChart(data);
             createTopProductsChart(data);
+            createStoreActivityChart(data);
         }
 
         // Initialize
