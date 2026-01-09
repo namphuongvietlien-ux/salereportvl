@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Báo Cáo Doanh Số 2023-2025</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: #333;
+        }
+
+        .dashboard-container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .kpi-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .kpi-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-card h3 {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .kpi-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .kpi-change {
+            font-size: 0.9em;
+            color: #22c55e;
+        }
+
+        .kpi-change.negative {
+            color: #ef4444;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-group label {
+            font-size: 0.85em;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input[type="month"] {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+            background: white;
+        }
+
+        select:hover, input[type="month"]:hover {
+            border-color: #667eea;
+        }
+
+        select:focus, input[type="month"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-card.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-card h2 {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+        }
+
+        .chart-container.tall {
+            height: 500px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: white;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        tr:hover {
+            background: #f9fafb;
+        }
+
+        .number {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+
+        @media (max-width: 768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>📊 Báo Cáo Phân Tích Doanh Số</h1>
+            <p>Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2023 - 2025)</p>
+        </div>
+
+        <div class="loading" id="loading">Đang tải dữ liệu...</div>
+
+        <div id="debugLog" style="background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; font-family: monospace; font-size: 13px; display: none;">
+            <h3 style="color: #667eea; margin-bottom: 10px;">📊 Debug Information</h3>
+            <div id="debugContent"></div>
+        </div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="kpi-container">
+                <div class="kpi-card">
+                    <h3>Tổng Doanh Số</h3>
+                    <div class="kpi-value" id="totalSales">0 ₫</div>
+                    <div class="kpi-change" id="salesChange">0%</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>Tổng Số Đơn Hàng</h3>
+                    <div class="kpi-value" id="totalOrders">0</div>
+                    <div class="kpi-change" id="ordersChange">0%</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>Giá Trị TB/Đơn</h3>
+                    <div class="kpi-value" id="avgOrderValue">0 ₫</div>
+                    <div class="kpi-change" id="avgChange">0%</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>Số Sản Phẩm (Lọc)</h3>
+                    <div class="kpi-value" id="totalProducts">0</div>
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">Tổng: <span id="totalProductsAll">0</span></div>
+                </div>
+                <div class="kpi-card">
+                    <h3>Số Hệ Thống</h3>
+                    <div class="kpi-value" id="totalSystems">0</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>Số Nhãn Hàng</h3>
+                    <div class="kpi-value" id="totalBrands">0</div>
+                </div>
+            </div>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label>Từ tháng</label>
+                    <input type="month" id="startMonth" value="2023-01">
+                </div>
+                <div class="filter-group">
+                    <label>Đến tháng</label>
+                    <input type="month" id="endMonth" value="2025-12">
+                </div>
+                <div class="filter-group">
+                    <label>Hệ thống</label>
+                    <select id="systemFilter">
+                        <option value="all">Tất cả hệ thống</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Nhãn hàng</label>
+                    <select id="brandFilter">
+                        <option value="all">Tất cả nhãn hàng</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chart-grid">
+                <div class="chart-card full-width">
+                    <h2>📈 Xu Hướng Doanh Số Theo Tháng</h2>
+                    <div class="chart-container tall">
+                        <canvas id="salesTrendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h2>🏢 Doanh Số Theo Hệ Thống</h2>
+                    <div class="chart-container">
+                        <canvas id="systemChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card">
+                    <h2>🏷️ Doanh Số Theo Nhãn Hàng</h2>
+                    <div class="chart-container">
+                        <canvas id="brandChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <h2>📊 So Sánh Doanh Số Theo Năm</h2>
+                    <div class="chart-container">
+                        <canvas id="yearComparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <h2>🔝 Top 20 Sản Phẩm Bán Chạy</h2>
+                    <div class="chart-container tall">
+                        <canvas id="topProductsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
+                    <h2>� Phân Tích Sản Phẩm Theo Năm & Dự Đoán</h2>
+                    <div class="table-container">
+                        <table id="yearlyProductTable">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">#</th>
+                                    <th rowspan="2">Nhãn Hàng</th>
+                                    <th rowspan="2">SKU</th>
+                                    <th colspan="3" style="text-align: center; border-bottom: 1px solid #e2e8f0;">Số Lượng Bán</th>
+                                    <th rowspan="2">Dự Đoán 2026</th>
+                                    <th rowspan="2">Tăng Trưởng</th>
+                                </tr>
+                                <tr>
+                                    <th class="number">2023</th>
+                                    <th class="number">2024</th>
+                                    <th class="number">2025</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yearlyProductTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = [];
+        let charts = {};
+
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+                maximumFractionDigits: 0
+            }).format(value);
+        }
+
+        // Format number
+        function formatNumber(value) {
+            return new Intl.NumberFormat('vi-VN').format(value);
+        }
+
+        // Shorten product name for better display
+        function shortenProductName(fullName) {
+            if (!fullName) return 'N/A';
+            
+            // Check lookup table first
+            const trimmedName = fullName.trim();
+            if (productNameLookup[trimmedName]) {
+                return productNameLookup[trimmedName];
+            }
+            
+            // Fallback: Remove content in parentheses (product codes)
+            let name = fullName.replace(/\s*\([^)]*\)\s*/g, ' ');
+            
+            // Remove extra whitespace
+            name = name.replace(/\s+/g, ' ').trim();
+            
+            // If still too long, take first 50 characters
+            if (name.length > 50) {
+                name = name.substring(0, 47) + '...';
+            }
+            
+            return name;
+        }
+
+        // Parse date from filename
+        function parseFilename(filename) {
+            const match = filename.match(/(\d{4})-(\d{2})-(\d{2})/);
+            if (match) {
+                return new Date(match[1], parseInt(match[2]) - 1, match[3]);
+            }
+            return null;
+        }
+
+        // Load product name lookup table
+        let productNameLookup = {};
+        let productBrandLookup = {}; // Thêm lookup cho NHAN (brand)
+        async function loadProductNameLookup() {
+            return new Promise((resolve) => {
+                Papa.parse('ten_sp_nhan.csv', {
+                    download: true,
+                    header: true,
+                    encoding: 'UTF-8',
+                    complete: function(results) {
+                        results.data.forEach(row => {
+                            const tenSP = (row['TEN SP'] || '').trim();
+                            const tenRutGon = (row['TEN RUT GON'] || '').trim();
+                            const nhan = (row['NHAN'] || '').trim();
+                            if (tenSP && tenRutGon) {
+                                productNameLookup[tenSP] = tenRutGon;
+                                productBrandLookup[tenSP] = nhan || 'N/A';
+                            }
+                        });
+                        console.log('Loaded', Object.keys(productNameLookup).length, 'product name mappings with brands');
+                        resolve();
+                    },
+                    error: function(error) {
+                        console.error('Error loading product lookup:', error);
+                        resolve(); // Continue even if lookup fails
+                    }
+                });
+            });
+        }
+
+        // Load CUSTOMERS lookup table
+        let customersLookup = {};
+        async function loadCustomers() {
+            return new Promise((resolve) => {
+                Papa.parse('CUSTOMERS.csv', {
+                    download: true,
+                    header: true,
+                    encoding: 'UTF-8',
+                    complete: function(results) {
+                        results.data.forEach(row => {
+                            const nam = parseInt(row['NAM']);
+                            const systemCode = (row['SYSTEM CODE'] || '').trim();
+                            const heThong = (row['HE THONG'] || '').trim();
+                            if (nam && systemCode && heThong) {
+                                const key = `${nam}_${systemCode}`;
+                                customersLookup[key] = heThong;
+                            }
+                        });
+                        console.log('Loaded', Object.keys(customersLookup).length, 'customer system mappings');
+                        resolve();
+                    },
+                    error: function(error) {
+                        console.error('Error loading customers:', error);
+                        resolve(); // Continue even if lookup fails
+                    }
+                });
+            });
+        }
+
+        // Load all CSV files
+        async function loadAllData() {
+            // Load lookup tables first
+            await loadProductNameLookup();
+            await loadCustomers();
+            await loadProductNameLookup();
+            // CHỈ LẤY FILE CUỐI THÁNG (loại bỏ file trung gian để tránh trùng lặp)
+            const files = [
+                '2023-01-31_DS_31.01.2023.csv', '2023-02-28_DS_28.02.23.csv', '2023-03-31_DS_31.03.2023.csv',
+                '2023-04-30_DS_30.04.2023.csv', '2023-05-27_DS_27.05.2023.csv', '2023-06-30_DS_30.06.2023.csv',
+                '2023-07-31_DS_31.07.2023.csv', '2023-08-31_DS_31.08.2023.csv', '2023-09-30_DS_30.09.2023.csv',
+                '2023-10-31_DS_31.10.2023.csv', '2023-11-30_DS_30.11.2023.csv', '2023-12-31_DS_31.12.2023.csv',
+                '2024-01-31_DS_31.01.2024.csv', '2024-02-29_DS_29.02.24.csv', '2024-03-30_DS_30.03.2024.csv',
+                '2024-04-30_DS_30.04.2024.csv', '2024-05-31_DS_31.05.2024.csv', '2024-06-30_DS_30.06.2024.csv',
+                '2024-07-31_DS_31.07.2024.csv', '2024-08-31_DS_31.08.2024.csv', '2024-09-30_DS_30.09.2024.csv',
+                '2024-10-31_DS_31.10.2024.csv', '2024-11-30_DS_30.11.2024.csv', '2024-12-31_DS_31.12.2024.csv',
+                '2025-01-24_DS_24.01.25.csv', '2025-02-28_DS_28.02.25.csv', '2025-03-31_DS_31.03.25.csv',
+                '2025-04-30_DS_30.4.25.csv', '2025-05-31_DS_31.05.25.csv', '2025-06-30_DS_30.06.25.csv',
+                '2025-07-28_DS_28.07.25.csv', '2025-08-31_DS_31.08.25.csv', '2025-09-30_DS_30.09.25 .csv',
+                '2025-10-31_DS_31.10.25 .csv', 
+                // Tháng 11: Chỉ lấy file 30/11 (bỏ file 22/11)
+                '2025-11-30_DS_30.11.25.csv',
+                // Tháng 12: Chỉ lấy file 31/12 (bỏ file 15/12 và 22/12)
+                '2025-12-31_DS_31.12.25.csv'
+            ];
+
+            const promises = files.map(filename => {
+                return new Promise((resolve, reject) => {
+                    const date = parseFilename(filename);
+                    // Sử dụng đường dẫn tương đối + cache buster
+                    const filePath = 'CSV_Output_Latest_Only/' + filename + '?v=' + Date.now();
+                    
+                    Papa.parse(filePath, {
+                        download: true,
+                        header: true,
+                        skipEmptyLines: true,
+                        encoding: 'UTF-8',
+                        complete: function(results) {
+                            // Debug: log tên cột để kiểm tra
+                            if (results.data.length > 0 && filename.includes('2025-11-30')) {
+                                console.log('Column names in CSV:', Object.keys(results.data[0]));
+                            }
+                            
+                            const data = results.data
+                                // Bước 1: Lọc bỏ header rows (NGAY = "NGAY")
+                                .filter(row => row.NGAY && row.NGAY !== 'NGAY')
+                                // Bước 2: Map và merge với lookups (giống Excel Power Query)
+                                .map(row => {
+                                    const sl = parseFloat(row.SL) || 0;
+                                    const donGia = parseFloat(row['ĐƠN GIÁ']) || 0;
+                                    // Công thức Power Query: VAT = SL * ĐƠN GIÁ * 1.1
+                                    const calculatedVAT = sl * donGia * 1.1;
+                                    
+                                    const tenSP = (row['TÊN SP'] || '').trim();
+                                    const maKH = (row['MA KH'] || '').toString().trim();
+                                    
+                                    // QUAN TRỌNG: Dùng NHAN từ ten_sp_nhan (không dùng NHÃN HÀNG từ CSV)
+                                    const nhanHang = productBrandLookup[tenSP] || 'N/A';
+                                    
+                                    // Merge với CUSTOMERS: NAM + MA KH -> HE THONG
+                                    const customerKey = `${date.getFullYear()}_${maKH}`;
+                                    const heThongFromCustomers = customersLookup[customerKey] || null;
+                                    
+                                    // Lấy MÃ HH từ cột thứ 8 (index 7)
+                                    const maHH = (row['MÃ HH'] || row['MA HH'] || '').toString().trim();
+                                    
+                                    return {
+                                        'SO HD': row['SO HD'],
+                                        'NGAY': row.NGAY,
+                                        'MA KH': maKH,
+                                        'MÃ HH': maHH,
+                                        'TÊN SP': tenSP,
+                                        'NHÃN HÀNG': nhanHang, // Từ NHAN trong ten_sp_nhan
+                                        'HỆ THỐNG': heThongFromCustomers, // Từ CUSTOMERS, không phải CSV gốc
+                                        'CỬA HÀNG': row['CỬA HÀNG'],
+                                        month: date,
+                                        monthKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+                                        year: date.getFullYear(),
+                                        vat: calculatedVAT,
+                                        thanhTien: parseFloat(row['THÀNH TIỀN']) || 0,
+                                        soLuong: sl,
+                                        donGia: donGia,
+                                        // Key để dedup: SO HD + NGAY + MÃ HH + TÊN SP + SL
+                                        duplicateKey: `${row['SO HD']}_${row.NGAY}_${maHH}_${tenSP}_${sl}`
+                                    };
+                                });
+                            resolve(data);
+                        },
+                        error: function(error) {
+                            console.error(`Error loading ${filename}:`, error);
+                            resolve([]);
+                        }
+                    });
+                });
+            });
+
+            const results = await Promise.all(promises);
+            const rawData = results.flat();
+            
+            let debugHTML = `<div style="color: green;">✓ Raw data loaded: <strong>${rawData.length}</strong> rows</div>`;
+            console.log('Raw data loaded:', rawData.length, 'rows');
+            
+            // DEDUP theo Excel Power Query: Group by SO HD + NGAY + MÃ HH + TÊN SP + SL
+            // Giữ dòng ĐẦU TIÊN (Table.FirstN(_,1))
+            const uniqueMap = new Map();
+            let duplicateCount = 0;
+            rawData.forEach(row => {
+                const key = row.duplicateKey;
+                if (!uniqueMap.has(key)) {
+                    uniqueMap.set(key, row);
+                } else {
+                    duplicateCount++;
+                }
+            });
+            
+            const afterDedup = Array.from(uniqueMap.values());
+            debugHTML += `<div style="color: blue;">✓ After dedup (keep first): <strong>${afterDedup.length}</strong> rows (removed ${duplicateCount} duplicates)</div>`;
+            console.log('After dedup:', afterDedup.length, 'rows');
+            
+            // LỌC HỆ THỐNG != null (từ CUSTOMERS)
+            // Excel: #"Filtered HE THONG" = Table.SelectRows(..., each ([HE THONG.1] <> null))
+            allData = afterDedup.filter(row => row['HỆ THỐNG'] !== null);
+            
+            debugHTML += `<div style="color: orange;">✓ Filter HỆ THỐNG not null: <strong>${allData.length}</strong> rows (removed ${afterDedup.length - allData.length} null rows)</div>`;
+            console.log('After filter HỆ THỐNG:', allData.length, 'rows');
+            
+            // Tính tổng VAT để debug
+            const totalVAT = allData.reduce((sum, row) => sum + row.vat, 0);
+            debugHTML += `<div style="color: green; font-size: 15px; margin-top: 10px;">💰 Total VAT (all data): <strong>${formatCurrency(totalVAT)}</strong></div>`;
+            console.log('Total VAT (all data):', totalVAT.toLocaleString('vi-VN'), 'VND');
+            
+            // Debug tháng 11/2025 cụ thể
+            const nov2025 = allData.filter(row => row.monthKey === '2025-11');
+            const nov2025VAT = nov2025.reduce((sum, row) => sum + row.vat, 0);
+            debugHTML += `<div style="color: red; font-size: 15px; margin-top: 5px;">📅 Nov 2025: <strong>${nov2025.length}</strong> rows, VAT: <strong>${formatCurrency(nov2025VAT)}</strong></div>`;
+            debugHTML += `<div style="color: #666; font-size: 12px; margin-left: 20px;">Expected: 3,230,416,893 VND | Difference: ${formatCurrency(Math.abs(nov2025VAT - 3230416893))}</div>`;
+            console.log('Nov 2025:', nov2025.length, 'rows, VAT:', nov2025VAT.toLocaleString('vi-VN'), 'VND', '(Expected: 3,230,416,893)');
+            
+            // Debug tháng 4/2025 cụ thể
+            const apr2025Raw = rawData.filter(row => row.monthKey === '2025-04');
+            const apr2025Final = allData.filter(row => row.monthKey === '2025-04');
+            const apr2025VAT = apr2025Final.reduce((sum, row) => sum + row.vat, 0);
+            debugHTML += `<div style="color: orange; font-size: 15px; margin-top: 5px;">📅 Apr 2025: Raw: <strong>${apr2025Raw.length}</strong> → Final: <strong>${apr2025Final.length}</strong> rows, VAT: <strong>${formatCurrency(apr2025VAT)}</strong></div>`;
+            console.log('Apr 2025: Raw:', apr2025Raw.length, '→ Final:', apr2025Final.length, 'rows, VAT:', apr2025VAT.toLocaleString('vi-VN'), 'VND');
+            
+            // Hiển thị debug info
+            document.getElementById('debugContent').innerHTML = debugHTML;
+            document.getElementById('debugLog').style.display = 'block';
+            
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            
+            initializeFilters();
+            updateDashboard();
+        }
+
+        // Initialize filters
+        function initializeFilters() {
+            const systems = [...new Set(allData.map(d => d['HỆ THỐNG']))].filter(Boolean).sort();
+            const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
+
+            const systemSelect = document.getElementById('systemFilter');
+            systems.forEach(system => {
+                const option = document.createElement('option');
+                option.value = system;
+                option.textContent = system;
+                systemSelect.appendChild(option);
+            });
+
+            const brandSelect = document.getElementById('brandFilter');
+            brands.forEach(brand => {
+                const option = document.createElement('option');
+                option.value = brand;
+                option.textContent = brand;
+                brandSelect.appendChild(option);
+            });
+
+            // Add event listeners
+            document.getElementById('startMonth').addEventListener('change', updateDashboard);
+            document.getElementById('endMonth').addEventListener('change', updateDashboard);
+            document.getElementById('systemFilter').addEventListener('change', updateDashboard);
+            document.getElementById('brandFilter').addEventListener('change', updateDashboard);
+        }
+
+        // Filter data
+        function filterData() {
+            const startMonth = document.getElementById('startMonth').value;
+            const endMonth = document.getElementById('endMonth').value;
+            const system = document.getElementById('systemFilter').value;
+            const brand = document.getElementById('brandFilter').value;
+
+            return allData.filter(row => {
+                if (startMonth && row.monthKey < startMonth) return false;
+                if (endMonth && row.monthKey > endMonth) return false;
+                if (system !== 'all' && row['HỆ THỐNG'] !== system) return false;
+                if (brand !== 'all' && row['NHÃN HÀNG'] !== brand) return false;
+                return true;
+            });
+        }
+
+        // Update KPIs
+        function updateKPIs(data) {
+            const totalSales = data.reduce((sum, row) => sum + row.vat, 0);
+            const uniqueOrders = new Set(data.map(d => d['SO HD']).filter(Boolean)).size;
+            const avgOrder = uniqueOrders > 0 ? totalSales / uniqueOrders : 0;
+            
+            // Đếm sản phẩm unique theo filter hiện tại
+            console.log('Sample row keys:', data.length > 0 ? Object.keys(data[0]) : 'No data');
+            console.log('Sample row MÃ HH:', data.length > 0 ? data[0]['MÃ HH'] : 'No data');
+            
+            const productCodes = data.map(d => d['MÃ HH']).filter(Boolean);
+            const uniqueProducts = new Set(productCodes).size;
+            
+            console.log('Product codes sample (first 10):', productCodes.slice(0, 10));
+            console.log('Unique products:', uniqueProducts);
+            
+            // Đếm tổng sản phẩm trong toàn bộ dữ liệu (không filter)
+            const allProductCodes = allData.map(d => d['MÃ HH']).filter(Boolean);
+            const totalAllProducts = new Set(allProductCodes).size;
+            
+            const systems = data.map(d => d['HỆ THỐNG'] || d.HỆ_THỐNG || d['HE THONG']).filter(Boolean);
+            const uniqueSystems = new Set(systems).size;
+            
+            const brands = data.map(d => d['NHÃN HÀNG'] || d.NHÃN_HÀNG || d['NHAN HANG']).filter(Boolean);
+            const uniqueBrands = new Set(brands).size;
+            
+            console.log('KPI Debug:', {
+                totalRows: data.length,
+                totalRowsAll: allData.length,
+                uniqueProducts: uniqueProducts,
+                totalAllProducts: totalAllProducts,
+                sampleProduct: productCodes[0],
+                uniqueSystems: uniqueSystems,
+                uniqueBrands: uniqueBrands
+            });
+
+            document.getElementById('totalSales').textContent = formatCurrency(totalSales);
+            document.getElementById('totalOrders').textContent = formatNumber(uniqueOrders);
+            document.getElementById('avgOrderValue').textContent = formatCurrency(avgOrder);
+            document.getElementById('totalProducts').textContent = formatNumber(uniqueProducts);
+            document.getElementById('totalProductsAll').textContent = formatNumber(totalAllProducts);
+            document.getElementById('totalSystems').textContent = formatNumber(uniqueSystems);
+            document.getElementById('totalBrands').textContent = formatNumber(uniqueBrands);
+
+            // Calculate changes (comparing with previous period)
+            const currentYear = new Date().getFullYear();
+            const currentData = data.filter(d => d.year === currentYear);
+            const previousData = data.filter(d => d.year === currentYear - 1);
+            
+            const currentSales = currentData.reduce((sum, row) => sum + row.vat, 0);
+            const previousSales = previousData.reduce((sum, row) => sum + row.vat, 0);
+            const salesGrowth = previousSales > 0 ? ((currentSales - previousSales) / previousSales * 100) : 0;
+            
+            const salesChangeEl = document.getElementById('salesChange');
+            salesChangeEl.textContent = `${salesGrowth >= 0 ? '+' : ''}${salesGrowth.toFixed(1)}% vs năm trước`;
+            salesChangeEl.className = salesGrowth >= 0 ? 'kpi-change' : 'kpi-change negative';
+        }
+
+        // Create Sales Trend Chart
+        function createSalesTrendChart(data) {
+            const monthlyData = {};
+            data.forEach(row => {
+                const key = row.monthKey;
+                if (!monthlyData[key]) {
+                    monthlyData[key] = 0;
+                }
+                monthlyData[key] += row.vat;
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const values = sortedMonths.map(month => monthlyData[month]);
+
+            const ctx = document.getElementById('salesTrendChart').getContext('2d');
+            
+            if (charts.salesTrend) {
+                charts.salesTrend.destroy();
+            }
+
+            charts.salesTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths,
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: values,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Doanh số: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create System Chart
+        function createSystemChart(data) {
+            const systemData = {};
+            data.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!systemData[system]) {
+                    systemData[system] = 0;
+                }
+                systemData[system] += row.vat;
+            });
+
+            const sorted = Object.entries(systemData)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const ctx = document.getElementById('systemChart').getContext('2d');
+            
+            if (charts.system) {
+                charts.system.destroy();
+            }
+
+            charts.system = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sorted.map(s => s[0]),
+                    datasets: [{
+                        data: sorted.map(s => s[1]),
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                            '#43e97b', '#fa709a', '#fee140', '#30cfd0',
+                            '#a8edea', '#fed6e3'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + formatCurrency(context.parsed) + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Brand Chart
+        function createBrandChart(data) {
+            const brandData = {};
+            data.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandData[brand]) {
+                    brandData[brand] = 0;
+                }
+                brandData[brand] += row.vat;
+            });
+
+            const sorted = Object.entries(brandData)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+
+            const ctx = document.getElementById('brandChart').getContext('2d');
+            
+            if (charts.brand) {
+                charts.brand.destroy();
+            }
+
+            charts.brand = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(s => s[0]),
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: sorted.map(s => s[1]),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Doanh số: ' + formatCurrency(context.parsed.x);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Year Comparison Chart
+        function createYearComparisonChart(data) {
+            const yearData = {};
+            data.forEach(row => {
+                const year = row.year;
+                if (!yearData[year]) {
+                    yearData[year] = 0;
+                }
+                yearData[year] += row.vat;
+            });
+
+            const years = Object.keys(yearData).sort();
+            const values = years.map(year => yearData[year]);
+
+            const ctx = document.getElementById('yearComparisonChart').getContext('2d');
+            
+            if (charts.yearComparison) {
+                charts.yearComparison.destroy();
+            }
+
+            charts.yearComparison = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: values,
+                        backgroundColor: ['#667eea', '#764ba2', '#f093fb']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Doanh số: ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Create Top Products Chart
+        function createTopProductsChart(data) {
+            const productData = {};
+            data.forEach(row => {
+                const fullName = (row['TÊN SP'] || '').trim();
+                const brand = (row['NHÃN HÀNG'] || '').trim();
+                
+                // Skip invalid records
+                if (!fullName) {
+                    return;
+                }
+                
+                // Get shortened name for grouping
+                const shortName = shortenProductName(fullName);
+                
+                // Group by TÊN RÚT GỌN (shortened name)
+                if (!productData[shortName]) {
+                    productData[shortName] = {
+                        name: shortName,
+                        brand: brand || 'N/A',
+                        sales: 0,
+                        quantity: 0
+                    };
+                }
+                productData[shortName].sales += row.vat || 0;
+                productData[shortName].quantity += row.soLuong || 0;
+            });
+
+            const sorted = Object.entries(productData)
+                .filter(item => item[1].sales > 0)
+                .sort((a, b) => b[1].sales - a[1].sales)
+                .slice(0, 20);
+
+            const ctx = document.getElementById('topProductsChart').getContext('2d');
+            
+            if (charts.topProducts) {
+                charts.topProducts.destroy();
+            }
+
+            if (sorted.length === 0) {
+                // Handle case when no data available
+                ctx.canvas.parentNode.innerHTML = '<p style="text-align: center; padding: 50px; color: #666;">Không có dữ liệu</p>';
+                return;
+            }
+
+            charts.topProducts = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(s => s[1].name), // Already shortened name
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: sorted.map(s => s[1].sales),
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    const index = context[0].dataIndex;
+                                    return sorted[index][1].name;
+                                },
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    return [
+                                        'Mã: ' + sorted[index][0],
+                                        'Doanh số: ' + formatCurrency(context.parsed.x),
+                                        'Số lượng: ' + formatNumber(sorted[index][1].quantity)
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update yearly product analysis table
+            updateYearlyProductTable(data);
+        }
+
+        // Update Yearly Product Analysis Table with Forecast
+        function updateYearlyProductTable(data) {
+            // Group by Brand > SKU and year, using QUANTITY instead of sales
+            const brandData = {};
+            
+            data.forEach(row => {
+                const fullName = (row['TÊN SP'] || '').trim();
+                const sku = shortenProductName(fullName);
+                const brand = (row['NHÃN HÀNG'] || 'N/A').trim();
+                const year = row.year;
+                const quantity = row.soLuong || 0;
+                
+                if (!sku) return;
+                
+                // Group by brand first
+                if (!brandData[brand]) {
+                    brandData[brand] = {};
+                }
+                
+                // Then by SKU under brand
+                if (!brandData[brand][sku]) {
+                    brandData[brand][sku] = {
+                        brand: brand,
+                        sku: sku,
+                        years: { 2023: 0, 2024: 0, 2025: 0 }
+                    };
+                }
+                
+                if (year >= 2023 && year <= 2025) {
+                    brandData[brand][sku].years[year] += quantity;
+                }
+            });
+            
+            // Flatten structure and calculate forecast
+            const allProducts = [];
+            Object.keys(brandData).forEach(brand => {
+                Object.values(brandData[brand]).forEach(product => {
+                    const y2023 = product.years[2023];
+                    const y2024 = product.years[2024];
+                    const y2025 = product.years[2025];
+                    
+                    // Calculate forecast
+                    let forecast2026 = 0;
+                    let growthRate = 0;
+                    
+                    const validYears = [y2023, y2024, y2025].filter(v => v > 0);
+                    
+                    if (validYears.length >= 2) {
+                        let growthRates = [];
+                        if (y2023 > 0 && y2024 > 0) {
+                            growthRates.push((y2024 - y2023) / y2023);
+                        }
+                        if (y2024 > 0 && y2025 > 0) {
+                            growthRates.push((y2025 - y2024) / y2024);
+                        }
+                        
+                        if (growthRates.length > 0) {
+                            const avgGrowth = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+                            growthRate = avgGrowth * 100;
+                            forecast2026 = y2025 * (1 + avgGrowth);
+                        }
+                    }
+                    
+                    allProducts.push({
+                        brand: product.brand,
+                        sku: product.sku,
+                        years: product.years,
+                        forecast2026: forecast2026,
+                        growthRate: growthRate,
+                        totalQty: y2023 + y2024 + y2025
+                    });
+                });
+            });
+            
+            // Sort by brand, then by total quantity (top 30)
+            const sorted = allProducts
+                .filter(p => p.totalQty > 0)
+                .sort((a, b) => {
+                    // First sort by brand
+                    if (a.brand !== b.brand) {
+                        return a.brand.localeCompare(b.brand);
+                    }
+                    // Then by quantity descending
+                    return b.totalQty - a.totalQty;
+                })
+                .slice(0, 30);
+            
+            const tbody = document.getElementById('yearlyProductTableBody');
+            tbody.innerHTML = '';
+            
+            let lastBrand = '';
+            sorted.forEach((product, index) => {
+                const row = tbody.insertRow();
+                const growthColor = product.growthRate > 0 ? '#10b981' : '#ef4444';
+                const growthIcon = product.growthRate > 0 ? '📈' : '📉';
+                
+                // Show brand only when it changes
+                const brandDisplay = product.brand !== lastBrand ? product.brand : '';
+                lastBrand = product.brand;
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td style="font-weight: 600; color: #667eea;">${brandDisplay}</td>
+                    <td style="padding-left: 20px;">${product.sku}</td>
+                    <td class="number">${product.years[2023] > 0 ? formatNumber(Math.round(product.years[2023])) : '-'}</td>
+                    <td class="number">${product.years[2024] > 0 ? formatNumber(Math.round(product.years[2024])) : '-'}</td>
+                    <td class="number">${product.years[2025] > 0 ? formatNumber(Math.round(product.years[2025])) : '-'}</td>
+                    <td class="number" style="background: #f0fdf4; font-weight: 600;">${product.forecast2026 > 0 ? formatNumber(Math.round(product.forecast2026)) : '-'}</td>
+                    <td class="number" style="color: ${growthColor}; font-weight: 600;">${growthIcon} ${product.growthRate.toFixed(1)}%</td>
+                `;
+            });
+        }
+
+        // Update dashboard
+        function updateDashboard() {
+            const data = filterData();
+            updateKPIs(data);
+            createSalesTrendChart(data);
+            createSystemChart(data);
+            createBrandChart(data);
+            createYearComparisonChart(data);
+            createTopProductsChart(data);
+        }
+
+        // Initialize
+        loadAllData();
+    </script>
+</body>
+</html>
