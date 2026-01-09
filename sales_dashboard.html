@@ -1623,6 +1623,8 @@
         }
 
         // Analyze growth contributors and detractors (2024 vs 2025)
+        let systemSKUDetails = {}; // Store SKU details per system for expansion
+        
         function analyzeGrowthDrivers(data) {
             // Filter data for 2024 and 2025
             const data2024 = data.filter(row => row.year === 2024);
@@ -1671,33 +1673,75 @@
             const topGrowth = skuChanges.filter(s => s.change > 0).sort((a, b) => b.change - a.change).slice(0, 10);
             const topDecline = skuChanges.filter(s => s.change < 0).sort((a, b) => a.change - b.change).slice(0, 10);
             
-            // Analyze by System
+            // Analyze by System WITH SKU DETAILS
             const systemData2024 = {};
             const systemData2025 = {};
+            const systemSKUData2024 = {}; // Track SKUs per system
+            const systemSKUData2025 = {};
             
             data2024.forEach(row => {
                 const system = row['HỆ THỐNG'] || '';
-                if (!system) return;
+                const sku = shortenProductName(row['TÊN SP'] || '');
+                if (!system || !sku) return;
+                
                 if (!systemData2024[system]) systemData2024[system] = 0;
                 systemData2024[system] += row.vat || 0;
+                
+                if (!systemSKUData2024[system]) systemSKUData2024[system] = {};
+                if (!systemSKUData2024[system][sku]) systemSKUData2024[system][sku] = 0;
+                systemSKUData2024[system][sku] += row.vat || 0;
             });
             
             data2025.forEach(row => {
                 const system = row['HỆ THỐNG'] || '';
-                if (!system) return;
+                const sku = shortenProductName(row['TÊN SP'] || '');
+                if (!system || !sku) return;
+                
                 if (!systemData2025[system]) systemData2025[system] = 0;
                 systemData2025[system] += row.vat || 0;
+                
+                if (!systemSKUData2025[system]) systemSKUData2025[system] = {};
+                if (!systemSKUData2025[system][sku]) systemSKUData2025[system][sku] = 0;
+                systemSKUData2025[system][sku] += row.vat || 0;
             });
             
-            // Calculate System changes
+            // Calculate System changes with SKU breakdown
             const systemChanges = [];
             const allSystems = new Set([...Object.keys(systemData2024), ...Object.keys(systemData2025)]);
+            
+            systemSKUDetails = {}; // Reset
             
             allSystems.forEach(system => {
                 const val2024 = systemData2024[system] || 0;
                 const val2025 = systemData2025[system] || 0;
                 const change = val2025 - val2024;
                 const changePercent = val2024 > 0 ? ((change / val2024) * 100) : 0;
+                
+                // Calculate SKU changes within this system
+                const skuChangesInSystem = [];
+                const systemSkus2024 = systemSKUData2024[system] || {};
+                const systemSkus2025 = systemSKUData2025[system] || {};
+                const allSystemSkus = new Set([...Object.keys(systemSkus2024), ...Object.keys(systemSkus2025)]);
+                
+                allSystemSkus.forEach(sku => {
+                    const skuVal2024 = systemSkus2024[sku] || 0;
+                    const skuVal2025 = systemSkus2025[sku] || 0;
+                    const skuChange = skuVal2025 - skuVal2024;
+                    const skuChangePercent = skuVal2024 > 0 ? ((skuChange / skuVal2024) * 100) : 0;
+                    
+                    if (Math.abs(skuChange) > 500000) { // Significant change > 500K
+                        skuChangesInSystem.push({
+                            sku: sku,
+                            val2024: skuVal2024,
+                            val2025: skuVal2025,
+                            change: skuChange,
+                            changePercent: skuChangePercent
+                        });
+                    }
+                });
+                
+                // Sort and store top SKUs for this system
+                systemSKUDetails[system] = skuChangesInSystem.sort((a, b) => Math.abs(b.change) - Math.abs(a.change)).slice(0, 10);
                 
                 systemChanges.push({
                     system: system,
@@ -1712,13 +1756,13 @@
             const topDeclineSystem = systemChanges.filter(s => s.change < 0).sort((a, b) => a.change - b.change).slice(0, 5);
             
             // Update tables
-            updateGrowthTable('topGrowthSKUTableBody', topGrowth, 'sku');
-            updateGrowthTable('topDeclineSKUTableBody', topDecline, 'sku');
-            updateGrowthTable('topGrowthSystemTableBody', topGrowthSystem, 'system');
-            updateGrowthTable('topDeclineSystemTableBody', topDeclineSystem, 'system');
+            updateGrowthTable('topGrowthSKUTableBody', topGrowth, 'sku', null);
+            updateGrowthTable('topDeclineSKUTableBody', topDecline, 'sku', null);
+            updateGrowthTable('topGrowthSystemTableBody', topGrowthSystem, 'system', true);
+            updateGrowthTable('topDeclineSystemTableBody', topDeclineSystem, 'system', true);
         }
         
-        function updateGrowthTable(tableBodyId, data, type) {
+        function updateGrowthTable(tableBodyId, data, type, expandable) {
             const tbody = document.getElementById(tableBodyId);
             tbody.innerHTML = '';
             
@@ -1729,16 +1773,22 @@
             }
             
             data.forEach((item, index) => {
-                const row = tbody.insertRow();
                 const name = type === 'sku' ? item.sku : item.system;
                 const changePercent = item.changePercent;
                 const isPositive = item.change > 0;
                 const percentColor = isPositive ? '#10b981' : '#ef4444';
                 const percentIcon = isPositive ? '↑' : '↓';
                 
+                const systemId = type === 'system' ? name.replace(/[^a-zA-Z0-9]/g, '_') : null;
+                const expandIcon = expandable && systemSKUDetails[name] && systemSKUDetails[name].length > 0 
+                    ? `<span id="icon_${systemId}" style="cursor: pointer; display: inline-block; width: 16px; margin-right: 5px;" onclick="toggleSystemSKUs('${systemId}', '${tableBodyId}')">▶</span>` 
+                    : '';
+                
+                const row = tbody.insertRow();
+                row.setAttribute('data-system-row', systemId);
                 row.innerHTML = `
                     <td>${index + 1}</td>
-                    <td style="text-align: left; font-weight: 500;">${name}</td>
+                    <td style="text-align: left; font-weight: 500;">${expandIcon}${name}</td>
                     <td class="number" style="color: #64748b;">${formatCurrency(item.val2024)}</td>
                     <td class="number" style="color: #1e293b; font-weight: 600;">${formatCurrency(item.val2025)}</td>
                     <td class="number" style="color: ${percentColor}; font-weight: 700;">
@@ -1746,7 +1796,48 @@
                         <br><span style="font-size: 0.85em;">(${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%)</span>
                     </td>
                 `;
+                
+                // Add SKU detail rows (hidden by default)
+                if (expandable && systemSKUDetails[name] && systemSKUDetails[name].length > 0) {
+                    systemSKUDetails[name].forEach(skuData => {
+                        const skuRow = tbody.insertRow();
+                        skuRow.setAttribute('data-system-sku', systemId);
+                        skuRow.style.display = 'none';
+                        
+                        const skuIsPositive = skuData.change > 0;
+                        const skuPercentColor = skuIsPositive ? '#10b981' : '#ef4444';
+                        const skuPercentIcon = skuIsPositive ? '↑' : '↓';
+                        
+                        skuRow.innerHTML = `
+                            <td style="background: #f9fafb;"></td>
+                            <td style="padding-left: 30px; background: #f9fafb; color: #666; font-size: 0.9em; text-align: left;">${skuData.sku}</td>
+                            <td class="number" style="background: #f9fafb; color: #94a3b8; font-size: 0.85em;">${formatCurrency(skuData.val2024)}</td>
+                            <td class="number" style="background: #f9fafb; color: #64748b; font-size: 0.85em;">${formatCurrency(skuData.val2025)}</td>
+                            <td class="number" style="background: #f9fafb; color: ${skuPercentColor}; font-size: 0.85em;">
+                                ${skuPercentIcon} ${formatCurrency(Math.abs(skuData.change))}
+                                <br><span style="font-size: 0.9em;">(${skuData.changePercent >= 0 ? '+' : ''}${skuData.changePercent.toFixed(1)}%)</span>
+                            </td>
+                        `;
+                    });
+                }
             });
+        }
+        
+        // Toggle system SKU details
+        function toggleSystemSKUs(systemId, tableBodyId) {
+            const icon = document.getElementById(`icon_${systemId}`);
+            const tbody = document.getElementById(tableBodyId);
+            const skuRows = tbody.querySelectorAll(`tr[data-system-sku="${systemId}"]`);
+            
+            if (icon.textContent === '▶') {
+                // Expand
+                icon.textContent = '▼';
+                skuRows.forEach(row => row.style.display = '');
+            } else {
+                // Collapse
+                icon.textContent = '▶';
+                skuRows.forEach(row => row.style.display = 'none');
+            }
         }
 
         // Update Yearly Product Analysis Table with Forecast
