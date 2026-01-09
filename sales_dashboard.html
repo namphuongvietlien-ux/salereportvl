@@ -457,6 +457,86 @@
                 </div>
 
                 <div class="chart-card full-width">
+                    <h2>📊 Phân Tích Nguyên Nhân Thay Đổi Doanh Số (2024 vs 2025)</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="color: #10b981; margin-bottom: 15px;">📈 Top 10 Mã Hàng Tăng Trưởng Mạnh Nhất</h3>
+                            <div class="table-container">
+                                <table id="topGrowthSKUTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Mã Hàng</th>
+                                            <th class="number">2024</th>
+                                            <th class="number">2025</th>
+                                            <th class="number">Tăng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topGrowthSKUTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="color: #ef4444; margin-bottom: 15px;">📉 Top 10 Mã Hàng Giảm Nhiều Nhất</h3>
+                            <div class="table-container">
+                                <table id="topDeclineSKUTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Mã Hàng</th>
+                                            <th class="number">2024</th>
+                                            <th class="number">2025</th>
+                                            <th class="number">Giảm</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topDeclineSKUTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px;">
+                        <div>
+                            <h3 style="color: #3b82f6; margin-bottom: 15px;">🏢 Top Hệ Thống Tăng Trưởng</h3>
+                            <div class="table-container">
+                                <table id="topGrowthSystemTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Hệ Thống</th>
+                                            <th class="number">2024</th>
+                                            <th class="number">2025</th>
+                                            <th class="number">Tăng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topGrowthSystemTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 style="color: #f59e0b; margin-bottom: 15px;">🏢 Top Hệ Thống Giảm</h3>
+                            <div class="table-container">
+                                <table id="topDeclineSystemTable">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Hệ Thống</th>
+                                            <th class="number">2024</th>
+                                            <th class="number">2025</th>
+                                            <th class="number">Giảm</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="topDeclineSystemTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card full-width">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
                         <h2 style="margin: 0; flex: 1; min-width: 200px;">📊 Phân Tích Sản Phẩm Theo Năm & Dự Đoán (Số Lượng)</h2>
                         <button id="toggleYearlyTable" onclick="toggleYearlyProductTable()" style="
@@ -1505,6 +1585,133 @@
             });
         }
 
+        // Analyze growth contributors and detractors (2024 vs 2025)
+        function analyzeGrowthDrivers(data) {
+            // Filter data for 2024 and 2025
+            const data2024 = data.filter(row => row.year === 2024);
+            const data2025 = data.filter(row => row.year === 2025);
+            
+            // Analyze by SKU
+            const skuData2024 = {};
+            const skuData2025 = {};
+            
+            data2024.forEach(row => {
+                const sku = shortenProductName(row['TÊN SP'] || '');
+                if (!sku) return;
+                if (!skuData2024[sku]) skuData2024[sku] = 0;
+                skuData2024[sku] += row.vat || 0;
+            });
+            
+            data2025.forEach(row => {
+                const sku = shortenProductName(row['TÊN SP'] || '');
+                if (!sku) return;
+                if (!skuData2025[sku]) skuData2025[sku] = 0;
+                skuData2025[sku] += row.vat || 0;
+            });
+            
+            // Calculate SKU changes
+            const skuChanges = [];
+            const allSkus = new Set([...Object.keys(skuData2024), ...Object.keys(skuData2025)]);
+            
+            allSkus.forEach(sku => {
+                const val2024 = skuData2024[sku] || 0;
+                const val2025 = skuData2025[sku] || 0;
+                const change = val2025 - val2024;
+                const changePercent = val2024 > 0 ? ((change / val2024) * 100) : 0;
+                
+                if (Math.abs(change) > 1000000) { // Only significant changes > 1M
+                    skuChanges.push({
+                        sku: sku,
+                        val2024: val2024,
+                        val2025: val2025,
+                        change: change,
+                        changePercent: changePercent
+                    });
+                }
+            });
+            
+            // Top growth and decline SKUs
+            const topGrowth = skuChanges.filter(s => s.change > 0).sort((a, b) => b.change - a.change).slice(0, 10);
+            const topDecline = skuChanges.filter(s => s.change < 0).sort((a, b) => a.change - b.change).slice(0, 10);
+            
+            // Analyze by System
+            const systemData2024 = {};
+            const systemData2025 = {};
+            
+            data2024.forEach(row => {
+                const system = row['HỆ THỐNG'] || '';
+                if (!system) return;
+                if (!systemData2024[system]) systemData2024[system] = 0;
+                systemData2024[system] += row.vat || 0;
+            });
+            
+            data2025.forEach(row => {
+                const system = row['HỆ THỐNG'] || '';
+                if (!system) return;
+                if (!systemData2025[system]) systemData2025[system] = 0;
+                systemData2025[system] += row.vat || 0;
+            });
+            
+            // Calculate System changes
+            const systemChanges = [];
+            const allSystems = new Set([...Object.keys(systemData2024), ...Object.keys(systemData2025)]);
+            
+            allSystems.forEach(system => {
+                const val2024 = systemData2024[system] || 0;
+                const val2025 = systemData2025[system] || 0;
+                const change = val2025 - val2024;
+                const changePercent = val2024 > 0 ? ((change / val2024) * 100) : 0;
+                
+                systemChanges.push({
+                    system: system,
+                    val2024: val2024,
+                    val2025: val2025,
+                    change: change,
+                    changePercent: changePercent
+                });
+            });
+            
+            const topGrowthSystem = systemChanges.filter(s => s.change > 0).sort((a, b) => b.change - a.change).slice(0, 5);
+            const topDeclineSystem = systemChanges.filter(s => s.change < 0).sort((a, b) => a.change - b.change).slice(0, 5);
+            
+            // Update tables
+            updateGrowthTable('topGrowthSKUTableBody', topGrowth, 'sku');
+            updateGrowthTable('topDeclineSKUTableBody', topDecline, 'sku');
+            updateGrowthTable('topGrowthSystemTableBody', topGrowthSystem, 'system');
+            updateGrowthTable('topDeclineSystemTableBody', topDeclineSystem, 'system');
+        }
+        
+        function updateGrowthTable(tableBodyId, data, type) {
+            const tbody = document.getElementById(tableBodyId);
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) {
+                const row = tbody.insertRow();
+                row.innerHTML = '<td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Không có dữ liệu</td>';
+                return;
+            }
+            
+            data.forEach((item, index) => {
+                const row = tbody.insertRow();
+                const name = type === 'sku' ? item.sku : item.system;
+                const changePercent = item.changePercent;
+                const isPositive = item.change > 0;
+                const percentColor = isPositive ? '#10b981' : '#ef4444';
+                const percentIcon = isPositive ? '↑' : '↓';
+                
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td style="text-align: left; font-weight: 500;">${name}</td>
+                    <td class="number" style="color: #64748b;">${formatCurrency(item.val2024)}</td>
+                    <td class="number" style="color: #1e293b; font-weight: 600;">${formatCurrency(item.val2025)}</td>
+                    <td class="number" style="color: ${percentColor}; font-weight: 700;">
+                        ${percentIcon} ${formatCurrency(Math.abs(item.change))}
+                        <br><span style="font-size: 0.85em;">(${changePercent >= 0 ? '+' : ''}${changePercent.toFixed(1)}%)</span>
+                    </td>
+                `;
+            });
+        }
+
         // Update Yearly Product Analysis Table with Forecast
         function updateYearlyProductTable(data) {
             // Group by Brand > Year > SKU to get detailed breakdown
@@ -1798,6 +2005,7 @@
             createYearComparisonChart(data);
             createTopProductsChart(data);
             createStoreActivityChart(data);
+            analyzeGrowthDrivers(data);
         }
 
         // Initialize
