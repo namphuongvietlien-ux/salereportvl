@@ -492,6 +492,15 @@
             });
         }
 
+        // ==========================================
+        // DANH SÁCH MÃ HÀNG LOẠI TRỪ KHỎI DỰ KIẾN 2026
+        // Thêm/bớt mã hàng vào danh sách này để loại trừ khỏi forecast
+        // ==========================================
+        const EXCLUDED_SKUS_FROM_FORECAST = [
+            // Ví dụ: 'Coleman 28Qt', 'Igloo 25L', 'Stanley 1.1L'
+            // Để trống [] nếu không loại trừ mã nào
+        ];
+
         // Load CUSTOMERS lookup table
         let customersLookup = {};
         async function loadCustomers() {
@@ -1508,23 +1517,46 @@
                         const forecast2026VAT = lastYear.vat * (1 + avgGrowth);
                         const forecast2026Qty = lastYear.qty * (1 + avgGrowth);
                         
-                        // Calculate forecast for each SKU based on 2025 data
+                        // Calculate forecast for each SKU based on 2025 data (excluding locked SKUs)
                         const forecast2026SKUs = {};
+                        let excludedVAT = 0; // Track excluded SKU values
+                        let excludedQty = 0;
+                        
                         if (lastYear.skus) {
                             Object.entries(lastYear.skus).forEach(([sku, skuData]) => {
-                                forecast2026SKUs[sku] = {
-                                    vat: skuData.vat * (1 + avgGrowth),
-                                    qty: skuData.qty * (1 + avgGrowth)
-                                };
+                                // Check if SKU is in exclusion list
+                                if (EXCLUDED_SKUS_FROM_FORECAST.includes(sku)) {
+                                    // Keep 2025 values for excluded SKUs (no growth)
+                                    forecast2026SKUs[sku] = {
+                                        vat: skuData.vat,
+                                        qty: skuData.qty,
+                                        excluded: true // Mark as excluded
+                                    };
+                                    excludedVAT += skuData.vat;
+                                    excludedQty += skuData.qty;
+                                } else {
+                                    // Apply growth for non-excluded SKUs
+                                    forecast2026SKUs[sku] = {
+                                        vat: skuData.vat * (1 + avgGrowth),
+                                        qty: skuData.qty * (1 + avgGrowth),
+                                        excluded: false
+                                    };
+                                }
                             });
                         }
+                        
+                        // Adjust brand total: only grow non-excluded portion
+                        const nonExcludedVAT = lastYear.vat - excludedVAT;
+                        const nonExcludedQty = lastYear.qty - excludedQty;
+                        const adjustedForecast2026VAT = (nonExcludedVAT * (1 + avgGrowth)) + excludedVAT;
+                        const adjustedForecast2026Qty = (nonExcludedQty * (1 + avgGrowth)) + excludedQty;
                         
                         yearRows.push({
                             brand: brandData.brand,
                             year: 2026,
-                            vat: forecast2026VAT,
-                            qty: forecast2026Qty,
-                            growthText: `<span style="color: #667eea; font-weight: 600;">🔮 ${(avgGrowth * 100).toFixed(1)}%</span>`,
+                            vat: adjustedForecast2026VAT,
+                            qty: adjustedForecast2026Qty,
+                            growthText: `<span style="color: #667eea; font-weight: 600;">🔮 ${(avgGrowth * 100).toFixed(1)}%</span>${EXCLUDED_SKUS_FROM_FORECAST.length > 0 ? ' <span style="color: #94a3b8; font-size: 0.85em;">(loại trừ ' + EXCLUDED_SKUS_FROM_FORECAST.length + ' mã)</span>' : ''}`,
                             growthRate: avgGrowth * 100,
                             isForecast: true,
                             skus: forecast2026SKUs // Include forecasted SKUs
@@ -1600,12 +1632,17 @@
                             skuRow.style.display = 'none';
                             rowIndex++;
                             
+                            // Add lock icon for excluded SKUs
+                            const lockIcon = skuData.excluded ? '<span style="color: #94a3b8; margin-right: 4px;" title="Mã này được loại trừ khỏi dự kiến">🔒</span>' : '';
+                            const skuStyle = skuData.excluded ? 'background: #f1f5f9;' : 'background: #f9fafb;';
+                            const valueStyle = skuData.excluded ? 'background: #e2e8f0; color: #64748b;' : 'background: #fef3c7; color: #92400e;';
+                            
                             skuRow.innerHTML = `
-                                <td style="background: #f9fafb;">${rowIndex}</td>
-                                <td style="padding-left: 50px; background: #f9fafb; color: #666; font-size: 0.9em;" colspan="2">${skuData.sku}</td>
-                                <td class="number" style="background: #f9fafb; color: #666;">${formatNumber(Math.round(skuData.qty))}</td>
-                                <td class="number" style="background: #fef3c7; color: #92400e;">${formatCurrency(skuData.vat)}</td>
-                                <td style="background: #f9fafb;"></td>
+                                <td style="${skuStyle}">${rowIndex}</td>
+                                <td style="padding-left: 50px; ${skuStyle} color: #666; font-size: 0.9em;" colspan="2">${lockIcon}${skuData.sku}</td>
+                                <td class="number" style="${skuStyle} color: #666;">${formatNumber(Math.round(skuData.qty))}</td>
+                                <td class="number" style="${valueStyle}">${formatCurrency(skuData.vat)}</td>
+                                <td style="${skuStyle}">${skuData.excluded ? '<span style="color: #94a3b8; font-size: 0.85em;">Loại trừ</span>' : ''}</td>
                             `;
                         });
                     }
