@@ -15,7 +15,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f5f7fa;
             padding: 20px;
             color: #333;
         }
@@ -28,14 +28,15 @@
         .header {
             background: white;
             padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             margin-bottom: 25px;
             text-align: center;
+            border: 1px solid #e5e7eb;
         }
 
         .header h1 {
-            color: #667eea;
+            color: #1e293b;
             font-size: 2.5em;
             margin-bottom: 10px;
             font-weight: 700;
@@ -56,14 +57,16 @@
         .kpi-card {
             background: white;
             padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .kpi-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            border-color: #cbd5e1;
         }
 
         .kpi-card h3 {
@@ -77,7 +80,7 @@
         .kpi-value {
             font-size: 2em;
             font-weight: bold;
-            color: #667eea;
+            color: #0f172a;
             margin-bottom: 5px;
         }
 
@@ -93,8 +96,9 @@
         .filters {
             background: white;
             padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
             margin-bottom: 25px;
             display: flex;
             gap: 15px;
@@ -118,22 +122,22 @@
 
         select, input[type="month"] {
             padding: 10px 15px;
-            border: 2px solid #e5e7eb;
+            border: 1px solid #cbd5e1;
             border-radius: 8px;
             font-size: 1em;
             cursor: pointer;
-            transition: border-color 0.3s ease;
+            transition: all 0.2s ease;
             background: white;
         }
 
         select:hover, input[type="month"]:hover {
-            border-color: #667eea;
+            border-color: #94a3b8;
         }
 
         select:focus, input[type="month"]:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
         .chart-grid {
@@ -146,8 +150,9 @@
         .chart-card {
             background: white;
             padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
         }
 
         .chart-card.full-width {
@@ -155,11 +160,12 @@
         }
 
         .chart-card h2 {
-            color: #333;
+            color: #1e293b;
             font-size: 1.3em;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 3px solid #667eea;
+            border-bottom: 2px solid #e5e7eb;
+            font-weight: 600;
         }
 
         .chart-container {
@@ -175,7 +181,11 @@
             text-align: center;
             padding: 50px;
             font-size: 1.2em;
-            color: white;
+            color: #64748b;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
         }
 
         .table-container {
@@ -190,13 +200,14 @@
         }
 
         th {
-            background: #667eea;
-            color: white;
+            background: #f8fafc;
+            color: #1e293b;
             padding: 12px;
             text-align: left;
             font-weight: 600;
             position: sticky;
             top: 0;
+            border-bottom: 2px solid #e5e7eb;
         }
 
         td {
