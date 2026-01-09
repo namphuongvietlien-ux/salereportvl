@@ -301,6 +301,13 @@
                     </div>
                 </div>
 
+                <div class="chart-card full-width">
+                    <h2>🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng</h2>
+                    <div class="chart-container tall">
+                        <canvas id="brandTrendChart"></canvas>
+                    </div>
+                </div>
+
                 <div class="chart-card">
                     <h2>🏢 Doanh Số Theo Hệ Thống</h2>
                     <div class="chart-container">
@@ -801,6 +808,112 @@
             });
         }
 
+        // Create brand trend chart (multi-line chart for top brands)
+        function createBrandTrendChart(data) {
+            // Group by brand and month
+            const brandMonthData = {};
+            const allMonths = new Set();
+            
+            data.forEach(row => {
+                const brand = (row['NHÃN HÀNG'] || 'N/A').trim();
+                const monthKey = row.monthKey;
+                const vat = row.vat || 0;
+                
+                if (!brand || brand === 'N/A') return;
+                
+                allMonths.add(monthKey);
+                
+                if (!brandMonthData[brand]) {
+                    brandMonthData[brand] = {};
+                }
+                
+                if (!brandMonthData[brand][monthKey]) {
+                    brandMonthData[brand][monthKey] = 0;
+                }
+                
+                brandMonthData[brand][monthKey] += vat;
+            });
+            
+            // Calculate total per brand and get top 10
+            const brandTotals = Object.entries(brandMonthData).map(([brand, months]) => {
+                const total = Object.values(months).reduce((sum, val) => sum + val, 0);
+                return { brand, months, total };
+            }).sort((a, b) => b.total - a.total).slice(0, 10);
+            
+            // Sort months chronologically
+            const sortedMonths = Array.from(allMonths).sort();
+            
+            // Color palette for brands
+            const colors = [
+                '#667eea', '#f093fb', '#4facfe', '#43e97b', '#fa709a',
+                '#fee140', '#30cfd0', '#a8edea', '#ff6b6b', '#c44569'
+            ];
+            
+            const datasets = brandTotals.map((brandData, index) => ({
+                label: brandData.brand,
+                data: sortedMonths.map(month => brandData.months[month] || 0),
+                borderColor: colors[index % colors.length],
+                backgroundColor: colors[index % colors.length] + '20',
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }));
+            
+            const ctx = document.getElementById('brandTrendChart').getContext('2d');
+            
+            if (charts.brandTrend) {
+                charts.brandTrend.destroy();
+            }
+            
+            charts.brandTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: sortedMonths,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
         // Create System Chart
         function createSystemChart(data) {
             const systemData = {};
@@ -1212,6 +1325,7 @@
             const data = filterData();
             updateKPIs(data);
             createSalesTrendChart(data);
+            createBrandTrendChart(data);
             createSystemChart(data);
             createBrandChart(data);
             createYearComparisonChart(data);
