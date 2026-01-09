@@ -587,11 +587,13 @@
             console.log('After dedup:', afterDedup.length, 'rows');
             
             // LỌC HỆ THỐNG != null (từ CUSTOMERS)
-            // Excel: #"Filtered HE THONG" = Table.SelectRows(..., each ([HE THONG.1] <> null))
-            allData = afterDedup.filter(row => row['HỆ THỐNG'] !== null);
+            const afterSystemFilter = afterDedup.filter(row => row['HỆ THỐNG'] !== null);
+            debugHTML += `<div style="color: orange;">✓ Filter HỆ THỐNG not null: <strong>${afterSystemFilter.length}</strong> rows (removed ${afterDedup.length - afterSystemFilter.length} null rows)</div>`;
             
-            debugHTML += `<div style="color: orange;">✓ Filter HỆ THỐNG not null: <strong>${allData.length}</strong> rows (removed ${afterDedup.length - allData.length} null rows)</div>`;
-            console.log('After filter HỆ THỐNG:', allData.length, 'rows');
+            // LỌC BỎ NHÃN HÀNG = "N/A"
+            allData = afterSystemFilter.filter(row => row['NHÃN HÀNG'] !== 'N/A' && row['NHÃN HÀNG'] !== '');
+            debugHTML += `<div style="color: purple;">✓ Filter NHÃN HÀNG (bỏ N/A): <strong>${allData.length}</strong> rows (removed ${afterSystemFilter.length - allData.length} N/A brands)</div>`;
+            console.log('After filter NHÃN HÀNG:', allData.length, 'rows');
             
             // Tính tổng VAT để debug
             const totalVAT = allData.reduce((sum, row) => sum + row.vat, 0);
