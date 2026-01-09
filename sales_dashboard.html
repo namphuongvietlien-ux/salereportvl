@@ -670,9 +670,6 @@
             const apr2025VAT = apr2025Final.reduce((sum, row) => sum + row.vat, 0);
             console.log('📅 Apr 2025: Raw:', apr2025Raw.length, '→ Final:', apr2025Final.length, 'rows, VAT:', apr2025VAT.toLocaleString('vi-VN'), 'VND');
             
-            document.getElementById('debugContent').innerHTML = debugHTML;
-            document.getElementById('debugLog').style.display = 'block';
-            
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             
