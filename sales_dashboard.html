@@ -1227,27 +1227,94 @@
             updateStoreFrequencyTable(data);
         }
 
-        // Create Store Activity Chart (Active stores per month)
+        // Create Store Activity Chart (Active stores per month by system)
         function createStoreActivityChart(data) {
-            // Group by month to count unique stores
-            const monthStoreData = {};
+            // Group by month and system to count unique stores
+            const monthStoreData = {}; // Total stores per month
+            const systemMonthStoreData = {}; // Stores per month per system
             
             data.forEach(row => {
                 const monthKey = row.monthKey;
                 const store = (row['CỬA HÀNG'] || '').trim();
+                const system = (row['HỆ THỐNG'] || '').trim();
                 
                 if (!monthKey || !store) return;
                 
+                // Track total stores
                 if (!monthStoreData[monthKey]) {
                     monthStoreData[monthKey] = new Set();
                 }
-                
                 monthStoreData[monthKey].add(store);
+                
+                // Track stores per system
+                if (system) {
+                    if (!systemMonthStoreData[system]) {
+                        systemMonthStoreData[system] = {};
+                    }
+                    if (!systemMonthStoreData[system][monthKey]) {
+                        systemMonthStoreData[system][monthKey] = new Set();
+                    }
+                    systemMonthStoreData[system][monthKey].add(store);
+                }
             });
             
-            // Convert to arrays and sort by month
+            // Get sorted months
             const sortedMonths = Object.keys(monthStoreData).sort();
-            const storeCounts = sortedMonths.map(month => monthStoreData[month].size);
+            
+            // Prepare datasets
+            const datasets = [];
+            
+            // Color palette for systems
+            const systemColors = [
+                { border: '#3b82f6', bg: '#3b82f640' },
+                { border: '#10b981', bg: '#10b98140' },
+                { border: '#f59e0b', bg: '#f59e0b40' },
+                { border: '#ef4444', bg: '#ef444440' },
+                { border: '#8b5cf6', bg: '#8b5cf640' },
+                { border: '#ec4899', bg: '#ec489940' },
+                { border: '#14b8a6', bg: '#14b8a640' },
+                { border: '#f97316', bg: '#f9731640' }
+            ];
+            
+            let colorIndex = 0;
+            
+            // Add system datasets
+            Object.keys(systemMonthStoreData).sort().forEach(system => {
+                const systemData = systemMonthStoreData[system];
+                const storeCounts = sortedMonths.map(month => 
+                    systemData[month] ? systemData[month].size : 0
+                );
+                
+                const color = systemColors[colorIndex % systemColors.length];
+                colorIndex++;
+                
+                datasets.push({
+                    label: system,
+                    data: storeCounts,
+                    borderColor: color.border,
+                    backgroundColor: color.bg,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointHoverRadius: 5
+                });
+            });
+            
+            // Add total dataset (thicker line, always on top)
+            const totalStoreCounts = sortedMonths.map(month => monthStoreData[month].size);
+            datasets.push({
+                label: 'Tổng cửa hàng',
+                data: totalStoreCounts,
+                borderColor: '#1e293b',
+                backgroundColor: '#1e293b20',
+                borderWidth: 3,
+                fill: false,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                borderDash: [5, 5]
+            });
             
             const ctx = document.getElementById('storeActivityChart').getContext('2d');
             
@@ -1259,17 +1326,7 @@
                 type: 'line',
                 data: {
                     labels: sortedMonths,
-                    datasets: [{
-                        label: 'Số cửa hàng hoạt động',
-                        data: storeCounts,
-                        borderColor: '#667eea',
-                        backgroundColor: '#667eea40',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -1282,7 +1339,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return 'Số cửa hàng: ' + context.parsed.y;
+                                    return context.dataset.label + ': ' + context.parsed.y + ' cửa hàng';
                                 }
                             }
                         }
