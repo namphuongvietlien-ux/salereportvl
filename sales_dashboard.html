@@ -353,6 +353,7 @@
                                     <th rowspan="2">Nhãn Hàng</th>
                                     <th rowspan="2">SKU</th>
                                     <th colspan="3" style="text-align: center; border-bottom: 1px solid #e2e8f0;">Số Lượng Bán</th>
+                                    <th rowspan="2">Tổng VAT (3 năm)</th>
                                     <th rowspan="2">Dự Đoán 2026</th>
                                     <th rowspan="2">Tăng Trưởng</th>
                                 </tr>
@@ -1080,7 +1081,7 @@
 
         // Update Yearly Product Analysis Table with Forecast
         function updateYearlyProductTable(data) {
-            // Group by Brand > SKU and year, using QUANTITY instead of sales
+            // Group by Brand > SKU and year, using QUANTITY and VAT
             const brandData = {};
             
             data.forEach(row => {
@@ -1089,6 +1090,7 @@
                 const brand = (row['NHÃN HÀNG'] || 'N/A').trim();
                 const year = row.year;
                 const quantity = row.soLuong || 0;
+                const vat = row.vat || 0;
                 
                 if (!sku) return;
                 
@@ -1102,12 +1104,14 @@
                     brandData[brand][sku] = {
                         brand: brand,
                         sku: sku,
-                        years: { 2023: 0, 2024: 0, 2025: 0 }
+                        years: { 2023: 0, 2024: 0, 2025: 0 },
+                        vatYears: { 2023: 0, 2024: 0, 2025: 0 }
                     };
                 }
                 
                 if (year >= 2023 && year <= 2025) {
                     brandData[brand][sku].years[year] += quantity;
+                    brandData[brand][sku].vatYears[year] += vat;
                 }
             });
             
@@ -1118,6 +1122,11 @@
                     const y2023 = product.years[2023];
                     const y2024 = product.years[2024];
                     const y2025 = product.years[2025];
+                    
+                    const v2023 = product.vatYears[2023];
+                    const v2024 = product.vatYears[2024];
+                    const v2025 = product.vatYears[2025];
+                    const totalVAT = v2023 + v2024 + v2025;
                     
                     // Calculate forecast
                     let forecast2026 = 0;
@@ -1145,6 +1154,8 @@
                         brand: product.brand,
                         sku: product.sku,
                         years: product.years,
+                        vatYears: product.vatYears,
+                        totalVAT: totalVAT,
                         forecast2026: forecast2026,
                         growthRate: growthRate,
                         totalQty: y2023 + y2024 + y2025
@@ -1152,7 +1163,7 @@
                 });
             });
             
-            // Sort by brand, then by total quantity (top 30)
+            // Sort by brand, then by total VAT descending (NO LIMIT)
             const sorted = allProducts
                 .filter(p => p.totalQty > 0)
                 .sort((a, b) => {
@@ -1160,35 +1171,65 @@
                     if (a.brand !== b.brand) {
                         return a.brand.localeCompare(b.brand);
                     }
-                    // Then by quantity descending
-                    return b.totalQty - a.totalQty;
-                })
-                .slice(0, 30);
+                    // Then by VAT descending
+                    return b.totalVAT - a.totalVAT;
+                });
             
             const tbody = document.getElementById('yearlyProductTableBody');
             tbody.innerHTML = '';
             
             let lastBrand = '';
-            sorted.forEach((product, index) => {
+            let rowIndex = 0;
+            sorted.forEach((product) => {
                 const row = tbody.insertRow();
                 const growthColor = product.growthRate > 0 ? '#10b981' : '#ef4444';
                 const growthIcon = product.growthRate > 0 ? '📈' : '📉';
                 
-                // Show brand only when it changes
-                const brandDisplay = product.brand !== lastBrand ? product.brand : '';
-                lastBrand = product.brand;
+                // Show brand with collapse button when it changes
+                let brandDisplay = '';
+                if (product.brand !== lastBrand) {
+                    const brandId = product.brand.replace(/[^a-zA-Z0-9]/g, '_');
+                    brandDisplay = `
+                        <span onclick="toggleBrand('${brandId}')" style="cursor: pointer; user-select: none;">
+                            <span id="icon_${brandId}" style="display: inline-block; width: 20px;">▼</span>
+                            <strong>${product.brand}</strong>
+                        </span>
+                    `;
+                    row.setAttribute('data-brand-header', brandId);
+                    lastBrand = product.brand;
+                } else {
+                    row.setAttribute('data-brand-row', product.brand.replace(/[^a-zA-Z0-9]/g, '_'));
+                }
                 
+                rowIndex++;
                 row.innerHTML = `
-                    <td>${index + 1}</td>
+                    <td>${rowIndex}</td>
                     <td style="font-weight: 600; color: #667eea;">${brandDisplay}</td>
-                    <td style="padding-left: 20px;">${product.sku}</td>
+                    <td style="padding-left: ${brandDisplay ? '20px' : '40px'};">${product.sku}</td>
                     <td class="number">${product.years[2023] > 0 ? formatNumber(Math.round(product.years[2023])) : '-'}</td>
                     <td class="number">${product.years[2024] > 0 ? formatNumber(Math.round(product.years[2024])) : '-'}</td>
                     <td class="number">${product.years[2025] > 0 ? formatNumber(Math.round(product.years[2025])) : '-'}</td>
+                    <td class="number" style="background: #fffbeb; font-weight: 600; color: #d97706;">${formatCurrency(product.totalVAT)}</td>
                     <td class="number" style="background: #f0fdf4; font-weight: 600;">${product.forecast2026 > 0 ? formatNumber(Math.round(product.forecast2026)) : '-'}</td>
                     <td class="number" style="color: ${growthColor}; font-weight: 600;">${growthIcon} ${product.growthRate.toFixed(1)}%</td>
                 `;
             });
+        }
+        
+        // Toggle individual brand visibility
+        function toggleBrand(brandId) {
+            const icon = document.getElementById(`icon_${brandId}`);
+            const rows = document.querySelectorAll(`tr[data-brand-row="${brandId}"]`);
+            
+            if (icon.textContent === '▼') {
+                // Collapse
+                icon.textContent = '▶';
+                rows.forEach(row => row.style.display = 'none');
+            } else {
+                // Expand
+                icon.textContent = '▼';
+                rows.forEach(row => row.style.display = '');
+            }
         }
 
         // Toggle yearly product table visibility
