@@ -712,6 +712,11 @@
             'NUOC HOA PURE GAME',
             'NUOC HOA GET READY'
         ];
+        
+        // Tỷ lệ tăng trưởng đặc biệt cho từng thương hiệu (ghi đè tính toán tự động)
+        const BRAND_CUSTOM_GROWTH = {
+            'Coleman': 0.30  // Coleman tăng trưởng 30%
+        };
 
         // Load CUSTOMERS lookup table
         let customersLookup = {};
@@ -1931,7 +1936,15 @@
                     }
                     
                     if (growthRates.length > 0) {
-                        const avgGrowth = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+                        // Check if brand has custom growth rate
+                        let avgGrowth = growthRates.reduce((a, b) => a + b, 0) / growthRates.length;
+                        let isCustomGrowth = false;
+                        
+                        if (BRAND_CUSTOM_GROWTH[brandData.brand] !== undefined) {
+                            avgGrowth = BRAND_CUSTOM_GROWTH[brandData.brand];
+                            isCustomGrowth = true;
+                        }
+                        
                         const lastYear = yearRows[yearRows.length - 1];
                         const forecast2026VAT = lastYear.vat * (1 + avgGrowth);
                         const forecast2026Qty = lastYear.qty * (1 + avgGrowth);
@@ -1970,12 +1983,21 @@
                         const adjustedForecast2026VAT = (nonExcludedVAT * (1 + avgGrowth)) + excludedVAT;
                         const adjustedForecast2026Qty = (nonExcludedQty * (1 + avgGrowth)) + excludedQty;
                         
+                        // Create growth text
+                        let growthDisplayText = `<span style="color: #667eea; font-weight: 600;">🔮 ${(avgGrowth * 100).toFixed(1)}%</span>`;
+                        if (isCustomGrowth) {
+                            growthDisplayText += ' <span style="color: #f59e0b; font-size: 0.85em;">⚙️ (tùy chỉnh)</span>';
+                        }
+                        if (EXCLUDED_SKUS_FROM_FORECAST.length > 0) {
+                            growthDisplayText += ` <span style="color: #94a3b8; font-size: 0.85em;">(loại trừ ${EXCLUDED_SKUS_FROM_FORECAST.length} mã)</span>`;
+                        }
+                        
                         yearRows.push({
                             brand: brandData.brand,
                             year: 2026,
                             vat: adjustedForecast2026VAT,
                             qty: adjustedForecast2026Qty,
-                            growthText: `<span style="color: #667eea; font-weight: 600;">🔮 ${(avgGrowth * 100).toFixed(1)}%</span>${EXCLUDED_SKUS_FROM_FORECAST.length > 0 ? ' <span style="color: #94a3b8; font-size: 0.85em;">(loại trừ ' + EXCLUDED_SKUS_FROM_FORECAST.length + ' mã)</span>' : ''}`,
+                            growthText: growthDisplayText,
                             growthRate: avgGrowth * 100,
                             isForecast: true,
                             skus: forecast2026SKUs // Include forecasted SKUs
