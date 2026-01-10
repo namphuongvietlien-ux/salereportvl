@@ -373,7 +373,7 @@
 
             <!-- Key Insights Section -->
             <div class="chart-card full-width" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 25px;">
-                <h2 style="color: white; margin-bottom: 20px;">💡 Insights Quan Trọng Cho Ban Giám Đốc</h2>
+                <h2 style="color: white; margin-bottom: 20px;">💡 Key Insights</h2>
                 <div id="keyInsights" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                     <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
                         <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">🎯 Trọng Tâm Chiến Lược</h3>
@@ -1119,6 +1119,13 @@
             const brands = data.map(d => d['NHÃN HÀNG'] || d.NHÃN_HÀNG || d['NHAN HANG']).filter(Boolean);
             const uniqueBrands = new Set(brands).size;
             
+            // Calculate unique stores
+            const stores = data.map(d => d['CỬA HÀNG']).filter(Boolean);
+            const uniqueStores = new Set(stores).size;
+            
+            // Calculate average orders per store
+            const avgOrdersPerStore = uniqueStores > 0 ? uniqueOrders / uniqueStores : 0;
+            
             console.log('KPI Debug:', {
                 totalRows: data.length,
                 totalRowsAll: allData.length,
@@ -1126,7 +1133,8 @@
                 totalAllProducts: totalAllProducts,
                 sampleProduct: productCodes[0],
                 uniqueSystems: uniqueSystems,
-                uniqueBrands: uniqueBrands
+                uniqueBrands: uniqueBrands,
+                uniqueStores: uniqueStores
             });
 
             document.getElementById('totalSales').textContent = formatCurrency(totalSales);
@@ -1135,6 +1143,7 @@
             document.getElementById('totalProducts').textContent = formatNumber(uniqueProducts);
             document.getElementById('totalProductsAll').textContent = formatNumber(totalAllProducts);
             document.getElementById('activeStores').textContent = formatNumber(uniqueStores);
+            document.getElementById('avgOrdersPerStore').textContent = formatNumber(Math.round(avgOrdersPerStore));
 
             // Calculate YoY growth and trends
             const currentYear = 2025;
