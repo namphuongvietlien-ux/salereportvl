@@ -1134,6 +1134,10 @@
 
             const sortedMonths = Object.keys(monthlyData).sort();
             const values = sortedMonths.map(month => monthlyData[month]);
+            
+            // Tính trung bình
+            const average = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+            const averageData = new Array(values.length).fill(average);
 
             const ctx = document.getElementById('salesTrendChart').getContext('2d');
             
@@ -1153,7 +1157,20 @@
                         tension: 0.4,
                         fill: true,
                         pointRadius: 4,
-                        pointHoverRadius: 6
+                        pointHoverRadius: 6,
+                        order: 2
+                    },
+                    {
+                        label: 'Trung Bình',
+                        data: averageData,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        fill: false,
+                        order: 1
                     }]
                 },
                 options: {
@@ -1167,6 +1184,9 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
+                                    if (context.dataset.label === 'Trung Bình') {
+                                        return 'Trung bình: ' + formatCurrency(context.parsed.y);
+                                    }
                                     return 'Doanh số: ' + formatCurrency(context.parsed.y);
                                 }
                             }
@@ -1188,6 +1208,10 @@
 
         // Create brand trend chart (multi-line chart for top brands)
         function createBrandTrendChart(data) {
+            // Check if filtering by specific brand
+            const brandFilter = document.getElementById('brandFilter').value;
+            const isFilteredByBrand = brandFilter && brandFilter !== 'all';
+            
             // Group by brand and month
             const brandMonthData = {};
             const allMonths = new Set();
@@ -1236,8 +1260,30 @@
                 fill: false,
                 tension: 0.4,
                 pointRadius: 3,
-                pointHoverRadius: 5
+                pointHoverRadius: 5,
+                order: 2
             }));
+            
+            // Thêm đường trung bình nếu đang lọc theo 1 brand cụ thể
+            if (isFilteredByBrand && brandTotals.length === 1) {
+                const brandData = brandTotals[0];
+                const values = sortedMonths.map(month => brandData.months[month] || 0);
+                const average = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+                const averageData = new Array(values.length).fill(average);
+                
+                datasets.push({
+                    label: 'Trung Bình',
+                    data: averageData,
+                    borderColor: '#ef4444',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    fill: false,
+                    order: 1
+                });
+            }
             
             const ctx = document.getElementById('brandTrendChart').getContext('2d');
             
@@ -1273,6 +1319,9 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
+                                    if (context.dataset.label === 'Trung Bình') {
+                                        return 'Trung bình: ' + formatCurrency(context.parsed.y);
+                                    }
                                     return context.dataset.label + ': ' + formatCurrency(context.parsed.y);
                                 }
                             }
