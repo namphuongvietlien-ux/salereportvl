@@ -321,8 +321,8 @@
 <body>
     <div class="dashboard-container">
         <div class="header">
-            <h1>📊 Báo Cáo Phân Tích Doanh Số</h1>
-            <p>Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2023 - 2025)</p>
+            <h1 data-i18n="title">📊 Báo Cáo Phân Tích Doanh Số</h1>
+            <p data-i18n="subtitle">Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2023 - 2025)</p>
         </div>
 
         <div class="loading" id="loading">Đang tải dữ liệu...</div>
@@ -330,22 +330,22 @@
         <div id="dashboard" style="display: none;">
             <div class="kpi-container">
                 <div class="kpi-card">
-                    <h3>Tổng Doanh Số</h3>
+                    <h3 data-i18n="totalRevenue">Tổng Doanh Số</h3>
                     <div class="kpi-value" id="totalSales">0 ₫</div>
                     <div class="kpi-change" id="salesChange">0%</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Tổng Số Đơn Hàng</h3>
+                    <h3 data-i18n="totalOrders">Tổng Số Đơn Hàng</h3>
                     <div class="kpi-value" id="totalOrders">0</div>
                     <div class="kpi-change" id="ordersChange">0%</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Giá Trị TB/Đơn</h3>
+                    <h3 data-i18n="avgOrderValue">Giá Trị TB/Đơn</h3>
                     <div class="kpi-value" id="avgOrderValue">0 ₫</div>
                     <div class="kpi-change" id="avgChange">0%</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Số Sản Phẩm (Lọc)</h3>
+                    <h3 data-i18n="totalProducts">Số Sản Phẩm (Lọc)</h3>
                     <div class="kpi-value" id="totalProducts">0</div>
                     <div style="font-size: 0.85em; color: #666; margin-top: 5px;">Tổng: <span id="totalProductsAll">0</span></div>
                 </div>
@@ -358,31 +358,31 @@
                     <div class="kpi-value" id="totalBrands">0</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Cửa Hàng Hoạt Động</h3>
+                    <h3 data-i18n="activeStores">Cửa Hàng Hoạt Động</h3>
                     <div class="kpi-value" id="activeStores">0</div>
-                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;">Trung bình: <span id="avgOrdersPerStore">0</span> đơn</div>
+                    <div style="font-size: 0.85em; color: #666; margin-top: 5px;"><span data-i18n="average">Trung bình</span>: <span id="avgOrdersPerStore">0</span> <span data-i18n="orders">đơn</span></div>
                 </div>
             </div>
 
             <div class="filters">
                 <div class="filter-group">
-                    <label>Từ tháng</label>
+                    <label data-i18n="fromMonth">Từ tháng</label>
                     <input type="month" id="startMonth" value="2023-01">
                 </div>
                 <div class="filter-group">
-                    <label>Đến tháng</label>
+                    <label data-i18n="toMonth">Đến tháng</label>
                     <input type="month" id="endMonth" value="2025-12">
                 </div>
                 <div class="filter-group">
-                    <label>Hệ thống</label>
+                    <label data-i18n="system">Hệ thống</label>
                     <select id="systemFilter">
-                        <option value="all">Tất cả hệ thống</option>
+                        <option value="all" data-i18n="allSystems">Tất cả hệ thống</option>
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Nhãn hàng</label>
+                    <label data-i18n="brand">Nhãn hàng</label>
                     <select id="brandFilter">
-                        <option value="all">Tất cả nhãn hàng</option>
+                        <option value="all" data-i18n="allBrands">Tất cả nhãn hàng</option>
                     </select>
                 </div>
                 <div class="filter-group" style="margin-left: auto;">
@@ -403,8 +403,24 @@
                         gap: 8px;
                     " onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
                         <span style="font-size: 1.2em;">📊</span>
-                        Tải PowerPoint
+                        <span data-i18n="exportPPT">Tải PowerPoint</span>
                     </button>
+                </div>
+                <div class="filter-group">
+                    <label>&nbsp;</label>
+                    <select id="languageSelector" onchange="switchLanguage(this.value)" style="
+                        padding: 10px 15px;
+                        border: 2px solid #e5e7eb;
+                        border-radius: 8px;
+                        font-size: 0.95em;
+                        background: white;
+                        cursor: pointer;
+                        min-height: 44px;
+                        font-weight: 600;
+                    ">
+                        <option value="vi">🇻🇳 Tiếng Việt</option>
+                        <option value="en">🇬🇧 English</option>
+                    </select>
                 </div>
             </div>
 
@@ -425,56 +441,56 @@
 
             <div class="chart-grid">
                 <div class="chart-card full-width">
-                    <h2>📈 Xu Hướng Doanh Số Theo Tháng</h2>
+                    <h2 data-i18n="salesTrend">📈 Xu Hướng Doanh Số Theo Tháng</h2>
                     <div class="chart-container tall">
                         <canvas id="salesTrendChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng</h2>
+                    <h2 data-i18n="brandTrend">🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng</h2>
                     <div class="chart-container tall">
                         <canvas id="brandTrendChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card">
-                    <h2>🏢 Doanh Số Theo Hệ Thống</h2>
+                    <h2 data-i18n="systemSales">🏢 Doanh Số Theo Hệ Thống</h2>
                     <div class="chart-container">
                         <canvas id="systemChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card">
-                    <h2>🏷️ Doanh Số Theo Nhãn Hàng</h2>
+                    <h2 data-i18n="brandSales">🏷️ Doanh Số Theo Nhãn Hàng</h2>
                     <div class="chart-container">
                         <canvas id="brandChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>📊 So Sánh Doanh Số Theo Năm</h2>
+                    <h2 data-i18n="yearComparison">📊 So Sánh Doanh Số Theo Năm</h2>
                     <div class="chart-container">
                         <canvas id="yearComparisonChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>🔝 Top 20 Sản Phẩm Bán Chạy</h2>
+                    <h2 data-i18n="topProducts">🔝 Top 20 Sản Phẩm Bán Chạy</h2>
                     <div class="chart-container tall">
                         <canvas id="topProductsChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>🏪 Hiệu Suất Cửa Hàng - Số Cửa Hàng Đặt Hàng Theo Tháng</h2>
+                    <h2 data-i18n="storePerformance">🏪 Hiệu Suất Cửa Hàng - Số Cửa Hàng Đặt Hàng Theo Tháng</h2>
                     <div class="chart-container">
                         <canvas id="storeActivityChart"></canvas>
                     </div>
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>🏆 Top 30 Cửa Hàng Theo Tần Suất Đặt Hàng</h2>
+                    <h2 data-i18n="topStores">🏆 Top 30 Cửa Hàng Theo Tần Suất Đặt Hàng</h2>
                     <div class="table-container">
                         <table id="storeFrequencyTable">
                             <thead>
@@ -494,10 +510,10 @@
                 </div>
 
                 <div class="chart-card full-width">
-                    <h2>📊 Phân Tích Nguyên Nhân Thay Đổi Doanh Số (2024 vs 2025)</h2>
+                    <h2 data-i18n="growthAnalysis">📊 Phân Tích Nguyên Nhân Thay Đổi Doanh Số (2024 vs 2025)</h2>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; margin-bottom: 20px;">
                         <div>
-                            <h3 style="color: #10b981; margin-bottom: 15px;">📈 Top 10 Mã Hàng Tăng Trưởng Mạnh Nhất</h3>
+                            <h3 style="color: #10b981; margin-bottom: 15px;" data-i18n="topGrowthSKU">📈 Top 10 Mã Hàng Tăng Trưởng Mạnh Nhất</h3>
                             <div class="table-container">
                                 <table id="topGrowthSKUTable">
                                     <thead>
@@ -515,7 +531,7 @@
                             </div>
                         </div>
                         <div>
-                            <h3 style="color: #ef4444; margin-bottom: 15px;">📉 Top 10 Mã Hàng Giảm Nhiều Nhất</h3>
+                            <h3 style="color: #ef4444; margin-bottom: 15px;" data-i18n="topDeclineSKU">📉 Top 10 Mã Hàng Giảm Nhiều Nhất</h3>
                             <div class="table-container">
                                 <table id="topDeclineSKUTable">
                                     <thead>
@@ -535,7 +551,7 @@
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px;">
                         <div>
-                            <h3 style="color: #3b82f6; margin-bottom: 15px;">🏢 Top Hệ Thống Tăng Trưởng</h3>
+                            <h3 style="color: #3b82f6; margin-bottom: 15px;" data-i18n="topGrowthSystem">🏢 Top Hệ Thống Tăng Trưởng</h3>
                             <div class="table-container">
                                 <table id="topGrowthSystemTable">
                                     <thead>
@@ -553,7 +569,7 @@
                             </div>
                         </div>
                         <div>
-                            <h3 style="color: #f59e0b; margin-bottom: 15px;">🏢 Top Hệ Thống Giảm</h3>
+                            <h3 style="color: #f59e0b; margin-bottom: 15px;" data-i18n="topDeclineSystem">🏢 Top Hệ Thống Giảm</h3>
                             <div class="table-container">
                                 <table id="topDeclineSystemTable">
                                     <thead>
@@ -717,6 +733,114 @@
         const BRAND_CUSTOM_GROWTH = {
             'COLEMAN': 0.30  // Coleman tăng trưởng 30%
         };
+
+        // ==========================================
+        // TRANSLATIONS / NGÔN NGỮ
+        // ==========================================
+        const translations = {
+            vi: {
+                title: '📊 Báo Cáo Doanh Số Nam Phương Việt Liên',
+                subtitle: 'Phân tích chi tiết doanh số bán hàng từ 2023-2025',
+                totalRevenue: 'Tổng Doanh Thu',
+                totalOrders: 'Số Đơn Hàng',
+                avgOrderValue: 'Giá Trị TB/Đơn',
+                totalProducts: 'Sản Phẩm',
+                activeStores: 'Cửa Hàng Hoạt Động',
+                average: 'Trung bình',
+                orders: 'đơn',
+                fromMonth: 'Từ tháng',
+                toMonth: 'Đến tháng',
+                system: 'Hệ thống',
+                brand: 'Nhãn hàng',
+                allSystems: 'Tất cả hệ thống',
+                allBrands: 'Tất cả nhãn hàng',
+                exportPPT: 'Tải PowerPoint',
+                salesTrend: '📈 Xu Hướng Doanh Số Theo Tháng',
+                brandTrend: '🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng',
+                systemSales: '🏢 Doanh Số Theo Hệ Thống',
+                brandSales: '🏷️ Doanh Số Theo Nhãn Hàng',
+                yearComparison: '📊 So Sánh Doanh Số Theo Năm',
+                topProducts: '🔝 Top 20 Sản Phẩm Bán Chạy',
+                storePerformance: '🏪 Hiệu Suất Cửa Hàng - Số Cửa Hàng Đặt Hàng Theo Tháng',
+                topStores: '🏆 Top 30 Cửa Hàng Theo Tần Suất Đặt Hàng',
+                growthAnalysis: '📊 Phân Tích Nguyên Nhân Thay Đổi Doanh Số (2024 vs 2025)',
+                topGrowthSKU: '📈 Top 10 Mã Hàng Tăng Trưởng Mạnh Nhất',
+                topDeclineSKU: '📉 Top 10 Mã Hàng Giảm Nhiều Nhất',
+                topGrowthSystem: '🏢 Top Hệ Thống Tăng Trưởng',
+                topDeclineSystem: '🏢 Top Hệ Thống Giảm',
+                brandYearComparison: '📊 So Sánh Doanh Số Theo Năm (Nhãn Hàng)'
+            },
+            en: {
+                title: '📊 Sales Report - Nam Phuong Viet Lien',
+                subtitle: 'Detailed sales analysis from 2023-2025',
+                totalRevenue: 'Total Revenue',
+                totalOrders: 'Total Orders',
+                avgOrderValue: 'Avg Order Value',
+                totalProducts: 'Products',
+                activeStores: 'Active Stores',
+                average: 'Average',
+                orders: 'orders',
+                fromMonth: 'From month',
+                toMonth: 'To month',
+                system: 'System',
+                brand: 'Brand',
+                allSystems: 'All systems',
+                allBrands: 'All brands',
+                exportPPT: 'Export PowerPoint',
+                salesTrend: '📈 Monthly Sales Trend',
+                brandTrend: '🏷️ Sales Trend by Brand',
+                systemSales: '🏢 Sales by System',
+                brandSales: '🏷️ Sales by Brand',
+                yearComparison: '📊 Year-over-Year Comparison',
+                topProducts: '🔝 Top 20 Best-Selling Products',
+                storePerformance: '🏪 Store Performance - Active Stores by Month',
+                topStores: '🏆 Top 30 Stores by Order Frequency',
+                growthAnalysis: '📊 Sales Change Analysis (2024 vs 2025)',
+                topGrowthSKU: '📈 Top 10 Growing SKUs',
+                topDeclineSKU: '📉 Top 10 Declining SKUs',
+                topGrowthSystem: '🏢 Top Growing Systems',
+                topDeclineSystem: '🏢 Top Declining Systems',
+                brandYearComparison: '📊 Year-over-Year Comparison (By Brand)'
+            }
+        };
+
+        let currentLanguage = localStorage.getItem('dashboardLanguage') || 'vi';
+
+        function switchLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('dashboardLanguage', lang);
+            document.documentElement.lang = lang;
+            
+            // Update all elements with data-i18n attribute
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (translations[lang] && translations[lang][key]) {
+                    element.textContent = translations[lang][key];
+                }
+            });
+            
+            // Update select options
+            const systemFilter = document.getElementById('systemFilter');
+            if (systemFilter && systemFilter.options[0]) {
+                systemFilter.options[0].textContent = translations[lang].allSystems;
+            }
+            
+            const brandFilter = document.getElementById('brandFilter');
+            if (brandFilter && brandFilter.options[0]) {
+                brandFilter.options[0].textContent = translations[lang].allBrands;
+            }
+            
+            // Re-render charts with new language
+            updateDashboard();
+        }
+
+        function initLanguage() {
+            const selector = document.getElementById('languageSelector');
+            if (selector) {
+                selector.value = currentLanguage;
+            }
+            switchLanguage(currentLanguage);
+        }
 
         // Load CUSTOMERS lookup table
         let customersLookup = {};
@@ -891,6 +1015,7 @@
             document.getElementById('dashboard').style.display = 'block';
             
             initializeFilters();
+            initLanguage();
             updateDashboard();
         }
 
