@@ -335,6 +335,16 @@
                     <div class="kpi-change" id="salesChange">0%</div>
                 </div>
                 <div class="kpi-card">
+                    <h3>Tăng Trưởng YoY</h3>
+                    <div class="kpi-value" id="yoyGrowth" style="font-size: 2em;">0%</div>
+                    <div class="kpi-change" id="yoyTrend">--</div>
+                </div>
+                <div class="kpi-card">
+                    <h3>Động Lực Tăng Trưởng</h3>
+                    <div class="kpi-value" id="topDriver" style="font-size: 1.3em; line-height: 1.2;">--</div>
+                    <div class="kpi-change" id="driverContribution">--</div>
+                </div>
+                <div class="kpi-card">
                     <h3 data-i18n="totalOrders">Tổng Số Đơn Hàng</h3>
                     <div class="kpi-value" id="totalOrders">0</div>
                     <div class="kpi-change" id="ordersChange">0%</div>
@@ -345,22 +355,42 @@
                     <div class="kpi-change" id="avgChange">0%</div>
                 </div>
                 <div class="kpi-card">
+                    <h3>MoM Growth (Gần Nhất)</h3>
+                    <div class="kpi-value" id="momGrowth" style="font-size: 2em;">0%</div>
+                    <div class="kpi-change" id="momTrend">--</div>
+                </div>
+                <div class="kpi-card">
                     <h3 data-i18n="totalProducts">Số Sản Phẩm (Lọc)</h3>
                     <div class="kpi-value" id="totalProducts">0</div>
                     <div style="font-size: 0.85em; color: #666; margin-top: 5px;">Tổng: <span id="totalProductsAll">0</span></div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Số Hệ Thống</h3>
-                    <div class="kpi-value" id="totalSystems">0</div>
-                </div>
-                <div class="kpi-card">
-                    <h3>Số Nhãn Hàng</h3>
-                    <div class="kpi-value" id="totalBrands">0</div>
-                </div>
-                <div class="kpi-card">
                     <h3 data-i18n="activeStores">Cửa Hàng Hoạt Động</h3>
                     <div class="kpi-value" id="activeStores">0</div>
                     <div style="font-size: 0.85em; color: #666; margin-top: 5px;"><span data-i18n="average">Trung bình</span>: <span id="avgOrdersPerStore">0</span> <span data-i18n="orders">đơn</span></div>
+                </div>
+            </div>
+
+            <!-- Key Insights Section -->
+            <div class="chart-card full-width" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 25px;">
+                <h2 style="color: white; margin-bottom: 20px;">💡 Insights Quan Trọng Cho Ban Giám Đốc</h2>
+                <div id="keyInsights" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">🎯 Trọng Tâm Chiến Lược</h3>
+                        <p id="strategicFocus" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">📊 Xu Hướng Thị Trường</h3>
+                        <p id="marketTrend" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">⚠️ Cảnh Báo Rủi Ro</h3>
+                        <p id="riskAlert" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">🚀 Cơ Hội Tăng Trưởng</h3>
+                        <p id="growthOpportunity" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
+                    </div>
                 </div>
             </div>
 
@@ -771,7 +801,7 @@
                 brandYearComparison: '📊 So Sánh Doanh Số Theo Năm (Nhãn Hàng)'
             },
             en: {
-                title: '📊 Sales Report - Nam Phuong Viet Lien',
+                title: '📊 Sales Report -  Viet Lien',
                 subtitle: 'Detailed sales analysis from 2023-2025',
                 totalRevenue: 'Total Revenue',
                 totalOrders: 'Total Orders',
@@ -1104,21 +1134,155 @@
             document.getElementById('avgOrderValue').textContent = formatCurrency(avgOrder);
             document.getElementById('totalProducts').textContent = formatNumber(uniqueProducts);
             document.getElementById('totalProductsAll').textContent = formatNumber(totalAllProducts);
-            document.getElementById('totalSystems').textContent = formatNumber(uniqueSystems);
-            document.getElementById('totalBrands').textContent = formatNumber(uniqueBrands);
+            document.getElementById('activeStores').textContent = formatNumber(uniqueStores);
 
-            // Calculate changes (comparing with previous period)
-            const currentYear = new Date().getFullYear();
-            const currentData = data.filter(d => d.year === currentYear);
-            const previousData = data.filter(d => d.year === currentYear - 1);
+            // Calculate YoY growth and trends
+            const currentYear = 2025;
+            const previousYear = 2024;
             
-            const currentSales = currentData.reduce((sum, row) => sum + row.vat, 0);
-            const previousSales = previousData.reduce((sum, row) => sum + row.vat, 0);
-            const salesGrowth = previousSales > 0 ? ((currentSales - previousSales) / previousSales * 100) : 0;
+            const currentYearData = allData.filter(d => d.year === currentYear);
+            const previousYearData = allData.filter(d => d.year === previousYear);
             
+            const currentSales = currentYearData.reduce((sum, row) => sum + row.vat, 0);
+            const previousSales = previousYearData.reduce((sum, row) => sum + row.vat, 0);
+            const yoyGrowth = previousSales > 0 ? ((currentSales - previousSales) / previousSales * 100) : 0;
+            
+            document.getElementById('yoyGrowth').textContent = `${yoyGrowth >= 0 ? '+' : ''}${yoyGrowth.toFixed(1)}%`;
+            document.getElementById('yoyGrowth').style.color = yoyGrowth >= 0 ? '#10b981' : '#ef4444';
+            document.getElementById('yoyTrend').textContent = `${formatCurrency(Math.abs(currentSales - previousSales))} ${yoyGrowth >= 0 ? 'tăng' : 'giảm'}`;
+            document.getElementById('yoyTrend').className = yoyGrowth >= 0 ? 'kpi-change' : 'kpi-change negative';
+            
+            // Calculate MoM growth (most recent 2 months)
+            const allMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            if (allMonths.length >= 2) {
+                const lastMonth = allMonths[allMonths.length - 1];
+                const prevMonth = allMonths[allMonths.length - 2];
+                
+                const lastMonthSales = allData.filter(d => d.monthKey === lastMonth).reduce((sum, row) => sum + row.vat, 0);
+                const prevMonthSales = allData.filter(d => d.monthKey === prevMonth).reduce((sum, row) => sum + row.vat, 0);
+                const momGrowth = prevMonthSales > 0 ? ((lastMonthSales - prevMonthSales) / prevMonthSales * 100) : 0;
+                
+                document.getElementById('momGrowth').textContent = `${momGrowth >= 0 ? '+' : ''}${momGrowth.toFixed(1)}%`;
+                document.getElementById('momGrowth').style.color = momGrowth >= 0 ? '#10b981' : '#ef4444';
+                document.getElementById('momTrend').textContent = `${lastMonth} vs ${prevMonth}`;
+            }
+            
+            // Find top growth driver (brand or system)
+            const brandGrowth = {};
+            currentYearData.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandGrowth[brand]) brandGrowth[brand] = 0;
+                brandGrowth[brand] += row.vat;
+            });
+            previousYearData.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandGrowth[brand]) brandGrowth[brand] = 0;
+                brandGrowth[brand] -= row.vat;
+            });
+            
+            const topGrowthBrand = Object.entries(brandGrowth)
+                .filter(([brand, growth]) => growth > 0)
+                .sort((a, b) => b[1] - a[1])[0];
+            
+            if (topGrowthBrand) {
+                document.getElementById('topDriver').textContent = topGrowthBrand[0];
+                const contribution = currentSales > 0 ? (topGrowthBrand[1] / (currentSales - previousSales) * 100) : 0;
+                document.getElementById('driverContribution').textContent = `+${formatCurrency(topGrowthBrand[1])} (${contribution.toFixed(0)}% đóng góp)`;
+                document.getElementById('driverContribution').className = 'kpi-change';
+            }
+            
+            // Generate Key Insights for Leadership
+            generateKeyInsights(allData);
+
             const salesChangeEl = document.getElementById('salesChange');
-            salesChangeEl.textContent = `${salesGrowth >= 0 ? '+' : ''}${salesGrowth.toFixed(1)}% vs năm trước`;
-            salesChangeEl.className = salesGrowth >= 0 ? 'kpi-change' : 'kpi-change negative';
+            salesChangeEl.textContent = `${yoyGrowth >= 0 ? '+' : ''}${yoyGrowth.toFixed(1)}% vs năm trước`;
+            salesChangeEl.className = yoyGrowth >= 0 ? 'kpi-change' : 'kpi-change negative';
+        }
+        
+        // Generate actionable insights for leadership decisions
+        function generateKeyInsights(data) {
+            const current2025 = data.filter(d => d.year === 2025);
+            const previous2024 = data.filter(d => d.year === 2024);
+            
+            // 1. Strategic Focus: Identify strongest growth segment
+            const brandPerf = {};
+            current2025.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandPerf[brand]) brandPerf[brand] = { current: 0, previous: 0 };
+                brandPerf[brand].current += row.vat;
+            });
+            previous2024.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandPerf[brand]) brandPerf[brand] = { current: 0, previous: 0 };
+                brandPerf[brand].previous += row.vat;
+            });
+            
+            const brandGrowths = Object.entries(brandPerf)
+                .map(([brand, perf]) => ({
+                    brand,
+                    growth: perf.previous > 0 ? ((perf.current - perf.previous) / perf.previous * 100) : 0,
+                    value: perf.current
+                }))
+                .sort((a, b) => b.growth - a.growth);
+            
+            const topBrand = brandGrowths[0];
+            const focusMessage = topBrand ? 
+                `Tập trung vào ${topBrand.brand} (tăng ${topBrand.growth.toFixed(0)}%, đóng góp ${formatCurrency(topBrand.value)})` :
+                'Phân tích thêm để xác định trọng tâm';
+            document.getElementById('strategicFocus').textContent = focusMessage;
+            
+            // 2. Market Trend: Month-over-month momentum
+            const months = [...new Set(data.map(d => d.monthKey))].sort();
+            const recentMonths = months.slice(-6);
+            const monthlyGrowth = [];
+            
+            for (let i = 1; i < recentMonths.length; i++) {
+                const currMonth = recentMonths[i];
+                const prevMonth = recentMonths[i-1];
+                const currSales = data.filter(d => d.monthKey === currMonth).reduce((s, r) => s + r.vat, 0);
+                const prevSales = data.filter(d => d.monthKey === prevMonth).reduce((s, r) => s + r.vat, 0);
+                const growth = prevSales > 0 ? ((currSales - prevSales) / prevSales * 100) : 0;
+                monthlyGrowth.push(growth);
+            }
+            
+            const avgMoMGrowth = monthlyGrowth.length > 0 ? 
+                monthlyGrowth.reduce((a, b) => a + b, 0) / monthlyGrowth.length : 0;
+            const trendDirection = avgMoMGrowth > 5 ? 'Tăng trưởng mạnh' : 
+                                    avgMoMGrowth > 0 ? 'Tăng trưởng ổn định' : 
+                                    avgMoMGrowth > -5 ? 'Suy giảm nhẹ' : 'Suy giảm nghiêm trọng';
+            const trendMessage = `${trendDirection} (TB MoM: ${avgMoMGrowth.toFixed(1)}%)`;
+            document.getElementById('marketTrend').textContent = trendMessage;
+            
+            // 3. Risk Alert: Declining segments
+            const decliningBrands = brandGrowths.filter(b => b.growth < -10).slice(0, 2);
+            const riskMessage = decliningBrands.length > 0 ?
+                `Chú ý: ${decliningBrands.map(b => `${b.brand} (${b.growth.toFixed(0)}%)`).join(', ')}` :
+                'Không có cảnh báo đáng kể';
+            document.getElementById('riskAlert').textContent = riskMessage;
+            
+            // 4. Growth Opportunity: Underperforming with potential
+            const systemPerf = {};
+            current2025.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!systemPerf[system]) systemPerf[system] = { stores: new Set(), sales: 0 };
+                systemPerf[system].stores.add(row['CỬA HÀNG']);
+                systemPerf[system].sales += row.vat;
+            });
+            
+            const systemOpportunities = Object.entries(systemPerf)
+                .map(([system, perf]) => ({
+                    system,
+                    avgPerStore: perf.sales / perf.stores.size,
+                    sales: perf.sales,
+                    stores: perf.stores.size
+                }))
+                .sort((a, b) => a.avgPerStore - b.avgPerStore)
+                .slice(0, 2);
+            
+            const oppMessage = systemOpportunities.length > 0 ?
+                `Tiềm năng tại ${systemOpportunities[0].system} (${formatCurrency(systemOpportunities[0].avgPerStore)}/cửa hàng)` :
+                'Đang tối ưu hóa toàn bộ hệ thống';
+            document.getElementById('growthOpportunity').textContent = oppMessage;
         }
 
         // Create Sales Trend Chart
