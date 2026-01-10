@@ -168,6 +168,30 @@
             border-bottom: 2px solid #e5e7eb;
             font-weight: 600;
         }
+        
+        .timeline-btn {
+            padding: 8px 16px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #374151;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .timeline-btn:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .timeline-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
 
         .chart-container {
             position: relative;
@@ -404,6 +428,16 @@
                     <input type="month" id="endMonth" value="2025-12">
                 </div>
                 <div class="filter-group">
+                    <label>Timeline nhanh</label>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="setQuickTimeline('1M')" class="timeline-btn">1M</button>
+                        <button onclick="setQuickTimeline('3M')" class="timeline-btn">3M</button>
+                        <button onclick="setQuickTimeline('6M')" class="timeline-btn">6M</button>
+                        <button onclick="setQuickTimeline('1Y')" class="timeline-btn">1Y</button>
+                        <button onclick="setQuickTimeline('ALL')" class="timeline-btn active">Tất cả</button>
+                    </div>
+                </div>
+                <div class="filter-group">
                     <label data-i18n="system">Hệ thống</label>
                     <select id="systemFilter">
                         <option value="all" data-i18n="allSystems">Tất cả hệ thống</option>
@@ -413,6 +447,12 @@
                     <label data-i18n="brand">Nhãn hàng</label>
                     <select id="brandFilter">
                         <option value="all" data-i18n="allBrands">Tất cả nhãn hàng</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Mã hàng (SKU)</label>
+                    <select id="skuFilter" style="min-width: 150px;">
+                        <option value="all">Tất cả SKU</option>
                     </select>
                 </div>
                 <div class="filter-group" style="margin-left: auto;">
@@ -571,6 +611,7 @@
 
                 <div class="chart-card full-width">
                     <h2 data-i18n="topProducts">🔝 Top 20 Sản Phẩm Bán Chạy</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào sản phẩm để xem doanh số theo tháng</p>
                     <div class="chart-container tall">
                         <canvas id="topProductsChart"></canvas>
                     </div>
@@ -1133,6 +1174,7 @@
         function initializeFilters() {
             const systems = [...new Set(allData.map(d => d['HỆ THỐNG']))].filter(Boolean).sort();
             const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
+            const skus = [...new Set(allData.map(d => d['MÃ HH']))].filter(Boolean).sort();
 
             const systemSelect = document.getElementById('systemFilter');
             systems.forEach(system => {
@@ -1150,11 +1192,60 @@
                 brandSelect.appendChild(option);
             });
 
+            const skuSelect = document.getElementById('skuFilter');
+            skus.forEach(sku => {
+                const option = document.createElement('option');
+                option.value = sku;
+                option.textContent = sku;
+                skuSelect.appendChild(option);
+            });
+
             // Add event listeners
             document.getElementById('startMonth').addEventListener('change', updateDashboard);
             document.getElementById('endMonth').addEventListener('change', updateDashboard);
             document.getElementById('systemFilter').addEventListener('change', updateDashboard);
             document.getElementById('brandFilter').addEventListener('change', updateDashboard);
+            document.getElementById('skuFilter').addEventListener('change', updateDashboard);
+        }
+
+        // Quick timeline filter
+        function setQuickTimeline(period) {
+            const latestDate = new Date('2025-12-01');
+            let startDate;
+            
+            switch(period) {
+                case '1M':
+                    startDate = new Date(latestDate);
+                    startDate.setMonth(startDate.getMonth() - 1);
+                    break;
+                case '3M':
+                    startDate = new Date(latestDate);
+                    startDate.setMonth(startDate.getMonth() - 3);
+                    break;
+                case '6M':
+                    startDate = new Date(latestDate);
+                    startDate.setMonth(startDate.getMonth() - 6);
+                    break;
+                case '1Y':
+                    startDate = new Date(latestDate);
+                    startDate.setFullYear(startDate.getFullYear() - 1);
+                    break;
+                case 'ALL':
+                    startDate = new Date('2023-01-01');
+                    break;
+            }
+            
+            const startMonth = startDate.toISOString().substring(0, 7);
+            const endMonth = '2025-12';
+            
+            document.getElementById('startMonth').value = startMonth;
+            document.getElementById('endMonth').value = endMonth;
+            
+            // Update button states
+            document.querySelectorAll('.timeline-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            updateDashboard();
         }
 
         // Filter data
@@ -1163,12 +1254,14 @@
             const endMonth = document.getElementById('endMonth').value;
             const system = document.getElementById('systemFilter').value;
             const brand = document.getElementById('brandFilter').value;
+            const sku = document.getElementById('skuFilter').value;
 
             return allData.filter(row => {
                 if (startMonth && row.monthKey < startMonth) return false;
                 if (endMonth && row.monthKey > endMonth) return false;
                 if (system !== 'all' && row['HỆ THỐNG'] !== system) return false;
                 if (brand !== 'all' && row['NHÃN HÀNG'] !== brand) return false;
+                if (sku !== 'all' && row['MÃ HH'] !== sku) return false;
                 return true;
             });
         }
@@ -2324,6 +2417,238 @@
                 });
             }, 100);
         }
+        
+        // Product Drill-Down
+        function showProductDrillDown(productName, productKey) {
+            // Filter data for this product (using shortened name)
+            const productData = allData.filter(d => {
+                const shortName = shortenProductName(d['TÊN SP']);
+                return shortName === productName;
+            });
+            
+            if (productData.length === 0) {
+                alert('Không có dữ liệu cho sản phẩm này');
+                return;
+            }
+            
+            document.getElementById('modalTitle').textContent = `📦 Chi Tiết: ${productName}`;
+            
+            // Get all SKUs for this product
+            const skus = [...new Set(productData.map(d => d['MÃ HH']))].filter(Boolean);
+            const skuText = skus.length > 0 ? ` (SKU: ${skus.slice(0, 3).join(', ')}${skus.length > 3 ? '...' : ''})` : '';
+            
+            // Monthly trend
+            const monthlyData = {};
+            productData.forEach(row => {
+                if (!monthlyData[row.monthKey]) monthlyData[row.monthKey] = { sales: 0, qty: 0 };
+                monthlyData[row.monthKey].sales += row.vat;
+                monthlyData[row.monthKey].qty += row.soLuong || 0;
+            });
+            const months = Object.keys(monthlyData).sort();
+            
+            // Top Systems buying this product
+            const systemData = {};
+            productData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!systemData[system]) systemData[system] = { sales: 0, qty: 0 };
+                systemData[system].sales += row.vat;
+                systemData[system].qty += row.soLuong || 0;
+            });
+            const topSystems = Object.entries(systemData)
+                .sort((a, b) => b[1].sales - a[1].sales)
+                .slice(0, 10);
+            
+            // Top Stores
+            const storeData = {};
+            productData.forEach(row => {
+                const store = row['CỬA HÀNG'];
+                if (!storeData[store]) storeData[store] = { sales: 0, qty: 0, orders: new Set() };
+                storeData[store].sales += row.vat;
+                storeData[store].qty += row.soLuong || 0;
+                storeData[store].orders.add(row['SO HD']);
+            });
+            const topStores = Object.entries(storeData)
+                .map(([store, data]) => [store, data.sales, data.qty, data.orders.size])
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            // Calculate total stats
+            const totalSales = productData.reduce((sum, row) => sum + row.vat, 0);
+            const totalQty = productData.reduce((sum, row) => sum + (row.soLuong || 0), 0);
+            const avgPrice = totalQty > 0 ? totalSales / totalQty : 0;
+            const brand = productData[0]['NHÃN HÀNG'] || 'N/A';
+            
+            let html = `
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Thương Hiệu</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${brand}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Tổng Doanh Số</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatCurrency(totalSales)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Tổng Số Lượng</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatNumber(totalQty)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Giá TB</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatCurrency(avgPrice)}</div>
+                        </div>
+                    </div>
+                    ${skuText ? `<div style="font-size: 0.85em; margin-top: 10px; opacity: 0.8;">${skuText}</div>` : ''}
+                </div>
+                
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Doanh Số & Số Lượng Theo Tháng</h3>
+                    <div style="height: 300px;"><canvas id="modalChart1"></canvas></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                        <h3 style="color: #10b981; margin-bottom: 15px;">🏢 Top 10 Hệ Thống Mua</h3>
+                        <div class="table-container" style="max-height: 350px; overflow: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb;">#</th>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb;">Hệ Thống</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb;">SL</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb;">Doanh Số</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topSystems.map((s, i) => `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${i + 1}</td>
+                                            <td style="padding: 8px; font-weight: 600;">${s[0]}</td>
+                                            <td style="padding: 8px; text-align: right;">${formatNumber(s[1].qty)}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #10b981;">${formatCurrency(s[1].sales)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: #f59e0b; margin-bottom: 15px;">🏆 Top 10 Cửa Hàng Mua</h3>
+                        <div class="table-container" style="max-height: 350px; overflow: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">#</th>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">Cửa Hàng</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">SL</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">DS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topStores.map((s, i) => `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px; font-size: 0.9em;">${i + 1}</td>
+                                            <td style="padding: 8px; font-size: 0.9em;">${s[0]}</td>
+                                            <td style="padding: 8px; text-align: right; font-size: 0.9em;">${formatNumber(s[2])}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #f59e0b; font-size: 0.9em;">${formatCurrency(s[1])}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('drillDownModal').style.display = 'block';
+            
+            setTimeout(() => {
+                const ctx1 = document.getElementById('modalChart1').getContext('2d');
+                modalCharts.chart1 = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            {
+                                label: 'Doanh Số',
+                                data: months.map(m => monthlyData[m].sales),
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y'
+                            },
+                            {
+                                label: 'Số Lượng',
+                                data: months.map(m => monthlyData[m].qty),
+                                borderColor: '#10b981',
+                                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                yAxisID: 'y1'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.dataset.label === 'Doanh Số') {
+                                            return 'Doanh số: ' + formatCurrency(context.parsed.y);
+                                        } else {
+                                            return 'Số lượng: ' + formatNumber(context.parsed.y);
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Doanh Số (VNĐ)'
+                                },
+                                ticks: {
+                                    callback: (v) => formatCurrency(v)
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Số Lượng'
+                                },
+                                grid: {
+                                    drawOnChartArea: false
+                                },
+                                ticks: {
+                                    callback: (v) => formatNumber(v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        }
 
         // Create Top Products Chart
         function createTopProductsChart(data) {
@@ -2384,6 +2709,13 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     indexAxis: 'y',
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const productInfo = sorted[index];
+                            showProductDrillDown(productInfo[1].name, productInfo[0]);
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: false
