@@ -335,12 +335,12 @@
                     <div class="kpi-change" id="salesChange">0%</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Tăng Trưởng YoY</h3>
+                    <h3 data-i18n="yoyGrowth">Tăng Trưởng YoY</h3>
                     <div class="kpi-value" id="yoyGrowth" style="font-size: 2em;">0%</div>
                     <div class="kpi-change" id="yoyTrend">--</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>Động Lực Tăng Trưởng</h3>
+                    <h3 data-i18n="topDriver">Động Lực Tăng Trưởng</h3>
                     <div class="kpi-value" id="topDriver" style="font-size: 1.3em; line-height: 1.2;">--</div>
                     <div class="kpi-change" id="driverContribution">--</div>
                 </div>
@@ -355,7 +355,7 @@
                     <div class="kpi-change" id="avgChange">0%</div>
                 </div>
                 <div class="kpi-card">
-                    <h3>MoM Growth (Gần Nhất)</h3>
+                    <h3 data-i18n="momGrowth">Tăng Trưởng MoM</h3>
                     <div class="kpi-value" id="momGrowth" style="font-size: 2em;">0%</div>
                     <div class="kpi-change" id="momTrend">--</div>
                 </div>
@@ -373,26 +373,22 @@
 
             <!-- Key Insights Section -->
             <div class="chart-card full-width" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; margin-bottom: 25px;">
-<<<<<<< HEAD
-                <h2 style="color: white; margin-bottom: 20px;">💡 Key Insights</h2>
-=======
-                <h2 style="color: white; margin-bottom: 20px;">💡 Insights Quan Trọng </h2>
->>>>>>> b9c28046988224c2db6abfdc952df78f0bfa03d4
+                <h2 style="color: white; margin-bottom: 20px;" data-i18n="keyInsights">💡 Thông Tin Quan Trọng</h2>
                 <div id="keyInsights" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                     <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
-                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">🎯 Trọng Tâm Chiến Lược</h3>
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;" data-i18n="strategicFocus">🎯 Trọng Tâm Chiến Lược</h3>
                         <p id="strategicFocus" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
                     </div>
                     <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
-                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">📊 Xu Hướng Thị Trường</h3>
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;" data-i18n="marketTrend">📊 Xu Hướng Thị Trường</h3>
                         <p id="marketTrend" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
                     </div>
                     <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
-                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">⚠️ Cảnh Báo Rủi Ro</h3>
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;" data-i18n="riskAlert">⚠️ Cảnh Báo Rủi Ro</h3>
                         <p id="riskAlert" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
                     </div>
                     <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px);">
-                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;">🚀 Cơ Hội Tăng Trưởng</h3>
+                        <h3 style="font-size: 1em; margin-bottom: 10px; opacity: 0.9;" data-i18n="growthOpportunity">🚀 Cơ Hội Tăng Trưởng</h3>
                         <p id="growthOpportunity" style="font-size: 1.1em; font-weight: 600; margin: 0;">Đang tải...</p>
                     </div>
                 </div>
@@ -476,6 +472,7 @@
             <div class="chart-grid">
                 <div class="chart-card full-width">
                     <h2 data-i18n="salesTrend">📈 Xu Hướng Doanh Số Theo Tháng</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào điểm dữ liệu để xem chi tiết tháng</p>
                     <div class="chart-container tall">
                         <canvas id="salesTrendChart"></canvas>
                     </div>
@@ -483,6 +480,7 @@
 
                 <div class="chart-card full-width">
                     <h2 data-i18n="brandTrend">🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào đường line để xem chi tiết brand</p>
                     <div class="chart-container tall">
                         <canvas id="brandTrendChart"></canvas>
                     </div>
@@ -490,6 +488,7 @@
 
                 <div class="chart-card">
                     <h2 data-i18n="systemSales">🏢 Doanh Số Theo Hệ Thống</h2>
+                    <p style="color: #666; font-size: 0.85em; margin-top: 5px;">👆 Click để xem chi tiết</p>
                     <div class="chart-container">
                         <canvas id="systemChart"></canvas>
                     </div>
@@ -497,6 +496,7 @@
 
                 <div class="chart-card">
                     <h2 data-i18n="brandSales">🏷️ Doanh Số Theo Nhãn Hàng</h2>
+                    <p style="color: #666; font-size: 0.85em; margin-top: 5px;">👆 Click để xem chi tiết</p>
                     <div class="chart-container">
                         <canvas id="brandChart"></canvas>
                     </div>
@@ -504,8 +504,68 @@
 
                 <div class="chart-card full-width">
                     <h2 data-i18n="yearComparison">📊 So Sánh Doanh Số Theo Năm</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào cột năm để xem chi tiết theo hệ thống và tháng</p>
                     <div class="chart-container">
                         <canvas id="yearComparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Year Drill-Down Modal -->
+                <div id="yearDrillDownModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow: auto;">
+                    <div style="background: white; margin: 50px auto; max-width: 95%; width: 1400px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <div style="padding: 20px; border-bottom: 2px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 id="drillDownTitle" style="margin: 0; color: #1f2937;">📊 Chi Tiết Năm 2024</h2>
+                            <button onclick="closeYearDrillDown()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">✕ Đóng</button>
+                        </div>
+                        <div style="padding: 30px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                                <div>
+                                    <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Doanh Số Theo Tháng</h3>
+                                    <div style="height: 300px;">
+                                        <canvas id="drillDownMonthlyChart"></canvas>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 style="color: #10b981; margin-bottom: 15px;">🏢 Top 10 Hệ Thống</h3>
+                                    <div style="height: 300px;">
+                                        <canvas id="drillDownSystemChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <h3 style="color: #6366f1; margin-bottom: 15px;">📊 Bảng Chi Tiết: Doanh Số Theo Hệ Thống & Tháng</h3>
+                            <div class="table-container" style="max-height: 500px; overflow: auto;">
+                                <table id="drillDownTable" style="width: 100%; border-collapse: collapse;">
+                                    <thead style="position: sticky; top: 0; background: white; z-index: 20;">
+                                        <tr>
+                                            <th style="position: sticky; left: 0; background: white; z-index: 21; text-align: left; padding: 12px; border-bottom: 2px solid #e5e7eb; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">#</th>
+                                            <th style="position: sticky; left: 50px; background: white; z-index: 21; text-align: left; padding: 12px; border-bottom: 2px solid #e5e7eb; box-shadow: 2px 0 5px rgba(0,0,0,0.05); min-width: 200px;">Hệ Thống</th>
+                                            <th style="position: sticky; left: 250px; background: white; z-index: 21; text-align: right; padding: 12px; border-bottom: 2px solid #e5e7eb; box-shadow: 2px 0 5px rgba(0,0,0,0.05); min-width: 150px;">Tổng Năm</th>
+                                            <th style="text-align: center; padding: 12px; border-bottom: 2px solid #e5e7eb;" colspan="12">Doanh Số Theo Tháng</th>
+                                        </tr>
+                                        <tr id="monthHeaderRow" style="background: #f9fafb;">
+                                            <th style="position: sticky; left: 0; background: #f9fafb; z-index: 21; box-shadow: 2px 0 5px rgba(0,0,0,0.05);"></th>
+                                            <th style="position: sticky; left: 50px; background: #f9fafb; z-index: 21; box-shadow: 2px 0 5px rgba(0,0,0,0.05);"></th>
+                                            <th style="position: sticky; left: 250px; background: #f9fafb; z-index: 21; box-shadow: 2px 0 5px rgba(0,0,0,0.05);"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="drillDownTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Universal Drill-Down Modal -->
+                <div id="drillDownModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; overflow: auto;">
+                    <div style="background: white; margin: 50px auto; max-width: 95%; width: 1400px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                        <div style="padding: 20px; border-bottom: 2px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 id="modalTitle" style="margin: 0; color: #1f2937;">📊 Chi Tiết</h2>
+                            <button onclick="closeDrillDownModal()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">✕ Đóng</button>
+                        </div>
+                        <div id="modalContent" style="padding: 30px;">
+                            <!-- Dynamic content will be inserted here -->
+                        </div>
                     </div>
                 </div>
 
@@ -802,7 +862,15 @@
                 topDeclineSKU: '📉 Top 10 Mã Hàng Giảm Nhiều Nhất',
                 topGrowthSystem: '🏢 Top Hệ Thống Tăng Trưởng',
                 topDeclineSystem: '🏢 Top Hệ Thống Giảm',
-                brandYearComparison: '📊 So Sánh Doanh Số Theo Năm (Nhãn Hàng)'
+                brandYearComparison: '📊 So Sánh Doanh Số Theo Năm (Nhãn Hàng)',
+                yoyGrowth: 'Tăng Trưởng YoY',
+                momGrowth: 'Tăng Trưởng MoM',
+                topDriver: 'Động Lực Tăng Trưởng',
+                keyInsights: '💡 Thông Tin Quan Trọng',
+                strategicFocus: '🎯 Trọng Tâm Chiến Lược',
+                marketTrend: '📊 Xu Hướng Thị Trường',
+                riskAlert: '⚠️ Cảnh Báo Rủi Ro',
+                growthOpportunity: '🚀 Cơ Hội Tăng Trưởng'
             },
             en: {
                 title: '📊 Sales Report - Viet Lien',
@@ -834,7 +902,15 @@
                 topDeclineSKU: '📉 Top 10 Declining SKUs',
                 topGrowthSystem: '🏢 Top Growing Systems',
                 topDeclineSystem: '🏢 Top Declining Systems',
-                brandYearComparison: '📊 Year-over-Year Comparison (By Brand)'
+                brandYearComparison: '📊 Year-over-Year Comparison (By Brand)',
+                yoyGrowth: 'YoY Growth',
+                momGrowth: 'MoM Growth',
+                topDriver: 'Top Growth Driver',
+                keyInsights: '💡 Key Insights',
+                strategicFocus: '🎯 Strategic Focus',
+                marketTrend: '📊 Market Trend',
+                riskAlert: '⚠️ Risk Alert',
+                growthOpportunity: '🚀 Growth Opportunity'
             }
         };
 
@@ -1353,6 +1429,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const monthKey = sortedMonths[index];
+                            showMonthDrillDown(monthKey, data);
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: true,
@@ -1477,6 +1560,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const datasetIndex = activeElements[0].datasetIndex;
+                            if (datasetIndex < brandTotals.length) {
+                                const brandName = brandTotals[datasetIndex].brand;
+                                showBrandDrillDown(brandName);
+                            }
+                        }
+                    },
                     interaction: {
                         mode: 'index',
                         intersect: false
@@ -1555,6 +1647,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const systemName = sorted[index][0];
+                            showSystemDrillDown(systemName);
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'right'
@@ -1608,6 +1707,13 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     indexAxis: 'y',
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const brandName = sorted[index][0];
+                            showBrandDrillDown(brandName);
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: false
@@ -1667,6 +1773,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const selectedYear = parseInt(years[index]);
+                            showYearDrillDown(selectedYear);
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: false
@@ -1691,6 +1804,525 @@
                     }
                 }
             });
+        }
+
+        // Show Year Drill-Down Modal
+        let drillDownCharts = {};
+        function showYearDrillDown(year) {
+            // Filter data for selected year
+            const yearData = allData.filter(d => d.year === year);
+            
+            // Update title
+            document.getElementById('drillDownTitle').textContent = `📊 Chi Tiết Năm ${year}`;
+            
+            // 1. Create Monthly Chart
+            const monthlyData = {};
+            yearData.forEach(row => {
+                const month = row.monthKey.substring(5, 7); // Get MM from YYYY-MM
+                if (!monthlyData[month]) monthlyData[month] = 0;
+                monthlyData[month] += row.vat;
+            });
+            
+            const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
+            const monthlyValues = months.map(m => monthlyData[m] || 0);
+            const monthLabels = months.map(m => `Tháng ${parseInt(m)}`);
+            
+            const monthCtx = document.getElementById('drillDownMonthlyChart').getContext('2d');
+            if (drillDownCharts.monthly) drillDownCharts.monthly.destroy();
+            drillDownCharts.monthly = new Chart(monthCtx, {
+                type: 'line',
+                data: {
+                    labels: monthLabels,
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: monthlyValues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => formatCurrency(context.parsed.y)
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => formatCurrency(value) }
+                        }
+                    }
+                }
+            });
+            
+            // 2. Create System Chart (Top 10)
+            const systemData = {};
+            yearData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!systemData[system]) systemData[system] = 0;
+                systemData[system] += row.vat;
+            });
+            
+            const sortedSystems = Object.entries(systemData)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            const systemCtx = document.getElementById('drillDownSystemChart').getContext('2d');
+            if (drillDownCharts.system) drillDownCharts.system.destroy();
+            drillDownCharts.system = new Chart(systemCtx, {
+                type: 'bar',
+                data: {
+                    labels: sortedSystems.map(s => s[0]),
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: sortedSystems.map(s => s[1]),
+                        backgroundColor: '#10b981'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => formatCurrency(context.parsed.x)
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { callback: (value) => formatCurrency(value) }
+                        }
+                    }
+                }
+            });
+            
+            // 3. Create Detailed Table (System x Month)
+            const systemMonthData = {};
+            yearData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                const month = row.monthKey.substring(5, 7);
+                
+                if (!systemMonthData[system]) {
+                    systemMonthData[system] = { total: 0, months: {} };
+                }
+                if (!systemMonthData[system].months[month]) {
+                    systemMonthData[system].months[month] = 0;
+                }
+                
+                systemMonthData[system].months[month] += row.vat;
+                systemMonthData[system].total += row.vat;
+            });
+            
+            const sortedSystemsForTable = Object.entries(systemMonthData)
+                .sort((a, b) => b[1].total - a[1].total);
+            
+            // Build month header
+            let monthHeaderHTML = '<th style="position: sticky; left: 0; background: #f9fafb; z-index: 21; box-shadow: 2px 0 5px rgba(0,0,0,0.05);"></th>';
+            monthHeaderHTML += '<th style="position: sticky; left: 50px; background: #f9fafb; z-index: 21; box-shadow: 2px 0 5px rgba(0,0,0,0.05);"></th>';
+            monthHeaderHTML += '<th style="position: sticky; left: 250px; background: #f9fafb; z-index: 21; box-shadow: 2px 0 5px rgba(0,0,0,0.05);"></th>';
+            months.forEach(m => {
+                monthHeaderHTML += `<th style="text-align: right; padding: 8px; border-bottom: 1px solid #e5e7eb; font-size: 0.85em; background: #f9fafb;">T${parseInt(m)}</th>`;
+            });
+            document.getElementById('monthHeaderRow').innerHTML = monthHeaderHTML;
+            
+            // Build table rows
+            let tableHTML = '';
+            sortedSystemsForTable.forEach((entry, index) => {
+                const [system, data] = entry;
+                tableHTML += `
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="position: sticky; left: 0; background: white; z-index: 10; padding: 10px; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">${index + 1}</td>
+                        <td style="position: sticky; left: 50px; background: white; z-index: 10; padding: 10px; font-weight: 600; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">${system}</td>
+                        <td style="position: sticky; left: 250px; background: white; z-index: 10; padding: 10px; text-align: right; font-weight: 600; color: #3b82f6; box-shadow: 2px 0 5px rgba(0,0,0,0.05);">${formatCurrency(data.total)}</td>
+                `;
+                
+                months.forEach(m => {
+                    const value = data.months[m] || 0;
+                    const bgColor = value > 0 ? 'rgba(59, 130, 246, ' + Math.min(value / data.total, 0.3) + ')' : 'transparent';
+                    tableHTML += `<td style="padding: 8px; text-align: right; font-size: 0.9em; background: ${bgColor};">${value > 0 ? formatCurrency(value) : '-'}</td>`;
+                });
+                
+                tableHTML += '</tr>';
+            });
+            
+            document.getElementById('drillDownTableBody').innerHTML = tableHTML;
+            
+            // Show modal
+            document.getElementById('yearDrillDownModal').style.display = 'block';
+        }
+        
+        function closeYearDrillDown() {
+            document.getElementById('yearDrillDownModal').style.display = 'none';
+            if (drillDownCharts.monthly) drillDownCharts.monthly.destroy();
+            if (drillDownCharts.system) drillDownCharts.system.destroy();
+        }
+
+        // Universal Drill-Down Modal Functions
+        let modalCharts = {};
+        
+        function closeDrillDownModal() {
+            document.getElementById('drillDownModal').style.display = 'none';
+            Object.values(modalCharts).forEach(chart => chart && chart.destroy());
+            modalCharts = {};
+        }
+        
+        // Month Drill-Down
+        function showMonthDrillDown(monthKey, filteredData) {
+            const monthData = filteredData.filter(d => d.monthKey === monthKey);
+            const [year, month] = monthKey.split('-');
+            const monthName = `Tháng ${parseInt(month)}/${year}`;
+            
+            document.getElementById('modalTitle').textContent = `📊 Chi Tiết ${monthName}`;
+            
+            // Top Systems
+            const systemData = {};
+            monthData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!systemData[system]) systemData[system] = 0;
+                systemData[system] += row.vat;
+            });
+            const topSystems = Object.entries(systemData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
+            // Top Brands
+            const brandData = {};
+            monthData.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandData[brand]) brandData[brand] = 0;
+                brandData[brand] += row.vat;
+            });
+            const topBrands = Object.entries(brandData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
+            // Top Products
+            const productData = {};
+            monthData.forEach(row => {
+                const product = shortenProductName(row['TÊN SP']);
+                if (!productData[product]) productData[product] = { sales: 0, qty: 0 };
+                productData[product].sales += row.vat;
+                productData[product].qty += row.soLuong || 0;
+            });
+            const topProducts = Object.entries(productData).sort((a, b) => b[1].sales - a[1].sales).slice(0, 10);
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                    <div>
+                        <h3 style="color: #3b82f6; margin-bottom: 15px;">🏢 Top 10 Hệ Thống</h3>
+                        <div style="height: 300px;"><canvas id="modalChart1"></canvas></div>
+                    </div>
+                    <div>
+                        <h3 style="color: #10b981; margin-bottom: 15px;">🏷️ Top 10 Nhãn Hàng</h3>
+                        <div style="height: 300px;"><canvas id="modalChart2"></canvas></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="color: #f59e0b; margin-bottom: 15px;">🔝 Top 10 Sản Phẩm</h3>
+                    <div class="table-container" style="max-height: 400px; overflow: auto;">
+                        <table style="width: 100%;">
+                            <thead style="position: sticky; top: 0; background: white;">
+                                <tr>
+                                    <th style="text-align: left; padding: 10px; border-bottom: 2px solid #e5e7eb;">#</th>
+                                    <th style="text-align: left; padding: 10px; border-bottom: 2px solid #e5e7eb;">Sản Phẩm</th>
+                                    <th style="text-align: right; padding: 10px; border-bottom: 2px solid #e5e7eb;">Số Lượng</th>
+                                    <th style="text-align: right; padding: 10px; border-bottom: 2px solid #e5e7eb;">Doanh Số</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${topProducts.map((p, i) => `
+                                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                                        <td style="padding: 10px;">${i + 1}</td>
+                                        <td style="padding: 10px;">${p[0]}</td>
+                                        <td style="padding: 10px; text-align: right;">${formatNumber(p[1].qty)}</td>
+                                        <td style="padding: 10px; text-align: right; font-weight: 600; color: #3b82f6;">${formatCurrency(p[1].sales)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('drillDownModal').style.display = 'block';
+            
+            // Create charts
+            setTimeout(() => {
+                const ctx1 = document.getElementById('modalChart1').getContext('2d');
+                modalCharts.chart1 = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: topSystems.map(s => s[0]),
+                        datasets: [{ data: topSystems.map(s => s[1]), backgroundColor: '#3b82f6' }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatCurrency(c.parsed.x) }}},
+                        scales: { x: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v) }}}
+                    }
+                });
+                
+                const ctx2 = document.getElementById('modalChart2').getContext('2d');
+                modalCharts.chart2 = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: topBrands.map(b => b[0]),
+                        datasets: [{ data: topBrands.map(b => b[1]), backgroundColor: '#10b981' }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatCurrency(c.parsed.x) }}},
+                        scales: { x: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v) }}}
+                    }
+                });
+            }, 100);
+        }
+        
+        // System Drill-Down
+        function showSystemDrillDown(systemName) {
+            const systemData = allData.filter(d => d['HỆ THỐNG'] === systemName);
+            
+            document.getElementById('modalTitle').textContent = `🏢 Chi Tiết: ${systemName}`;
+            
+            // Monthly trend
+            const monthlyData = {};
+            systemData.forEach(row => {
+                if (!monthlyData[row.monthKey]) monthlyData[row.monthKey] = 0;
+                monthlyData[row.monthKey] += row.vat;
+            });
+            const months = Object.keys(monthlyData).sort();
+            
+            // Top Brands
+            const brandData = {};
+            systemData.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brandData[brand]) brandData[brand] = 0;
+                brandData[brand] += row.vat;
+            });
+            const topBrands = Object.entries(brandData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
+            // Top Stores
+            const storeData = {};
+            systemData.forEach(row => {
+                const store = row['CỬA HÀNG'];
+                if (!storeData[store]) storeData[store] = { sales: 0, orders: new Set() };
+                storeData[store].sales += row.vat;
+                storeData[store].orders.add(row['SO HD']);
+            });
+            const topStores = Object.entries(storeData)
+                .map(([store, data]) => [store, data.sales, data.orders.size])
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            let html = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Xu Hướng Doanh Số Theo Tháng</h3>
+                    <div style="height: 250px;"><canvas id="modalChart1"></canvas></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                        <h3 style="color: #10b981; margin-bottom: 15px;">🏷️ Top 10 Nhãn Hàng</h3>
+                        <div style="height: 300px;"><canvas id="modalChart2"></canvas></div>
+                    </div>
+                    <div>
+                        <h3 style="color: #f59e0b; margin-bottom: 15px;">🏪 Top 10 Cửa Hàng</h3>
+                        <div class="table-container" style="max-height: 300px; overflow: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb;">#</th>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb;">Cửa Hàng</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb;">Đơn</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb;">Doanh Số</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topStores.map((s, i) => `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${i + 1}</td>
+                                            <td style="padding: 8px;">${s[0]}</td>
+                                            <td style="padding: 8px; text-align: right;">${s[2]}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #3b82f6;">${formatCurrency(s[1])}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('drillDownModal').style.display = 'block';
+            
+            setTimeout(() => {
+                const ctx1 = document.getElementById('modalChart1').getContext('2d');
+                modalCharts.chart1 = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Doanh Số',
+                            data: months.map(m => monthlyData[m] || 0),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatCurrency(c.parsed.y) }}},
+                        scales: { y: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v) }}}
+                    }
+                });
+                
+                const ctx2 = document.getElementById('modalChart2').getContext('2d');
+                modalCharts.chart2 = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: topBrands.map(b => b[0]),
+                        datasets: [{ data: topBrands.map(b => b[1]), backgroundColor: '#10b981' }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatCurrency(c.parsed.x) }}},
+                        scales: { x: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v) }}}
+                    }
+                });
+            }, 100);
+        }
+        
+        // Brand Drill-Down
+        function showBrandDrillDown(brandName) {
+            const brandData = allData.filter(d => d['NHÃN HÀNG'] === brandName);
+            
+            document.getElementById('modalTitle').textContent = `🏷️ Chi Tiết: ${brandName}`;
+            
+            // Monthly trend
+            const monthlyData = {};
+            brandData.forEach(row => {
+                if (!monthlyData[row.monthKey]) monthlyData[row.monthKey] = 0;
+                monthlyData[row.monthKey] += row.vat;
+            });
+            const months = Object.keys(monthlyData).sort();
+            
+            // Top Systems
+            const systemData = {};
+            brandData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!systemData[system]) systemData[system] = 0;
+                systemData[system] += row.vat;
+            });
+            const topSystems = Object.entries(systemData).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            
+            // Top Products
+            const productData = {};
+            brandData.forEach(row => {
+                const product = shortenProductName(row['TÊN SP']);
+                const sku = row['MÃ HH'];
+                const key = `${product} (${sku})`;
+                if (!productData[key]) productData[key] = { sales: 0, qty: 0 };
+                productData[key].sales += row.vat;
+                productData[key].qty += row.soLuong || 0;
+            });
+            const topProducts = Object.entries(productData).sort((a, b) => b[1].sales - a[1].sales).slice(0, 15);
+            
+            let html = `
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Xu Hướng Doanh Số Theo Tháng</h3>
+                    <div style="height: 250px;"><canvas id="modalChart1"></canvas></div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                        <h3 style="color: #10b981; margin-bottom: 15px;">🏢 Top 10 Hệ Thống</h3>
+                        <div style="height: 300px;"><canvas id="modalChart2"></canvas></div>
+                    </div>
+                    <div>
+                        <h3 style="color: #f59e0b; margin-bottom: 15px;">🔝 Top 15 Sản Phẩm</h3>
+                        <div class="table-container" style="max-height: 300px; overflow: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">#</th>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">Sản Phẩm</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">SL</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">Doanh Số</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topProducts.map((p, i) => `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px; font-size: 0.9em;">${i + 1}</td>
+                                            <td style="padding: 8px; font-size: 0.9em;">${p[0]}</td>
+                                            <td style="padding: 8px; text-align: right; font-size: 0.9em;">${formatNumber(p[1].qty)}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #3b82f6; font-size: 0.9em;">${formatCurrency(p[1].sales)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('drillDownModal').style.display = 'block';
+            
+            setTimeout(() => {
+                const ctx1 = document.getElementById('modalChart1').getContext('2d');
+                modalCharts.chart1 = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Doanh Số',
+                            data: months.map(m => monthlyData[m] || 0),
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatCurrency(c.parsed.y) }}},
+                        scales: { y: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v) }}}
+                    }
+                });
+                
+                const ctx2 = document.getElementById('modalChart2').getContext('2d');
+                modalCharts.chart2 = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: topSystems.map(s => s[0]),
+                        datasets: [{ data: topSystems.map(s => s[1]), backgroundColor: '#10b981' }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y',
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => formatCurrency(c.parsed.x) }}},
+                        scales: { x: { beginAtZero: true, ticks: { callback: (v) => formatCurrency(v) }}}
+                    }
+                });
+            }, 100);
         }
 
         // Create Top Products Chart
