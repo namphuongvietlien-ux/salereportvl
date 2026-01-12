@@ -888,6 +888,38 @@
                     </div>
                 </div>
 
+                <!-- SKU Analysis Modal -->
+                <div id="skuAnalysisModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 15000; overflow: auto;">
+                    <div style="background: white; margin: 30px auto; max-width: 90%; width: 1200px; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); overflow: hidden;">
+                        <div style="padding: 25px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 id="skuModalTitle" style="margin: 0; font-size: 1.4em; font-weight: 700;">📊 Phân Tích SKU</h2>
+                            <button onclick="closeSKUModal()" style="background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">✕ Đóng</button>
+                        </div>
+                        <div style="padding: 30px;">
+                            <div style="margin-bottom: 25px;">
+                                <div style="height: 400px;">
+                                    <canvas id="modalChart2"></canvas>
+                                </div>
+                            </div>
+                            <div class="table-container" style="max-height: 500px; overflow: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                <table id="skuDetailTable" style="width: 100%; border-collapse: collapse; background: white;">
+                                    <thead style="position: sticky; top: 0; background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%); color: white; z-index: 10;">
+                                        <tr>
+                                            <th style="padding: 15px 12px; text-align: left; font-weight: 600;">#</th>
+                                            <th style="padding: 15px 12px; text-align: left; font-weight: 600; min-width: 300px;">Tên Sản Phẩm</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600;">Tổng Số Lượng</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600;">Doanh Số</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600;">% Tổng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="skuDetailTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="chart-card full-width">
                     <h2 data-i18n="topProducts">🔝 Top 20 Sản Phẩm Bán Chạy</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào sản phẩm để xem doanh số theo tháng</p>
@@ -1096,7 +1128,7 @@
                 </div>
 
                 <!-- Detailed Analysis Table -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px;">
                     <!-- Normal Systems -->
                     <div>
                         <h3 style="color: #059669; margin-bottom: 15px;">✅ Hệ Thống Bình Thường</h3>
@@ -1108,6 +1140,7 @@
                                         <th>Hệ Thống</th>
                                         <th class="number">Lần/Tháng</th>
                                         <th class="number">Trạng Thái</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="normalSystemsTableBody">
@@ -1127,12 +1160,28 @@
                                         <th>Hệ Thống</th>
                                         <th class="number">Lần/Tháng</th>
                                         <th class="number">Vấn Đề</th>
-                                        <th>Gợi Ý</th>
+                                        <th>SP Biến Động</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="abnormalSystemsTableBody">
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Product Trend Summary -->
+                <div id="productTrendSummary" style="display: none; margin-bottom: 25px;">
+                    <h3 style="color: #1f2937; margin-bottom: 15px;">📊 Tóm Tắt Biến Động Sản Phẩm</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div style="background: #dcfdf7; padding: 15px; border-radius: 8px; border-left: 4px solid #10b981;">
+                            <h4 style="color: #065f46; margin: 0 0 10px 0;">📈 Sản Phẩm Tăng Mạnh</h4>
+                            <div id="increasingProductsList" style="font-size: 0.9em;"></div>
+                        </div>
+                        <div style="background: #fef2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #ef4444;">
+                            <h4 style="color: #991b1b; margin: 0 0 10px 0;">📉 Sản Phẩm Giảm Mạnh</h4>
+                            <div id="decreasingProductsList" style="font-size: 0.9em;"></div>
                         </div>
                     </div>
                 </div>
@@ -1260,6 +1309,266 @@
                                 <tbody id="forecastProductTableBody">
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Frequency Drill-Down Modal -->
+    <div id="orderFrequencyDrillModal" style="
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.8);
+        z-index: 20000;
+        overflow: auto;
+    ">
+        <div style="
+            background: white;
+            margin: 20px auto;
+            max-width: 95%;
+            width: 1600px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            overflow: hidden;
+        ">
+            <!-- Modal Header -->
+            <div style="
+                padding: 25px 30px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 3px solid #4f46e5;
+            ">
+                <h2 id="drillModalTitle" style="
+                    margin: 0;
+                    font-size: 1.4em;
+                    font-weight: 700;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                ">🔍 Phân Tích Chi Tiết Hệ Thống</h2>
+                <button onclick="closeOrderFrequencyDrill()" style="
+                    background: rgba(255,255,255,0.2);
+                    color: white;
+                    border: 2px solid rgba(255,255,255,0.3);
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 1em;
+                    font-weight: 600;
+                    backdrop-filter: blur(10px);
+                    transition: all 0.3s ease;
+                " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕ Đóng</button>
+            </div>
+
+            <!-- Breadcrumb Navigation -->
+            <div id="drillBreadcrumb" style="
+                padding: 15px 30px;
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+                font-size: 0.9em;
+                color: #64748b;
+            "></div>
+
+            <!-- Modal Body -->
+            <div style="padding: 30px;">
+                <!-- Dynamic Content Area -->
+                <div id="drillModalContent">
+                    <!-- System Level Analysis -->
+                    <div id="systemLevelContent" style="display: none;">
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #1e40af; margin-bottom: 20px; font-size: 1.2em;">📊 Phân Tích SKU Trong Hệ Thống</h3>
+                            
+                            <!-- Summary Cards -->
+                            <div style="
+                                display: grid;
+                                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                                gap: 15px;
+                                margin-bottom: 25px;
+                            ">
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%);
+                                    padding: 20px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+                                ">
+                                    <div style="font-size: 2em; margin-bottom: 8px;">⚠️</div>
+                                    <div style="font-size: 1.5em; font-weight: 700; color: #92400e;" id="abnormalSKUCount">0</div>
+                                    <div style="color: #92400e; font-size: 0.9em; font-weight: 600;">SKU Bất Thường</div>
+                                </div>
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #dcfce7 0%, #22c55e 100%);
+                                    padding: 20px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+                                ">
+                                    <div style="font-size: 2em; margin-bottom: 8px;">📈</div>
+                                    <div style="font-size: 1.5em; font-weight: 700; color: #14532d;" id="increasingSKUCount">0</div>
+                                    <div style="color: #14532d; font-size: 0.9em; font-weight: 600;">SKU Tăng Trưởng</div>
+                                </div>
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #fee2e2 0%, #ef4444 100%);
+                                    padding: 20px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+                                ">
+                                    <div style="font-size: 2em; margin-bottom: 8px;">📉</div>
+                                    <div style="font-size: 1.5em; font-weight: 700; color: #7f1d1d;" id="decreasingSKUCount">0</div>
+                                    <div style="color: #7f1d1d; font-size: 0.9em; font-weight: 600;">SKU Giảm</div>
+                                </div>
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #e0e7ff 0%, #6366f1 100%);
+                                    padding: 20px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+                                ">
+                                    <div style="font-size: 2em; margin-bottom: 8px;">🎯</div>
+                                    <div style="font-size: 1.5em; font-weight: 700; color: #312e81;" id="totalSKUCount">0</div>
+                                    <div style="color: #312e81; font-size: 0.9em; font-weight: 600;">Tổng SKU</div>
+                                </div>
+                            </div>
+
+                            <!-- SKU Analysis Table -->
+                            <div class="table-container" style="
+                                max-height: 600px;
+                                overflow: auto;
+                                border-radius: 12px;
+                                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                                border: 1px solid #e2e8f0;
+                            ">
+                                <table id="skuAnalysisTable" style="
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    background: white;
+                                ">
+                                    <thead style="
+                                        position: sticky;
+                                        top: 0;
+                                        background: linear-gradient(135deg, #1e40af 0%, #3730a3 100%);
+                                        color: white;
+                                        z-index: 10;
+                                    ">
+                                        <tr>
+                                            <th style="padding: 15px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a;">#</th>
+                                            <th style="padding: 15px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #1e3a8a; min-width: 250px;">Tên Sản Phẩm (Rút Gọn)</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a;">Trung Bình<br/>Trước</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a;">Trung Bình<br/>Gần Đây</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a;">Thay Đổi<br/>(%)</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a;">Xu Hướng</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a;">Mức Độ</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #1e3a8a;">Chi Tiết</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="skuAnalysisTableBody">
+                                        <!-- Dynamic SKU data will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SKU Level Analysis -->
+                    <div id="skuLevelContent" style="display: none;">
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="color: #1e40af; margin-bottom: 20px; font-size: 1.2em;">🏪 Phân Tích Chi Tiết Theo Cửa Hàng</h3>
+                            
+                            <!-- Store Performance Summary -->
+                            <div style="
+                                display: grid;
+                                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                                gap: 15px;
+                                margin-bottom: 25px;
+                            ">
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #f0f9ff 0%, #0ea5e9 100%);
+                                    padding: 18px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+                                ">
+                                    <div style="font-size: 1.8em; margin-bottom: 6px;">🏪</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #0c4a6e;" id="activeStoreCount">0</div>
+                                    <div style="color: #0c4a6e; font-size: 0.85em; font-weight: 600;">Cửa Hàng Hoạt Động</div>
+                                </div>
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%);
+                                    padding: 18px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+                                ">
+                                    <div style="font-size: 1.8em; margin-bottom: 6px;">⚡</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #92400e;" id="avgOrderFreq">0</div>
+                                    <div style="color: #92400e; font-size: 0.85em; font-weight: 600;">TB Tần Suất/Tháng</div>
+                                </div>
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #ecfdf5 0%, #10b981 100%);
+                                    padding: 18px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                                ">
+                                    <div style="font-size: 1.8em; margin-bottom: 6px;">🎯</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #064e3b;" id="topStoreCount">0</div>
+                                    <div style="color: #064e3b; font-size: 0.85em; font-weight: 600;">CH Hiệu Quả Cao</div>
+                                </div>
+                                <div class="summary-card" style="
+                                    background: linear-gradient(135deg, #fef2f2 0%, #dc2626 100%);
+                                    padding: 18px;
+                                    border-radius: 12px;
+                                    text-align: center;
+                                    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+                                ">
+                                    <div style="font-size: 1.8em; margin-bottom: 6px;">⚠️</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #7f1d1d;" id="lowStoreCount">0</div>
+                                    <div style="color: #7f1d1d; font-size: 0.85em; font-weight: 600;">CH Cần Chú Ý</div>
+                                </div>
+                            </div>
+
+                            <!-- Store Analysis Table -->
+                            <div class="table-container" style="
+                                max-height: 600px;
+                                overflow: auto;
+                                border-radius: 12px;
+                                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                                border: 1px solid #e2e8f0;
+                            ">
+                                <table id="storeAnalysisTable" style="
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    background: white;
+                                ">
+                                    <thead style="
+                                        position: sticky;
+                                        top: 0;
+                                        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                                        color: white;
+                                        z-index: 10;
+                                    ">
+                                        <tr>
+                                            <th style="padding: 15px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #065f46;">#</th>
+                                            <th style="padding: 15px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #065f46; min-width: 180px;">Cửa Hàng</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #065f46;">Tần Suất<br/>Trước</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #065f46;">Tần Suất<br/>Gần Đây</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #065f46;">Thay Đổi<br/>(%)</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #065f46;">Tổng SL<br/>6 Tháng</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #065f46;">Xu Hướng</th>
+                                            <th style="padding: 15px 12px; text-align: center; font-weight: 600; border-bottom: 2px solid #065f46;">Khuyến Nghị</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="storeAnalysisTableBody">
+                                        <!-- Dynamic store data will be inserted here -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3882,6 +4191,7 @@
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
                             const systemName = sorted[index][0];
+                            console.log('System clicked:', systemName);
                             showSystemDrillDown(systemName);
                         }
                     },
@@ -3942,6 +4252,7 @@
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
                             const brandName = sorted[index][0];
+                            console.log('Brand clicked:', brandName);
                             showBrandDrillDown(brandName);
                         }
                     },
@@ -4425,19 +4736,21 @@
                 });
             }, 100);
         }
+
+        // ==========================================
+        // ORDER FREQUENCY DRILL-DOWN FUNCTIONS
+        // ==========================================
         
-        // System Drill-Down
-        function showSystemDrillDown(systemName) {
-            const systemData = allData.filter(d => d['HỆ THỐNG'] === systemName);
-            currentDrillDownContext = {
-                type: 'system',
-                name: systemName,
-                baseData: systemData
-            };
-            renderSystemDrillDown(systemName, systemData);
-        }
-        
-        function renderSystemDrillDown(systemName, systemData) {
+        // Global variables for drill-down state
+        let currentDrillState = {
+            level: 'overview', // 'overview' | 'system' | 'sku'
+            systemName: null,
+            skuName: null,
+            data: {}
+        };
+
+        // Open system-level drill-down
+        function drillDownToSystem(systemName) {
             document.getElementById('modalTitle').textContent = `🏢 Chi Tiết: ${systemName}`;
             
             // Monthly trend
@@ -6297,10 +6610,32 @@
                     const row = `
                         <tr>
                             <td>${idx + 1}</td>
-                            <td>${stat.system}</td>
+                            <td>
+                                <span style="cursor: pointer; color: #3b82f6; font-weight: 600; text-decoration: underline;" 
+                                      onclick="drillDownToSystem('${stat.system.replace(/'/g, "\\'")}')" 
+                                      title="Click để xem chi tiết SKU">
+                                    ${stat.system}
+                                </span>
+                            </td>
                             <td class="number">${stat.avgOrdersPerMonth}</td>
                             <td class="number">
                                 <span style="color: #10b981; font-weight: 600;">✓ ${stat.stability}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <button onclick="drillDownToSystem('${stat.system.replace(/'/g, "\\'")}')" style="
+                                    background: #10b981;
+                                    color: white;
+                                    border: none;
+                                    padding: 6px 12px;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 0.8em;
+                                    font-weight: 600;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'"
+                                   title="Xem chi tiết sản phẩm">
+                                    👁️ Xem SKU
+                                </button>
                             </td>
                         </tr>
                     `;
@@ -6317,10 +6652,32 @@
                     const row = `
                         <tr>
                             <td>${idx + 1}</td>
-                            <td>${stat.system}</td>
+                            <td>
+                                <span style="cursor: pointer; color: #3b82f6; font-weight: 600; text-decoration: underline;" 
+                                      onclick="drillDownToSystem('${stat.system.replace(/'/g, "\\'")}')" 
+                                      title="Click để xem chi tiết SKU">
+                                    ${stat.system}
+                                </span>
+                            </td>
                             <td class="number" style="color: ${severityColor}; font-weight: 600;">${stat.avgOrdersPerMonth}</td>
                             <td class="number" style="color: ${severityColor}; font-weight: 600;">${stat.issues}</td>
                             <td style="font-size: 0.85em; max-width: 200px;">${stat.suggestions}</td>
+                            <td style="text-align: center;">
+                                <button onclick="drillDownToSystem('${stat.system.replace(/'/g, "\\'")}')" style="
+                                    background: #ef4444;
+                                    color: white;
+                                    border: none;
+                                    padding: 6px 12px;
+                                    border-radius: 6px;
+                                    cursor: pointer;
+                                    font-size: 0.8em;
+                                    font-weight: 600;
+                                    transition: all 0.3s ease;
+                                " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'"
+                                   title="Phân tích chi tiết theo SKU">
+                                    🔍 Chi Tiết
+                                </button>
+                            </td>
                         </tr>
                     `;
                     abnormalTableBody.innerHTML += row;
@@ -6341,6 +6698,571 @@
                 abnormalSystems: abnormalSystems.length,
                 analysisMethod: 'Individual system historical pattern analysis'
             });
+        }
+
+        // ==========================================
+        // ORDER FREQUENCY DRILL-DOWN FUNCTIONS
+        // ==========================================
+        
+        // Global variables for drill-down state
+        let currentDrillState = {
+            level: 'overview', // 'overview' | 'system' | 'sku'
+            systemName: null,
+            skuName: null,
+            data: {}
+        };
+
+        // Open system-level drill-down
+        function drillDownToSystem(systemName) {
+            currentDrillState.level = 'system';
+            currentDrillState.systemName = systemName;
+            currentDrillState.skuName = null;
+            
+            // Update modal title and breadcrumb
+            document.getElementById('drillModalTitle').textContent = `🔍 Phân Tích SKU - ${systemName}`;
+            document.getElementById('drillBreadcrumb').innerHTML = `
+                <span onclick="backToDrillOverview()" style="color: #3b82f6; cursor: pointer; text-decoration: underline;">📊 Tổng Quan</span>
+                <span style="margin: 0 8px; color: #9ca3af;">›</span>
+                <span style="color: #374151; font-weight: 600;">${systemName}</span>
+            `;
+            
+            // Show system level content
+            document.getElementById('systemLevelContent').style.display = 'block';
+            document.getElementById('skuLevelContent').style.display = 'none';
+            
+            // Analyze SKU data for this system
+            analyzeSKUData(systemName);
+            
+            // Show modal
+            document.getElementById('orderFrequencyDrillModal').style.display = 'block';
+        }
+
+        // Analyze SKU-level data for a specific system
+        function analyzeSKUData(systemName) {
+            const skuAnalysis = [];
+            const systemData = {};
+            
+            // Collect all SKU data for this system
+            allData.forEach(row => {
+                const system = row['HE THONG']?.trim();
+                const product = row['TEN SP']?.trim();
+                const store = row['TEN KH']?.trim();
+                const month = row['THANG']?.replace('T', '');
+                const quantity = parseFloat(row['SO LUONG']) || 0;
+                
+                if (system === systemName && product && store && quantity > 0) {
+                    if (!systemData[product]) {
+                        systemData[product] = {};
+                    }
+                    if (!systemData[product][month]) {
+                        systemData[product][month] = 0;
+                    }
+                    systemData[product][month] += quantity;
+                }
+            });
+
+            // Analyze each SKU's trend
+            Object.keys(systemData).forEach(product => {
+                const monthlyData = systemData[product];
+                const months = Object.keys(monthlyData).sort();
+                const quantities = months.map(m => monthlyData[m]);
+                
+                if (months.length >= 3) { // Need at least 3 months of data
+                    const totalQty = quantities.reduce((a, b) => a + b, 0);
+                    const avgQty = totalQty / quantities.length;
+                    
+                    // Recent vs earlier comparison
+                    const recentMonths = months.slice(-3);
+                    const recentQty = recentMonths.map(m => monthlyData[m]);
+                    const recentAvg = recentQty.reduce((a, b) => a + b, 0) / recentQty.length;
+                    
+                    const earlierMonths = months.slice(0, -3);
+                    const earlierQty = earlierMonths.length > 0 ? 
+                        earlierMonths.map(m => monthlyData[m]) : [];
+                    const earlierAvg = earlierQty.length > 0 ? 
+                        earlierQty.reduce((a, b) => a + b, 0) / earlierQty.length : recentAvg;
+                    
+                    const changePercent = earlierAvg > 0 ? ((recentAvg - earlierAvg) / earlierAvg * 100) : 0;
+                    
+                    // Calculate volatility
+                    const variance = quantities.reduce((sum, qty) => sum + Math.pow(qty - avgQty, 2), 0) / quantities.length;
+                    const stdDev = Math.sqrt(variance);
+                    const volatility = avgQty > 0 ? (stdDev / avgQty * 100) : 0;
+                    
+                    // Determine trend and level
+                    let trend = '→';
+                    let level = 'normal';
+                    if (Math.abs(changePercent) > 50) level = 'high';
+                    else if (Math.abs(changePercent) > 25) level = 'medium';
+                    
+                    if (changePercent > 15) trend = '📈';
+                    else if (changePercent < -15) trend = '📉';
+                    
+                    skuAnalysis.push({
+                        product: shortenProductName(product),
+                        fullProduct: product,
+                        earlierAvg,
+                        recentAvg,
+                        changePercent,
+                        trend,
+                        level,
+                        totalQty,
+                        volatility,
+                        monthCount: months.length
+                    });
+                }
+            });
+
+            // Sort by absolute change percentage
+            skuAnalysis.sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+            
+            // Update summary cards
+            const increasing = skuAnalysis.filter(s => s.changePercent > 15);
+            const decreasing = skuAnalysis.filter(s => s.changePercent < -15);
+            const abnormal = skuAnalysis.filter(s => Math.abs(s.changePercent) > 25);
+            
+            document.getElementById('totalSKUCount').textContent = skuAnalysis.length;
+            document.getElementById('increasingSKUCount').textContent = increasing.length;
+            document.getElementById('decreasingSKUCount').textContent = decreasing.length;
+            document.getElementById('abnormalSKUCount').textContent = abnormal.length;
+            
+            // Populate SKU table
+            const tbody = document.getElementById('skuAnalysisTableBody');
+            tbody.innerHTML = '';
+            
+            skuAnalysis.forEach((sku, index) => {
+                const levelColors = {
+                    'normal': '#f3f4f6',
+                    'medium': '#fef3c7',
+                    'high': '#fee2e2'
+                };
+                
+                const levelLabels = {
+                    'normal': 'Thường',
+                    'medium': 'Trung Bình',
+                    'high': 'Cao'
+                };
+                
+                const row = `
+                    <tr style="background: ${levelColors[sku.level]}; border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">${index + 1}</td>
+                        <td style="padding: 12px; max-width: 250px; word-wrap: break-word;">
+                            <strong>${sku.product}</strong>
+                            <div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">
+                                ${sku.monthCount} tháng data • Tổng: ${formatNumber(sku.totalQty)}
+                            </div>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">${formatNumber(Math.round(sku.earlierAvg))}</td>
+                        <td style="padding: 12px; text-align: center;">${formatNumber(Math.round(sku.recentAvg))}</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600; color: ${sku.changePercent > 0 ? '#059669' : '#dc2626'};">
+                            ${sku.changePercent > 0 ? '+' : ''}${sku.changePercent.toFixed(1)}%
+                        </td>
+                        <td style="padding: 12px; text-align: center; font-size: 1.2em;">${sku.trend}</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="
+                                padding: 4px 8px;
+                                border-radius: 12px;
+                                font-size: 0.8em;
+                                font-weight: 600;
+                                background: ${sku.level === 'high' ? '#fee2e2' : sku.level === 'medium' ? '#fef3c7' : '#f0f9ff'};
+                                color: ${sku.level === 'high' ? '#991b1b' : sku.level === 'medium' ? '#92400e' : '#1e40af'};
+                            ">${levelLabels[sku.level]}</span>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button onclick="drillDownToSKU('${systemName}', '${sku.fullProduct.replace(/'/g, "\\'")}')" style="
+                                background: #3b82f6;
+                                color: white;
+                                border: none;
+                                padding: 6px 12px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 0.8em;
+                                font-weight: 600;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                                👁️ Xem CH
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            
+            // Store data for potential further drill-down
+            currentDrillState.data.skus = skuAnalysis;
+        }
+
+        // Open SKU-level drill-down (store analysis)
+        function drillDownToSKU(systemName, skuName) {
+            currentDrillState.level = 'sku';
+            currentDrillState.systemName = systemName;
+            currentDrillState.skuName = skuName;
+            
+            const shortName = shortenProductName(skuName);
+            
+            // Update modal title and breadcrumb
+            document.getElementById('drillModalTitle').textContent = `🏪 Phân Tích Cửa Hàng - ${shortName}`;
+            document.getElementById('drillBreadcrumb').innerHTML = `
+                <span onclick="backToDrillOverview()" style="color: #3b82f6; cursor: pointer; text-decoration: underline;">📊 Tổng Quan</span>
+                <span style="margin: 0 8px; color: #9ca3af;">›</span>
+                <span onclick="drillDownToSystem('${systemName}')" style="color: #3b82f6; cursor: pointer; text-decoration: underline;">${systemName}</span>
+                <span style="margin: 0 8px; color: #9ca3af;">›</span>
+                <span style="color: #374151; font-weight: 600;">${shortName}</span>
+            `;
+            
+            // Show SKU level content
+            document.getElementById('systemLevelContent').style.display = 'none';
+            document.getElementById('skuLevelContent').style.display = 'block';
+            
+            // Analyze store data for this SKU
+            analyzeStoreData(systemName, skuName);
+        }
+
+        // Analyze store-level data for a specific SKU
+        function analyzeStoreData(systemName, skuName) {
+            const storeAnalysis = [];
+            const storeData = {};
+            
+            // Collect store data for this SKU
+            allData.forEach(row => {
+                const system = row['HE THONG']?.trim();
+                const product = row['TEN SP']?.trim();
+                const store = row['TEN KH']?.trim();
+                const month = row['THANG']?.replace('T', '');
+                const quantity = parseFloat(row['SO LUONG']) || 0;
+                
+                if (system === systemName && product === skuName && store && quantity > 0) {
+                    if (!storeData[store]) {
+                        storeData[store] = {};
+                    }
+                    if (!storeData[store][month]) {
+                        storeData[store][month] = 0;
+                    }
+                    storeData[store][month] += quantity;
+                }
+            });
+
+            // Analyze each store's performance
+            Object.keys(storeData).forEach(store => {
+                const monthlyData = storeData[store];
+                const months = Object.keys(monthlyData).sort();
+                const quantities = months.map(m => monthlyData[m]);
+                
+                if (months.length >= 2) { // Need at least 2 months of data
+                    const totalQty = quantities.reduce((a, b) => a + b, 0);
+                    const avgQty = totalQty / quantities.length;
+                    const orderFreq = months.length; // Number of months with orders
+                    
+                    // Recent vs earlier comparison
+                    const recentMonths = months.slice(-2);
+                    const recentQty = recentMonths.map(m => monthlyData[m]);
+                    const recentAvg = recentQty.reduce((a, b) => a + b, 0) / recentQty.length;
+                    const recentFreq = recentMonths.length;
+                    
+                    const earlierMonths = months.slice(0, -2);
+                    const earlierQty = earlierMonths.length > 0 ? 
+                        earlierMonths.map(m => monthlyData[m]) : [];
+                    const earlierAvg = earlierQty.length > 0 ? 
+                        earlierQty.reduce((a, b) => a + b, 0) / earlierQty.length : recentAvg;
+                    const earlierFreq = earlierMonths.length;
+                    
+                    const changePercent = earlierAvg > 0 ? ((recentAvg - earlierAvg) / earlierAvg * 100) : 0;
+                    
+                    // Determine trend and recommendation
+                    let trend = '→';
+                    let recommendation = '✅ Duy trì hiện tại';
+                    
+                    if (changePercent > 30) {
+                        trend = '📈';
+                        recommendation = '🎯 Hiệu quả cao - Có thể tăng stock';
+                    } else if (changePercent > 10) {
+                        trend = '📈';
+                        recommendation = '✅ Tăng trưởng ổn định';
+                    } else if (changePercent < -30) {
+                        trend = '📉';
+                        recommendation = '⚠️ Giảm mạnh - Cần kiểm tra nguyên nhân';
+                    } else if (changePercent < -10) {
+                        trend = '📉';
+                        recommendation = '⚠️ Giảm nhẹ - Theo dõi thêm';
+                    }
+                    
+                    // Low frequency warning
+                    if (orderFreq <= 2 && avgQty < 10) {
+                        recommendation = '🔍 Tần suất thấp - Có thể ngưng cung cấp';
+                    }
+                    
+                    storeAnalysis.push({
+                        store,
+                        earlierFreq,
+                        recentFreq,
+                        changePercent,
+                        totalQty,
+                        avgQty,
+                        orderFreq,
+                        trend,
+                        recommendation,
+                        monthCount: months.length
+                    });
+                }
+            });
+
+            // Sort by change percentage (descending)
+            storeAnalysis.sort((a, b) => b.changePercent - a.changePercent);
+            
+            // Update summary cards
+            const activeStores = storeAnalysis.length;
+            const topStores = storeAnalysis.filter(s => s.changePercent > 20).length;
+            const lowStores = storeAnalysis.filter(s => s.changePercent < -20 || s.orderFreq <= 2).length;
+            const avgFreq = activeStores > 0 ? storeAnalysis.reduce((sum, s) => sum + s.orderFreq, 0) / activeStores : 0;
+            
+            document.getElementById('activeStoreCount').textContent = activeStores;
+            document.getElementById('topStoreCount').textContent = topStores;
+            document.getElementById('lowStoreCount').textContent = lowStores;
+            document.getElementById('avgOrderFreq').textContent = avgFreq.toFixed(1);
+            
+            // Populate store table
+            const tbody = document.getElementById('storeAnalysisTableBody');
+            tbody.innerHTML = '';
+            
+            storeAnalysis.forEach((store, index) => {
+                const rowColor = store.changePercent > 20 ? '#ecfdf5' : 
+                                 store.changePercent < -20 ? '#fef2f2' : 
+                                 store.orderFreq <= 2 ? '#fefbf2' : '#ffffff';
+                
+                const row = `
+                    <tr style="background: ${rowColor}; border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">${index + 1}</td>
+                        <td style="padding: 12px;">
+                            <strong>${store.store}</strong>
+                            <div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">
+                                ${store.monthCount} tháng • TB: ${formatNumber(Math.round(store.avgQty))}/tháng
+                            </div>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">${store.earlierFreq}</td>
+                        <td style="padding: 12px; text-align: center;">${store.recentFreq}</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600; color: ${store.changePercent > 0 ? '#059669' : '#dc2626'};">
+                            ${store.changePercent > 0 ? '+' : ''}${store.changePercent.toFixed(1)}%
+                        </td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">
+                            ${formatNumber(store.totalQty)}
+                        </td>
+                        <td style="padding: 12px; text-align: center; font-size: 1.2em;">${store.trend}</td>
+                        <td style="padding: 12px; font-size: 0.85em; max-width: 200px;">${store.recommendation}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            
+            // Store data for reference
+            currentDrillState.data.stores = storeAnalysis;
+        }
+
+        // Navigation functions
+        function backToDrillOverview() {
+            document.getElementById('orderFrequencyDrillModal').style.display = 'none';
+            currentDrillState.level = 'overview';
+            currentDrillState.systemName = null;
+            currentDrillState.skuName = null;
+        }
+
+        function closeOrderFrequencyDrill() {
+            document.getElementById('orderFrequencyDrillModal').style.display = 'none';
+            currentDrillState.level = 'overview';
+            currentDrillState.systemName = null;
+            currentDrillState.skuName = null;
+        }
+
+        // ==========================================
+        // SKU ANALYSIS FUNCTIONS
+        // ==========================================
+        
+        let skuModalChart = null;
+        
+        // Show SKU analysis for selected system
+        function showSystemDrillDown(systemName) {
+            console.log('showSystemDrillDown called with:', systemName);
+            const systemData = {};
+            
+            // Collect all SKU data for this system
+            allData.forEach(row => {
+                const system = row['HE THONG']?.trim();
+                const product = row['TEN SP']?.trim();
+                const quantity = parseFloat(row['SO LUONG']) || 0;
+                const revenue = parseFloat(row['VAT']) || 0;
+                
+                if (system === systemName && product) {
+                    if (!systemData[product]) {
+                        systemData[product] = {
+                            quantity: 0,
+                            revenue: 0
+                        };
+                    }
+                    systemData[product].quantity += quantity;
+                    systemData[product].revenue += revenue;
+                }
+            });
+            
+            // Sort by revenue
+            const sortedProducts = Object.entries(systemData)
+                .sort((a, b) => b[1].revenue - a[1].revenue)
+                .slice(0, 20); // Top 20 SKUs
+            
+            // Update modal title
+            document.getElementById('skuModalTitle').textContent = `🏢 SKU Trong Hệ Thống: ${systemName}`;
+            
+            // Create chart
+            createSKUChart(sortedProducts, 'system');
+            
+            // Populate table
+            populateSKUTable(sortedProducts);
+            
+            // Show modal
+            document.getElementById('skuAnalysisModal').style.display = 'block';
+        }
+        
+        // Show SKU analysis for selected brand
+        function showBrandDrillDown(brandName) {
+            console.log('showBrandDrillDown called with:', brandName);
+            const brandData = {};
+            
+            // Collect all SKU data for this brand
+            allData.forEach(row => {
+                const brand = row['NHAN']?.trim();
+                const product = row['TEN SP']?.trim();
+                const quantity = parseFloat(row['SO LUONG']) || 0;
+                const revenue = parseFloat(row['VAT']) || 0;
+                
+                if (brand === brandName && product) {
+                    if (!brandData[product]) {
+                        brandData[product] = {
+                            quantity: 0,
+                            revenue: 0
+                        };
+                    }
+                    brandData[product].quantity += quantity;
+                    brandData[product].revenue += revenue;
+                }
+            });
+            
+            // Sort by revenue
+            const sortedProducts = Object.entries(brandData)
+                .sort((a, b) => b[1].revenue - a[1].revenue)
+                .slice(0, 20); // Top 20 SKUs
+            
+            // Update modal title
+            document.getElementById('skuModalTitle').textContent = `🏷️ SKU Trong Nhãn Hàng: ${brandName}`;
+            
+            // Create chart
+            createSKUChart(sortedProducts, 'brand');
+            
+            // Populate table
+            populateSKUTable(sortedProducts);
+            
+            // Show modal
+            document.getElementById('skuAnalysisModal').style.display = 'block';
+        }
+        
+        // Create SKU chart
+        function createSKUChart(sortedProducts, type) {
+            const ctx = document.getElementById('modalChart2').getContext('2d');
+            
+            // Destroy existing chart
+            if (skuModalChart) {
+                skuModalChart.destroy();
+            }
+            
+            const chartType = type === 'brand' ? 'bar' : 'doughnut';
+            const colors = type === 'brand' ? 
+                ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
+                 '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'] :
+                ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
+                 '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'];
+            
+            skuModalChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: sortedProducts.map(p => shortenProductName(p[0])),
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: sortedProducts.map(p => p[1].revenue),
+                        backgroundColor: chartType === 'bar' ? '#667eea' : colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: chartType === 'bar' ? 'y' : undefined,
+                    plugins: {
+                        legend: {
+                            display: chartType === 'doughnut',
+                            position: chartType === 'doughnut' ? 'right' : undefined
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = chartType === 'doughnut' ? 
+                                        ` (${((context.parsed / total) * 100).toFixed(1)}%)` : '';
+                                    return (chartType === 'bar' ? 'Doanh số: ' : context.label + ': ') + 
+                                           formatCurrency(context.parsed) + percentage;
+                                }
+                            }
+                        }
+                    },
+                    scales: chartType === 'bar' ? {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                    } : undefined
+                }
+            });
+        }
+        
+        // Populate SKU table
+        function populateSKUTable(sortedProducts) {
+            const tbody = document.getElementById('skuDetailTableBody');
+            tbody.innerHTML = '';
+            
+            const totalRevenue = sortedProducts.reduce((sum, p) => sum + p[1].revenue, 0);
+            
+            sortedProducts.forEach((product, index) => {
+                const percentage = ((product[1].revenue / totalRevenue) * 100).toFixed(1);
+                const row = `
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 15px 12px; font-weight: 600; text-align: center;">${index + 1}</td>
+                        <td style="padding: 15px 12px; max-width: 300px; word-wrap: break-word;">
+                            <strong>${shortenProductName(product[0])}</strong>
+                            <div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">
+                                SL: ${formatNumber(product[1].quantity)}
+                            </div>
+                        </td>
+                        <td style="padding: 15px 12px; text-align: center; font-weight: 600;">
+                            ${formatNumber(product[1].quantity)}
+                        </td>
+                        <td style="padding: 15px 12px; text-align: center; font-weight: 600; color: #059669;">
+                            ${formatCurrency(product[1].revenue)}
+                        </td>
+                        <td style="padding: 15px 12px; text-align: center; font-weight: 600;">
+                            ${percentage}%
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // Close SKU modal
+        function closeSKUModal() {
+            document.getElementById('skuAnalysisModal').style.display = 'none';
+            if (skuModalChart) {
+                skuModalChart.destroy();
+                skuModalChart = null;
+            }
         }
 
         // Initialize
