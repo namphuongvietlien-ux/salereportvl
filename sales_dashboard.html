@@ -1068,6 +1068,7 @@
                                             <th>Hệ Thống</th>
                                             <th class="number">Số Lượng</th>
                                             <th class="number">Doanh Số</th>
+                                            <th class="number" style="background: #fef3c7;">Đứt Hàng</th>
                                             <th class="number">% Tổng</th>
                                         </tr>
                                     </thead>
@@ -1087,6 +1088,7 @@
                                             <th>Nhãn Hàng</th>
                                             <th class="number">Số Lượng</th>
                                             <th class="number">Doanh Số</th>
+                                            <th class="number" style="background: #fef3c7;">Đứt Hàng</th>
                                             <th class="number">% Tổng</th>
                                         </tr>
                                     </thead>
@@ -1108,6 +1110,7 @@
                                         <th>Nhãn Hàng</th>
                                         <th class="number">Số Lượng</th>
                                         <th class="number">Doanh Số</th>
+                                        <th class="number" style="background: #fef3c7;">Đứt Hàng</th>
                                         <th class="number">% Tổng</th>
                                     </tr>
                                 </thead>
@@ -2236,6 +2239,13 @@
             // Clone the original forecast data
             const detail = JSON.parse(JSON.stringify(forecastDetailsData[periodType]));
             
+            // Initialize adjustment tracking
+            detail.adjustments = {
+                systems: {},
+                brands: {},
+                products: {}
+            };
+            
             // Only apply adjustments for currentMonth
             if (periodType !== 'currentMonth' || !manualStockoutProducts || manualStockoutProducts.length === 0) {
                 return detail;
@@ -2270,6 +2280,13 @@
                         const systemQtyShare = adjustedQty * (sys.storeCount / prod.totalStores);
                         detail.systems[sys.name].sales += systemShare;
                         detail.systems[sys.name].qty += systemQtyShare;
+                        
+                        // Track adjustment
+                        if (!detail.adjustments.systems[sys.name]) {
+                            detail.adjustments.systems[sys.name] = { sales: 0, qty: 0 };
+                        }
+                        detail.adjustments.systems[sys.name].sales += systemShare;
+                        detail.adjustments.systems[sys.name].qty += systemQtyShare;
                     });
                     
                     // Add to brand
@@ -2279,12 +2296,26 @@
                     detail.brands[prod.brand].sales += adjustedSales;
                     detail.brands[prod.brand].qty += adjustedQty;
                     
+                    // Track brand adjustment
+                    if (!detail.adjustments.brands[prod.brand]) {
+                        detail.adjustments.brands[prod.brand] = { sales: 0, qty: 0 };
+                    }
+                    detail.adjustments.brands[prod.brand].sales += adjustedSales;
+                    detail.adjustments.brands[prod.brand].qty += adjustedQty;
+                    
                     // Add to product
                     if (!detail.products[prod.name]) {
                         detail.products[prod.name] = { sales: 0, qty: 0, brand: prod.brand };
                     }
                     detail.products[prod.name].sales += adjustedSales;
                     detail.products[prod.name].qty += adjustedQty;
+                    
+                    // Track product adjustment
+                    if (!detail.adjustments.products[prod.name]) {
+                        detail.adjustments.products[prod.name] = { sales: 0, qty: 0 };
+                    }
+                    detail.adjustments.products[prod.name].sales += adjustedSales;
+                    detail.adjustments.products[prod.name].qty += adjustedQty;
                 } else {
                     // For stockout products, add proportionally across existing distribution
                     // Find the product in existing forecast
@@ -2292,11 +2323,25 @@
                         detail.products[prod.name].sales += adjustedSales;
                         detail.products[prod.name].qty += adjustedQty;
                         
+                        // Track product adjustment
+                        if (!detail.adjustments.products[prod.name]) {
+                            detail.adjustments.products[prod.name] = { sales: 0, qty: 0 };
+                        }
+                        detail.adjustments.products[prod.name].sales += adjustedSales;
+                        detail.adjustments.products[prod.name].qty += adjustedQty;
+                        
                         // Add to brand
                         const brand = detail.products[prod.name].brand;
                         if (detail.brands[brand]) {
                             detail.brands[brand].sales += adjustedSales;
                             detail.brands[brand].qty += adjustedQty;
+                            
+                            // Track brand adjustment
+                            if (!detail.adjustments.brands[brand]) {
+                                detail.adjustments.brands[brand] = { sales: 0, qty: 0 };
+                            }
+                            detail.adjustments.brands[brand].sales += adjustedSales;
+                            detail.adjustments.brands[brand].qty += adjustedQty;
                         }
                     }
                 }
@@ -2337,12 +2382,17 @@
             const sortedSystems = Object.entries(detail.systems).sort((a, b) => b[1].sales - a[1].sales);
             sortedSystems.forEach(([system, data], idx) => {
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
+                const adjustment = detail.adjustments?.systems?.[system]?.sales || 0;
+                const adjustmentDisplay = adjustment > 0 ? 
+                    `<span style="color: #f59e0b; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    '<span style="color: #9ca3af;">-</span>';
                 const row = `
                     <tr>
                         <td>${idx + 1}</td>
                         <td>${system}</td>
                         <td class="number">${formatNumber(Math.round(data.qty))}</td>
                         <td class="number">${formatCurrency(data.sales)}</td>
+                        <td class="number" style="background: #fffbeb;">${adjustmentDisplay}</td>
                         <td class="number">${percentage}%</td>
                     </tr>
                 `;
@@ -2355,12 +2405,17 @@
             const sortedBrands = Object.entries(detail.brands).sort((a, b) => b[1].sales - a[1].sales).slice(0, 20);
             sortedBrands.forEach(([brand, data], idx) => {
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
+                const adjustment = detail.adjustments?.brands?.[brand]?.sales || 0;
+                const adjustmentDisplay = adjustment > 0 ? 
+                    `<span style="color: #f59e0b; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    '<span style="color: #9ca3af;">-</span>';
                 const row = `
                     <tr>
                         <td>${idx + 1}</td>
                         <td>${brand}</td>
                         <td class="number">${formatNumber(Math.round(data.qty))}</td>
                         <td class="number">${formatCurrency(data.sales)}</td>
+                        <td class="number" style="background: #fffbeb;">${adjustmentDisplay}</td>
                         <td class="number">${percentage}%</td>
                     </tr>
                 `;
@@ -2373,6 +2428,10 @@
             const sortedProducts = Object.entries(detail.products).sort((a, b) => b[1].sales - a[1].sales).slice(0, 50);
             sortedProducts.forEach(([product, data], idx) => {
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
+                const adjustment = detail.adjustments?.products?.[product]?.sales || 0;
+                const adjustmentDisplay = adjustment > 0 ? 
+                    `<span style="color: #f59e0b; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    '<span style="color: #9ca3af;">-</span>';
                 const row = `
                     <tr>
                         <td>${idx + 1}</td>
@@ -2380,6 +2439,7 @@
                         <td>${data.brand}</td>
                         <td class="number">${formatNumber(Math.round(data.qty))}</td>
                         <td class="number">${formatCurrency(data.sales)}</td>
+                        <td class="number" style="background: #fffbeb;">${adjustmentDisplay}</td>
                         <td class="number">${percentage}%</td>
                     </tr>
                 `;
