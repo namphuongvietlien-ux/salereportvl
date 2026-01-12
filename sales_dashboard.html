@@ -2252,24 +2252,22 @@
             }
             
             const today = new Date();
+            const currentDay = today.getDate();
             const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             const surgeFactor = 1.25;
             
             // Process each manual product
             manualStockoutProducts.forEach(prod => {
-                const remainingDays = Math.max(0, daysInMonth - prod.restockDay + 1);
-                const adjustedSales = prod.isNew ? 
-                    (prod.avgMonthlySales / daysInMonth) * remainingDays :
-                    (prod.avgMonthlySales / daysInMonth) * remainingDays * surgeFactor;
-                const adjustedQty = prod.isNew ?
-                    (prod.avgMonthlyQty / daysInMonth) * remainingDays :
-                    (prod.avgMonthlyQty / daysInMonth) * remainingDays * surgeFactor;
-                
-                // Add to total
-                detail.totalSales += adjustedSales;
-                detail.totalQty += adjustedQty;
-                
                 if (prod.isNew) {
+                    // New products: only count days after launch
+                    const remainingDays = Math.max(0, daysInMonth - prod.restockDay + 1);
+                    const adjustedSales = (prod.avgMonthlySales / daysInMonth) * remainingDays;
+                    const adjustedQty = (prod.avgMonthlyQty / daysInMonth) * remainingDays;
+                    
+                    // Add to total
+                    detail.totalSales += adjustedSales;
+                    detail.totalQty += adjustedQty;
+                    
                     // For new products, add to selected systems
                     prod.systems.forEach(sys => {
                         if (!detail.systems[sys.name]) {
@@ -2317,7 +2315,30 @@
                     detail.adjustments.products[prod.name].sales += adjustedSales;
                     detail.adjustments.products[prod.name].qty += adjustedQty;
                 } else {
-                    // For stockout products, add proportionally across existing distribution
+                    // For STOCKOUT products: Calculate net adjustment
+                    // 1. Lost sales during stockout (từ hôm nay → ngày về hàng)
+                    const stockoutDays = Math.max(0, prod.restockDay - currentDay);
+                    const lostSales = -(prod.avgMonthlySales / daysInMonth) * stockoutDays;
+                    const lostQty = -(prod.avgMonthlyQty / daysInMonth) * stockoutDays;
+                    
+                    // 2. Surge sales after restock (từ ngày về hàng → cuối tháng)
+                    const daysAfterRestock = Math.max(0, daysInMonth - prod.restockDay + 1);
+                    const surgeSales = (prod.avgMonthlySales / daysInMonth) * daysAfterRestock * surgeFactor;
+                    const surgeQty = (prod.avgMonthlyQty / daysInMonth) * daysAfterRestock * surgeFactor;
+                    
+                    // 3. Normal sales for the remaining period (baseline)
+                    const normalSalesForPeriod = (prod.avgMonthlySales / daysInMonth) * daysAfterRestock;
+                    const normalQtyForPeriod = (prod.avgMonthlyQty / daysInMonth) * daysAfterRestock;
+                    
+                    // 4. Net adjustment = Lost + (Surge - Normal)
+                    // This represents: -lost during stockout + extra surge after restock
+                    const adjustedSales = lostSales + (surgeSales - normalSalesForPeriod);
+                    const adjustedQty = lostQty + (surgeQty - normalQtyForPeriod);
+                    
+                    // Add to total
+                    detail.totalSales += adjustedSales;
+                    detail.totalQty += adjustedQty;
+                    
                     // Find the product in existing forecast
                     if (detail.products[prod.name]) {
                         detail.products[prod.name].sales += adjustedSales;
@@ -2428,7 +2449,9 @@
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
                 const adjustment = detail.adjustments?.systems?.[system]?.sales || 0;
                 const adjustmentDisplay = adjustment > 0 ? 
-                    `<span style="color: #f59e0b; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    `<span style="color: #10b981; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    adjustment < 0 ?
+                    `<span style="color: #ef4444; font-weight: 600;">${formatCurrency(adjustment)}</span>` :
                     '<span style="color: #9ca3af;">-</span>';
                 const row = `
                     <tr>
@@ -2451,7 +2474,9 @@
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
                 const adjustment = detail.adjustments?.brands?.[brand]?.sales || 0;
                 const adjustmentDisplay = adjustment > 0 ? 
-                    `<span style="color: #f59e0b; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    `<span style="color: #10b981; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    adjustment < 0 ?
+                    `<span style="color: #ef4444; font-weight: 600;">${formatCurrency(adjustment)}</span>` :
                     '<span style="color: #9ca3af;">-</span>';
                 const row = `
                     <tr>
@@ -2474,7 +2499,9 @@
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
                 const adjustment = detail.adjustments?.products?.[product]?.sales || 0;
                 const adjustmentDisplay = adjustment > 0 ? 
-                    `<span style="color: #f59e0b; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    `<span style="color: #10b981; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
+                    adjustment < 0 ?
+                    `<span style="color: #ef4444; font-weight: 600;">${formatCurrency(adjustment)}</span>` :
                     '<span style="color: #9ca3af;">-</span>';
                 const row = `
                     <tr>
