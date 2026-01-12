@@ -318,6 +318,31 @@
             border-bottom: 2px solid #e5e7eb;
         }
 
+        .modal-timeline-btn {
+            padding: 6px 14px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            color: #374151;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-right: 8px;
+        }
+        
+        .modal-timeline-btn:hover {
+            background: #f3f4f6;
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .modal-timeline-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -2799,11 +2824,71 @@
 
         // Universal Drill-Down Modal Functions
         let modalCharts = {};
+        let currentDrillDownContext = null; // Store current drill-down context for timeline filtering
         
         function closeDrillDownModal() {
             document.getElementById('drillDownModal').style.display = 'none';
             Object.values(modalCharts).forEach(chart => chart && chart.destroy());
             modalCharts = {};
+            currentDrillDownContext = null;
+        }
+        
+        // Apply timeline filter to drill-down
+        function applyDrillDownTimeline(period) {
+            if (!currentDrillDownContext) return;
+            
+            // Calculate date range
+            const now = new Date();
+            let startDate = null;
+            
+            if (period !== 'ALL') {
+                startDate = new Date(now);
+                switch(period) {
+                    case '1M':
+                        startDate.setMonth(startDate.getMonth() - 1);
+                        break;
+                    case '3M':
+                        startDate.setMonth(startDate.getMonth() - 3);
+                        break;
+                    case '6M':
+                        startDate.setMonth(startDate.getMonth() - 6);
+                        break;
+                    case '1Y':
+                        startDate.setFullYear(startDate.getFullYear() - 1);
+                        break;
+                }
+            }
+            
+            // Re-call the drill-down function with filtered data
+            const ctx = currentDrillDownContext;
+            let filteredData = ctx.baseData;
+            
+            if (startDate) {
+                const startKey = startDate.toISOString().substring(0, 7);
+                filteredData = filteredData.filter(d => d.monthKey >= startKey);
+            }
+            
+            // Update active button
+            document.querySelectorAll('.modal-timeline-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Re-render based on type
+            switch(ctx.type) {
+                case 'system':
+                    renderSystemDrillDown(ctx.name, filteredData);
+                    break;
+                case 'brand':
+                    renderBrandDrillDown(ctx.name, filteredData);
+                    break;
+                case 'product':
+                    renderProductDrillDown(ctx.name, ctx.key, filteredData);
+                    break;
+                case 'store':
+                    renderStoreDrillDown(ctx.name, filteredData);
+                    break;
+            }
         }
         
         // Month Drill-Down
@@ -2922,7 +3007,15 @@
         // System Drill-Down
         function showSystemDrillDown(systemName) {
             const systemData = allData.filter(d => d['HỆ THỐNG'] === systemName);
-            
+            currentDrillDownContext = {
+                type: 'system',
+                name: systemName,
+                baseData: systemData
+            };
+            renderSystemDrillDown(systemName, systemData);
+        }
+        
+        function renderSystemDrillDown(systemName, systemData) {
             document.getElementById('modalTitle').textContent = `🏢 Chi Tiết: ${systemName}`;
             
             // Monthly trend
@@ -2956,6 +3049,13 @@
                 .slice(0, 10);
             
             let html = `
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1M')">1M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('3M')">3M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('6M')">6M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1Y')">1Y</button>
+                    <button class="modal-timeline-btn active" onclick="applyDrillDownTimeline('ALL')">Tất cả</button>
+                </div>
                 <div style="margin-bottom: 30px;">
                     <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Xu Hướng Doanh Số Theo Tháng</h3>
                     <div style="height: 250px;"><canvas id="modalChart1"></canvas></div>
@@ -3040,7 +3140,15 @@
         // Brand Drill-Down
         function showBrandDrillDown(brandName) {
             const brandData = allData.filter(d => d['NHÃN HÀNG'] === brandName);
-            
+            currentDrillDownContext = {
+                type: 'brand',
+                name: brandName,
+                baseData: brandData
+            };
+            renderBrandDrillDown(brandName, brandData);
+        }
+        
+        function renderBrandDrillDown(brandName, brandData) {
             document.getElementById('modalTitle').textContent = `🏷️ Chi Tiết: ${brandName}`;
             
             // Monthly trend
@@ -3073,6 +3181,13 @@
             const topProducts = Object.entries(productData).sort((a, b) => b[1].sales - a[1].sales).slice(0, 15);
             
             let html = `
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1M')">1M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('3M')">3M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('6M')">6M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1Y')">1Y</button>
+                    <button class="modal-timeline-btn active" onclick="applyDrillDownTimeline('ALL')">Tất cả</button>
+                </div>
                 <div style="margin-bottom: 30px;">
                     <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Xu Hướng Doanh Số Theo Tháng</h3>
                     <div style="height: 250px;"><canvas id="modalChart1"></canvas></div>
@@ -3167,6 +3282,16 @@
                 return;
             }
             
+            currentDrillDownContext = {
+                type: 'product',
+                name: productName,
+                key: productKey,
+                baseData: productData
+            };
+            renderProductDrillDown(productName, productKey, productData);
+        }
+        
+        function renderProductDrillDown(productName, productKey, productData) {
             document.getElementById('modalTitle').textContent = `📦 Chi Tiết: ${productName}`;
             
             // Get all SKUs for this product
@@ -3215,6 +3340,13 @@
             const brand = productData[0]['NHÃN HÀNG'] || 'N/A';
             
             let html = `
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 15px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1M')">1M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('3M')">3M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('6M')">6M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1Y')">1Y</button>
+                    <button class="modal-timeline-btn active" onclick="applyDrillDownTimeline('ALL')">Tất cả</button>
+                </div>
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 30px;">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                         <div>
@@ -3395,6 +3527,15 @@
                 return;
             }
             
+            currentDrillDownContext = {
+                type: 'store',
+                name: storeName,
+                baseData: storeData
+            };
+            renderStoreDrillDown(storeName, storeData);
+        }
+        
+        function renderStoreDrillDown(storeName, storeData) {
             document.getElementById('modalTitle').textContent = `🏪 Chi Tiết Cửa Hàng: ${storeName}`;
             
             // Calculate totals
@@ -3454,6 +3595,13 @@
                 .slice(0, 10);
             
             const html = `
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 15px; padding: 10px; background: #f8fafc; border-radius: 8px;">
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1M')">1M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('3M')">3M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('6M')">6M</button>
+                    <button class="modal-timeline-btn" onclick="applyDrillDownTimeline('1Y')">1Y</button>
+                    <button class="modal-timeline-btn active" onclick="applyDrillDownTimeline('ALL')">Tất cả</button>
+                </div>
                 <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin-bottom: 30px;">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
                         <div>
