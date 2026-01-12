@@ -2642,6 +2642,28 @@
                 systemTableBody.innerHTML += row;
             });
             
+            // Add TOTAL row for system table
+            const totalSystemQty = Object.values(detail.systems).reduce((sum, data) => sum + data.qty, 0);
+            const totalSystemSales = Object.values(detail.systems).reduce((sum, data) => sum + data.sales, 0);
+            const totalSystemAdjustment = Object.values(detail.adjustments?.systems || {}).reduce((sum, adj) => sum + (adj?.sales || 0), 0);
+            const totalAdjustmentDisplay = totalSystemAdjustment > 0 ? 
+                `<span style="color: #10b981; font-weight: 600;">+${formatCurrency(totalSystemAdjustment)}</span>` : 
+                totalSystemAdjustment < 0 ?
+                `<span style="color: #ef4444; font-weight: 600;">${formatCurrency(totalSystemAdjustment)}</span>` :
+                '<span style="color: #9ca3af;">-</span>';
+            
+            const totalRow = `
+                <tr style="border-top: 2px solid #e5e7eb; background: #f9fafb; font-weight: 600;">
+                    <td style="text-align: center;">📊</td>
+                    <td style="color: #1f2937;"><strong>TOTAL</strong></td>
+                    <td class="number" style="color: #1f2937;">${formatNumber(Math.round(totalSystemQty))}</td>
+                    <td class="number" style="color: #1f2937;">${formatCurrency(totalSystemSales)}</td>
+                    <td class="number" style="background: #fef3c7; color: #1f2937;">${totalAdjustmentDisplay}</td>
+                    <td class="number" style="color: #1f2937;">100.0%</td>
+                </tr>
+            `;
+            systemTableBody.innerHTML += totalRow;
+            
             // Populate brand table (top 20)
             const brandTableBody = document.getElementById('forecastBrandTableBody');
             brandTableBody.innerHTML = '';
