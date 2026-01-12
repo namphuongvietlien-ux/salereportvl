@@ -2312,6 +2312,9 @@
                 return;
             }
             
+            // Store current type for refresh
+            currentForecastType = type;
+            
             // Apply manual adjustments (stockout and new products)
             const detail = applyManualAdjustments(type);
             
@@ -2394,6 +2397,7 @@
             document.getElementById('stockoutAnalysisSection').style.display = 'none';
             document.getElementById('stockoutAdjustment').style.display = 'none';
             manualStockoutProducts = []; // Clear the list
+            currentForecastType = null; // Clear current type
         }
 
         // Global variable for stockout products list
@@ -2572,12 +2576,22 @@
         
         // Populate system checkboxes with store counts
         function populateSystemCheckboxes() {
-            if (!allData || allData.length === 0) return;
+            const container = document.getElementById('systemCheckboxes');
             
-            // Get unique systems and their store counts
+            if (!allData || allData.length === 0) {
+                container.innerHTML = '<p style="color: #ef4444; padding: 10px;">⚠️ Không có dữ liệu. Vui lòng tải dữ liệu trước.</p>';
+                return;
+            }
+            
+            // Get unique systems and their store counts from the most recent month
             const systemStores = {};
+            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            const recentMonth = sortedMonths[sortedMonths.length - 1];
             
             allData.forEach(row => {
+                // Only use recent month data for accurate store counts
+                if (row.monthKey !== recentMonth) return;
+                
                 const system = row['HỆ THỐNG'];
                 const store = row['Tên CH'];
                 
@@ -2589,15 +2603,23 @@
                 systemStores[system].add(store);
             });
             
+            // Check if we got any systems
+            if (Object.keys(systemStores).length === 0) {
+                container.innerHTML = '<p style="color: #ef4444; padding: 10px;">⚠️ Không tìm thấy hệ thống nào trong dữ liệu.</p>';
+                console.error('No systems found. Sample data:', allData[0]);
+                return;
+            }
+            
             // Sort by store count
             const sortedSystems = Object.entries(systemStores)
                 .map(([system, stores]) => ({ system, storeCount: stores.size }))
                 .sort((a, b) => b.storeCount - a.storeCount);
             
             // Render checkboxes
-            const container = document.getElementById('systemCheckboxes');
             container.innerHTML = sortedSystems.map(({ system, storeCount }) => `
-                <label style="display: flex; align-items: center; padding: 8px; background: white; border-radius: 4px; cursor: pointer; border: 1px solid #e5e7eb;">
+                <label style="display: flex; align-items: center; padding: 8px; background: white; border-radius: 4px; cursor: pointer; border: 1px solid #e5e7eb; transition: background 0.2s;" 
+                       onmouseover="this.style.background='#f3f4f6'" 
+                       onmouseout="this.style.background='white'">
                     <input type="checkbox" value="${system}" data-stores="${storeCount}" 
                            style="margin-right: 8px; cursor: pointer; width: 18px; height: 18px;">
                     <span style="flex: 1; font-size: 0.9em;">
@@ -2606,6 +2628,8 @@
                     </span>
                 </label>
             `).join('');
+            
+            console.log('Populated', sortedSystems.length, 'systems with checkboxes');
         }
         
         // Add new product to forecast
@@ -2703,6 +2727,9 @@
             const currentDay = today.getDate();
             renderStockoutProductsList(currentDay, daysInMonth);
             
+            // Refresh forecast modal if it's open
+            refreshForecastModalIfOpen();
+            
             // Reset form
             nameInput.value = '';
             brandInput.value = '';
@@ -2758,6 +2785,9 @@
             // Re-render list
             renderStockoutProductsList(currentDay, daysInMonth);
             
+            // Refresh forecast modal if it's open
+            refreshForecastModalIfOpen();
+            
             // Reset form
             select.value = '';
             dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-20`;
@@ -2772,6 +2802,20 @@
             const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             
             renderStockoutProductsList(currentDay, daysInMonth);
+            
+            // Refresh forecast modal if it's open
+            refreshForecastModalIfOpen();
+        }
+        
+        // Refresh forecast modal if currently open
+        let currentForecastType = null;
+        
+        function refreshForecastModalIfOpen() {
+            const modal = document.getElementById('forecastDetailModal');
+            if (modal && modal.style.display === 'block' && currentForecastType) {
+                // Re-render the modal with updated data
+                showForecastDetail(currentForecastType);
+            }
         }
         
         // Render stockout products list with calculations
