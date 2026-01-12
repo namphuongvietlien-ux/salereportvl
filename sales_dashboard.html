@@ -2058,7 +2058,8 @@
                                     const nhanHang = productBrandLookup[tenSP] || 'N/A';
                                     
                                     // Merge với CUSTOMERS: NAM + MA KH -> HE THONG
-                                    const customerKey = `${date.getFullYear()}_${maKH}`;
+                                    // Fix template literal to avoid SyntaxError
+                                    const customerKey = date.getFullYear() + '_' + maKH;
                                     const heThongFromCustomers = customersLookup[customerKey] || null;
                                     
                                     // Lấy MÃ HH từ cột thứ 8 (index 7)
