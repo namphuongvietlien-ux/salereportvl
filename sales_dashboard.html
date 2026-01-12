@@ -2113,6 +2113,80 @@
             });
         }
 
+        // Apply manual adjustments from stockout and new products
+        function applyManualAdjustments(periodType) {
+            // Clone the original forecast data
+            const detail = JSON.parse(JSON.stringify(forecastDetailsData[periodType]));
+            
+            // Only apply adjustments for currentMonth
+            if (periodType !== 'currentMonth' || !manualStockoutProducts || manualStockoutProducts.length === 0) {
+                return detail;
+            }
+            
+            const today = new Date();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            const surgeFactor = 1.25;
+            
+            // Process each manual product
+            manualStockoutProducts.forEach(prod => {
+                const remainingDays = Math.max(0, daysInMonth - prod.restockDay + 1);
+                const adjustedSales = prod.isNew ? 
+                    (prod.avgMonthlySales / daysInMonth) * remainingDays :
+                    (prod.avgMonthlySales / daysInMonth) * remainingDays * surgeFactor;
+                const adjustedQty = prod.isNew ?
+                    (prod.avgMonthlyQty / daysInMonth) * remainingDays :
+                    (prod.avgMonthlyQty / daysInMonth) * remainingDays * surgeFactor;
+                
+                // Add to total
+                detail.totalSales += adjustedSales;
+                detail.totalQty += adjustedQty;
+                
+                if (prod.isNew) {
+                    // For new products, add to selected systems
+                    prod.systems.forEach(sys => {
+                        if (!detail.systems[sys.name]) {
+                            detail.systems[sys.name] = { sales: 0, qty: 0 };
+                        }
+                        // Distribute proportionally to stores
+                        const systemShare = adjustedSales * (sys.storeCount / prod.totalStores);
+                        const systemQtyShare = adjustedQty * (sys.storeCount / prod.totalStores);
+                        detail.systems[sys.name].sales += systemShare;
+                        detail.systems[sys.name].qty += systemQtyShare;
+                    });
+                    
+                    // Add to brand
+                    if (!detail.brands[prod.brand]) {
+                        detail.brands[prod.brand] = { sales: 0, qty: 0 };
+                    }
+                    detail.brands[prod.brand].sales += adjustedSales;
+                    detail.brands[prod.brand].qty += adjustedQty;
+                    
+                    // Add to product
+                    if (!detail.products[prod.name]) {
+                        detail.products[prod.name] = { sales: 0, qty: 0, brand: prod.brand };
+                    }
+                    detail.products[prod.name].sales += adjustedSales;
+                    detail.products[prod.name].qty += adjustedQty;
+                } else {
+                    // For stockout products, add proportionally across existing distribution
+                    // Find the product in existing forecast
+                    if (detail.products[prod.name]) {
+                        detail.products[prod.name].sales += adjustedSales;
+                        detail.products[prod.name].qty += adjustedQty;
+                        
+                        // Add to brand
+                        const brand = detail.products[prod.name].brand;
+                        if (detail.brands[brand]) {
+                            detail.brands[brand].sales += adjustedSales;
+                            detail.brands[brand].qty += adjustedQty;
+                        }
+                    }
+                }
+            });
+            
+            return detail;
+        }
+
         // Show forecast detail modal
         function showForecastDetail(type) {
             if (!forecastDetailsData || !forecastDetailsData[type]) {
@@ -2120,7 +2194,8 @@
                 return;
             }
             
-            const detail = forecastDetailsData[type];
+            // Apply manual adjustments (stockout and new products)
+            const detail = applyManualAdjustments(type);
             
             // Set title based on type
             const titles = {
