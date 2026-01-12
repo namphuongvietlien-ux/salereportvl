@@ -450,9 +450,9 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Sản phẩm</label>
-                    <select id="productFilter" style="min-width: 200px;">
-                        <option value="all">Tất cả sản phẩm</option>
+                    <label>Mã hàng</label>
+                    <select id="skuFilter" style="min-width: 200px;">
+                        <option value="all">Tất cả mã hàng</option>
                     </select>
                 </div>
                 <div class="filter-group" style="margin-left: auto;">
@@ -1174,7 +1174,7 @@
         function initializeFilters() {
             const systems = [...new Set(allData.map(d => d['HỆ THỐNG']))].filter(Boolean).sort();
             const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
-            const products = [...new Set(allData.map(d => d['TÊN SP']))].filter(Boolean).sort();
+            const skus = [...new Set(allData.map(d => d['MÃ HH']))].filter(Boolean).sort();
 
             const systemSelect = document.getElementById('systemFilter');
             systems.forEach(system => {
@@ -1192,12 +1192,12 @@
                 brandSelect.appendChild(option);
             });
 
-            const productSelect = document.getElementById('productFilter');
-            products.forEach(product => {
+            const skuSelect = document.getElementById('skuFilter');
+            skus.forEach(sku => {
                 const option = document.createElement('option');
-                option.value = product;
-                option.textContent = product;
-                productSelect.appendChild(option);
+                option.value = sku;
+                option.textContent = sku;
+                skuSelect.appendChild(option);
             });
 
             // Add event listeners with cascading update
@@ -1211,7 +1211,7 @@
                 updateCascadingFilters();
                 updateDashboard();
             });
-            document.getElementById('productFilter').addEventListener('change', updateDashboard);
+            document.getElementById('skuFilter').addEventListener('change', updateDashboard);
         }
 
         // Update cascading filters based on current selection
@@ -1220,7 +1220,7 @@
             const endMonth = document.getElementById('endMonth').value;
             const selectedSystem = document.getElementById('systemFilter').value;
             const selectedBrand = document.getElementById('brandFilter').value;
-            const selectedProduct = document.getElementById('productFilter').value;
+            const selectedSku = document.getElementById('skuFilter').value;
 
             // Filter data based on current selections
             let filteredData = allData.filter(row => {
@@ -1247,18 +1247,18 @@
                 });
             }
 
-            // Update product dropdown based on selected system and brand
-            const availableProducts = [...new Set(filteredData.map(d => d['TÊN SP']))].filter(Boolean).sort();
-            const productSelect = document.getElementById('productFilter');
-            const currentProduct = productSelect.value;
+            // Update SKU dropdown based on selected system and brand
+            const availableSkus = [...new Set(filteredData.map(d => d['MÃ HH']))].filter(Boolean).sort();
+            const skuSelect = document.getElementById('skuFilter');
+            const currentSku = skuSelect.value;
             
-            productSelect.innerHTML = '<option value="all">Tất cả sản phẩm</option>';
-            availableProducts.forEach(product => {
+            skuSelect.innerHTML = '<option value="all">Tất cả mã hàng</option>';
+            availableSkus.forEach(sku => {
                 const option = document.createElement('option');
-                option.value = product;
-                option.textContent = product;
-                if (product === currentProduct) option.selected = true;
-                productSelect.appendChild(option);
+                option.value = sku;
+                option.textContent = sku;
+                if (sku === currentSku) option.selected = true;
+                skuSelect.appendChild(option);
             });
         }
 
@@ -1308,14 +1308,14 @@
             const endMonth = document.getElementById('endMonth').value;
             const system = document.getElementById('systemFilter').value;
             const brand = document.getElementById('brandFilter').value;
-            const product = document.getElementById('productFilter').value;
+            const sku = document.getElementById('skuFilter').value;
 
             return allData.filter(row => {
                 if (startMonth && row.monthKey < startMonth) return false;
                 if (endMonth && row.monthKey > endMonth) return false;
                 if (system !== 'all' && row['HỆ THỐNG'] !== system) return false;
                 if (brand !== 'all' && row['NHÃN HÀNG'] !== brand) return false;
-                if (product !== 'all' && row['TÊN SP'] !== product) return false;
+                if (sku !== 'all' && row['MÃ HH'] !== sku) return false;
                 return true;
             });
         }
