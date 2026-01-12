@@ -1744,7 +1744,7 @@
                 // Normalize lookup key too
                 const normalizedKey = key.replace(/\s+/g, ' ').trim();
                 if (normalizedKey === normalizedName) {
-                    console.log(`✅ Fuzzy match found: "${normalizedName}" -> "${productNameLookup[key]}"`);
+                    console.log('✅ Fuzzy match found: "' + normalizedName + '" -> "' + productNameLookup[key] + '"');
                     return productNameLookup[key];
                 }
             }
