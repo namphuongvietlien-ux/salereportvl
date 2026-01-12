@@ -2075,14 +2075,14 @@
                                         'HỆ THỐNG': heThongFromCustomers, // Từ CUSTOMERS, không phải CSV gốc
                                         'CỬA HÀNG': row['CỬA HÀNG'],
                                         month: date,
-                                        monthKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+                                        monthKey: date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0'),
                                         year: date.getFullYear(),
                                         vat: calculatedVAT,
                                         thanhTien: parseFloat(row['THÀNH TIỀN']) || 0,
                                         soLuong: sl,
                                         donGia: donGia,
                                         // Key để dedup: SO HD + NGAY + MÃ HH + TÊN SP + SL
-                                        duplicateKey: `${row['SO HD']}_${row.NGAY}_${maHH}_${tenSP}_${sl}`
+                                        duplicateKey: row['SO HD'] + '_' + row.NGAY + '_' + maHH + '_' + tenSP + '_' + sl
                                     };
                                 });
                             resolve(data);
