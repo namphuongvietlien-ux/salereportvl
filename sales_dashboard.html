@@ -7222,10 +7222,14 @@
             const skuAvgFreq = storeAnalysis.length > 0 ? 
                 storeAnalysis.reduce((sum, s) => sum + s.avgQty, 0) / storeAnalysis.length : 0;
             
-            document.getElementById('skuActiveStoreCount').textContent = storeAnalysis.length;
-            document.getElementById('skuAvgOrderFreq').textContent = skuAvgFreq.toFixed(1);
-            document.getElementById('skuTopStoreCount').textContent = skuTopStores.length;
-            document.getElementById('skuLowStoreCount').textContent = skuLowStores.length;
+            const elActive = document.getElementById('skuActiveStoreCount');
+            if (elActive) elActive.textContent = storeAnalysis.length;
+            const elAvg = document.getElementById('skuAvgOrderFreq');
+            if (elAvg) elAvg.textContent = skuAvgFreq.toFixed(1);
+            const elTop = document.getElementById('skuTopStoreCount');
+            if (elTop) elTop.textContent = skuTopStores.length;
+            const elLow = document.getElementById('skuLowStoreCount');
+            if (elLow) elLow.textContent = skuLowStores.length;
             
             // Create store chart
             const chartData = storeAnalysis.slice(0, 15).map(store => [store.store, { 
