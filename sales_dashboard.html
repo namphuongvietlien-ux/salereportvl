@@ -1751,12 +1751,12 @@
             
             // Debug: Log when lookup fails for key products
             if (normalizedName.includes('Pin Fujitsu') || normalizedName.includes('Baking Soda')) {
-                console.log(`🔍 Lookup miss for: "${normalizedName}"`);
+                console.log('🔍 Lookup miss for: "' + normalizedName + '"');
                 // Try to find similar keys
                 const similarKeys = lookupKeys.filter(key => 
                     key.includes('Pin Fujitsu') || key.includes('Baking Soda')
                 ).slice(0, 2);
-                console.log(`📝 Similar keys:`, similarKeys);
+                console.log('📝 Similar keys:', similarKeys);
             }
             
             // Fallback: Remove content in parentheses (product codes)
