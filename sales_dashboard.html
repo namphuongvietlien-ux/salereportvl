@@ -7105,14 +7105,14 @@
             currentDrillState.data.stores = storeAnalysis;
             
             // Update SKU level summary cards
-            const topStores = storeAnalysis.filter(s => s.changePercent > 15);
+            const skuTopStores = storeAnalysis.filter(s => s.changePercent > 15);
             const lowStores = storeAnalysis.filter(s => s.changePercent < -15);
             const avgFreq = storeAnalysis.length > 0 ? 
                 storeAnalysis.reduce((sum, s) => sum + s.avgQty, 0) / storeAnalysis.length : 0;
             
             document.getElementById('skuActiveStoreCount').textContent = storeAnalysis.length;
             document.getElementById('skuAvgOrderFreq').textContent = avgFreq.toFixed(1);
-            document.getElementById('skuTopStoreCount').textContent = topStores.length;
+            document.getElementById('skuTopStoreCount').textContent = skuTopStores.length;
             document.getElementById('skuLowStoreCount').textContent = lowStores.length;
             
             // Create store chart
