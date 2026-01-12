@@ -1495,7 +1495,7 @@
                                     box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
                                 ">
                                     <div style="font-size: 1.8em; margin-bottom: 6px;">🏪</div>
-                                    <div style="font-size: 1.4em; font-weight: 700; color: #0c4a6e;" id="activeStoreCount">0</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #0c4a6e;" id="skuActiveStoreCount">0</div>
                                     <div style="color: #0c4a6e; font-size: 0.85em; font-weight: 600;">Cửa Hàng Hoạt Động</div>
                                 </div>
                                 <div class="summary-card" style="
@@ -1506,7 +1506,7 @@
                                     box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
                                 ">
                                     <div style="font-size: 1.8em; margin-bottom: 6px;">⚡</div>
-                                    <div style="font-size: 1.4em; font-weight: 700; color: #92400e;" id="avgOrderFreq">0</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #92400e;" id="skuAvgOrderFreq">0</div>
                                     <div style="color: #92400e; font-size: 0.85em; font-weight: 600;">TB Tần Suất/Tháng</div>
                                 </div>
                                 <div class="summary-card" style="
@@ -1517,7 +1517,7 @@
                                     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
                                 ">
                                     <div style="font-size: 1.8em; margin-bottom: 6px;">🎯</div>
-                                    <div style="font-size: 1.4em; font-weight: 700; color: #064e3b;" id="topStoreCount">0</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #064e3b;" id="skuTopStoreCount">0</div>
                                     <div style="color: #064e3b; font-size: 0.85em; font-weight: 600;">CH Hiệu Quả Cao</div>
                                 </div>
                                 <div class="summary-card" style="
@@ -1528,12 +1528,12 @@
                                     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
                                 ">
                                     <div style="font-size: 1.8em; margin-bottom: 6px;">⚠️</div>
-                                    <div style="font-size: 1.4em; font-weight: 700; color: #7f1d1d;" id="lowStoreCount">0</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; color: #7f1d1d;" id="skuLowStoreCount">0</div>
                                     <div style="color: #7f1d1d; font-size: 0.85em; font-weight: 600;">CH Cần Chú Ý</div>
                                 </div>
                             </div>
 
-                            <!-- SKU Analysis Chart -->
+                            <!-- Store Analysis Chart -->
                             <div style="
                                 background: white;
                                 border-radius: 12px;
@@ -1542,8 +1542,8 @@
                                 box-shadow: 0 4px 15px rgba(0,0,0,0.1);
                                 border: 1px solid #e2e8f0;
                             ">
-                                <h4 style="color: #1e40af; margin-bottom: 15px; text-align: center;">📈 Phân Tích Trend SKU Theo Tháng</h4>
-                                <canvas id="skuAnalysisSystemChart" style="max-height: 400px;"></canvas>
+                                <h4 style="color: #1e40af; margin-bottom: 15px; text-align: center;">📊 Phân Tích Cửa Hàng Theo Tháng</h4>
+                                <canvas id="storeAnalysisChart" style="max-height: 400px;"></canvas>
                             </div>
 
                             <!-- Store Analysis Table -->
@@ -7103,6 +7103,26 @@
             
             // Store data for reference
             currentDrillState.data.stores = storeAnalysis;
+            
+            // Update SKU level summary cards
+            const topStores = storeAnalysis.filter(s => s.changePercent > 15);
+            const lowStores = storeAnalysis.filter(s => s.changePercent < -15);
+            const avgFreq = storeAnalysis.length > 0 ? 
+                storeAnalysis.reduce((sum, s) => sum + s.avgQty, 0) / storeAnalysis.length : 0;
+            
+            document.getElementById('skuActiveStoreCount').textContent = storeAnalysis.length;
+            document.getElementById('skuAvgOrderFreq').textContent = avgFreq.toFixed(1);
+            document.getElementById('skuTopStoreCount').textContent = topStores.length;
+            document.getElementById('skuLowStoreCount').textContent = lowStores.length;
+            
+            // Create store chart
+            const chartData = storeAnalysis.slice(0, 15).map(store => [store.store, { 
+                revenue: store.totalQty * 1500, // Approximate revenue per unit
+                quantity: store.totalQty 
+            }]);
+            
+            createSKUChart(chartData, 'store', 'storeAnalysisChart');
+            console.log('✅ Created store analysis chart with', chartData.length, 'stores');
         }
 
         // Navigation functions
@@ -7225,9 +7245,11 @@
                 skuModalChart.destroy();
             } else if (window.skuSystemChart && canvasId === 'skuAnalysisSystemChart') {
                 window.skuSystemChart.destroy();
+            } else if (window.storeChart && canvasId === 'storeAnalysisChart') {
+                window.storeChart.destroy();
             }
             
-            const chartType = type === 'brand' ? 'bar' : 'doughnut';
+            const chartType = type === 'brand' ? 'bar' : type === 'store' ? 'bar' : 'doughnut';
             const colors = type === 'brand' ? 
                 ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
                  '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'] :
@@ -7248,6 +7270,15 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     indexAxis: chartType === 'bar' ? 'y' : undefined,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0 && canvasId === 'skuAnalysisSystemChart') {
+                            const index = activeElements[0].index;
+                            const productName = sortedProducts[index][0];
+                            console.log('SKU chart clicked:', productName);
+                            // Trigger drill down to store level
+                            drillDownToSKU(currentDrillState.systemName, productName);
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: chartType === 'doughnut',
@@ -7283,6 +7314,8 @@
                 skuModalChart = chart;
             } else if (canvasId === 'skuAnalysisSystemChart') {
                 window.skuSystemChart = chart;
+            } else if (canvasId === 'storeAnalysisChart') {
+                window.storeChart = chart;
             }
             
             console.log(`✅ Chart created successfully for ${canvasId}`);
