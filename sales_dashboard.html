@@ -2367,7 +2367,11 @@
                     detail.totalQty += adjustedQty;
                     
                     // Find the product in existing forecast
+                    console.log(`🔍 Looking for product "${prod.name}" in forecast...`);
+                    console.log(`📋 Available products:`, Object.keys(detail.products).slice(0, 5));
+                    
                     if (detail.products[prod.name]) {
+                        console.log(`✅ Found product in forecast, applying adjustment...`);
                         detail.products[prod.name].sales += adjustedSales;
                         detail.products[prod.name].qty += adjustedQty;
                         
@@ -2415,6 +2419,9 @@
                             }
                         });
                         
+                        console.log(`📊 System distribution for ${prod.name}:`, productSystemDistribution);
+                        console.log(`💰 Total in systems: ${productTotalInSystems}`);
+                        
                         // Fallback: if no recent data, use current forecast's system distribution
                         if (productTotalInSystems === 0) {
                             console.warn(`No recent system distribution for ${prod.name}, using forecast proportions`);
@@ -2445,6 +2452,53 @@
                             });
                         } else {
                             console.error(`Cannot distribute adjustment for ${prod.name}: no system data found`);
+                        }
+                    } else {
+                        console.warn(`❌ Product "${prod.name}" not found in forecast. Creating new entry...`);
+                        // Create new product entry if not exists
+                        detail.products[prod.name] = {
+                            sales: adjustedSales,
+                            qty: adjustedQty,
+                            brand: prod.brand
+                        };
+                        
+                        // Track product adjustment
+                        detail.adjustments.products[prod.name] = {
+                            sales: adjustedSales,
+                            qty: adjustedQty
+                        };
+                        
+                        // Add to brand
+                        if (!detail.brands[prod.brand]) {
+                            detail.brands[prod.brand] = { sales: 0, qty: 0 };
+                        }
+                        detail.brands[prod.brand].sales += adjustedSales;
+                        detail.brands[prod.brand].qty += adjustedQty;
+                        
+                        // Track brand adjustment
+                        if (!detail.adjustments.brands[prod.brand]) {
+                            detail.adjustments.brands[prod.brand] = { sales: 0, qty: 0 };
+                        }
+                        detail.adjustments.brands[prod.brand].sales += adjustedSales;
+                        detail.adjustments.brands[prod.brand].qty += adjustedQty;
+                        
+                        // Distribute to all systems proportionally (since product not in forecast)
+                        const totalSystemSales = Object.values(detail.systems).reduce((sum, sys) => sum + sys.sales, 0);
+                        if (totalSystemSales > 0) {
+                            Object.entries(detail.systems).forEach(([system, sysData]) => {
+                                const proportion = sysData.sales / totalSystemSales;
+                                const systemAdjustment = adjustedSales * proportion;
+                                const systemQtyAdjustment = adjustedQty * proportion;
+                                
+                                detail.systems[system].sales += systemAdjustment;
+                                detail.systems[system].qty += systemQtyAdjustment;
+                                
+                                if (!detail.adjustments.systems[system]) {
+                                    detail.adjustments.systems[system] = { sales: 0, qty: 0 };
+                                }
+                                detail.adjustments.systems[system].sales += systemAdjustment;
+                                detail.adjustments.systems[system].qty += systemQtyAdjustment;
+                            });
                         }
                     }
                 }
