@@ -6787,11 +6787,11 @@
             let matchedRows = 0;
             
             allData.forEach(row => {
-                const system = row['HE THONG']?.trim() || row['HỆ THỐNG']?.trim();
-                const product = row['TEN SP']?.trim();
-                const store = row['TEN KH']?.trim();
-                const month = row['THANG']?.replace('T', '') || row.monthKey;
-                const quantity = parseFloat(row['SO LUONG']) || 0;
+                const system = row['HỆ THỐNG']?.trim();
+                const product = row['TÊN SP']?.trim();
+                const store = row['MA KH']?.trim();
+                const month = row.monthKey;
+                const quantity = parseFloat(row.soLuong) || 0;
                 
                 if (system === systemName && product && store && quantity > 0) {
                     matchedRows++;
@@ -6988,11 +6988,11 @@
             
             // Collect store data for this SKU
             allData.forEach(row => {
-                const system = row['HE THONG']?.trim();
-                const product = row['TEN SP']?.trim();
-                const store = row['TEN KH']?.trim();
-                const month = row['THANG']?.replace('T', '');
-                const quantity = parseFloat(row['SO LUONG']) || 0;
+                const system = row['HỆ THỐNG']?.trim();
+                const product = row['TÊN SP']?.trim();
+                const store = row['MA KH']?.trim();
+                const month = row.monthKey;
+                const quantity = parseFloat(row.soLuong) || 0;
                 
                 if (system === systemName && product === skuName && store && quantity > 0) {
                     if (!storeData[store]) {
@@ -7168,10 +7168,10 @@
             
             // Collect all SKU data for this system
             allData.forEach(row => {
-                const system = row['HE THONG']?.trim() || row['HỆ THỐNG']?.trim();
-                const product = row['TEN SP']?.trim();
-                const quantity = parseFloat(row['SO LUONG']) || 0;
-                const revenue = parseFloat(row['VAT']) || 0;
+                const system = row['HỆ THỐNG']?.trim();
+                const product = row['TÊN SP']?.trim();
+                const quantity = parseFloat(row.soLuong) || 0;
+                const revenue = parseFloat(row.vat) || 0;
                 
                 if (system === systemName && product) {
                     if (!systemData[product]) {
@@ -7219,10 +7219,10 @@
             
             // Collect all SKU data for this brand
             allData.forEach(row => {
-                const brand = row['NHAN']?.trim();
-                const product = row['TEN SP']?.trim();
-                const quantity = parseFloat(row['SO LUONG']) || 0;
-                const revenue = parseFloat(row['VAT']) || 0;
+                const brand = row['NHÃN HÀNG']?.trim();
+                const product = row['TÊN SP']?.trim();
+                const quantity = parseFloat(row.soLuong) || 0;
+                const revenue = parseFloat(row.vat) || 0;
                 
                 if (brand === brandName && product) {
                     if (!brandData[product]) {
@@ -7236,10 +7236,17 @@
                 }
             });
             
+            console.log('brandData collected:', Object.keys(brandData).length, 'products');
+            
             // Sort by revenue
             const sortedProducts = Object.entries(brandData)
                 .sort((a, b) => b[1].revenue - a[1].revenue)
                 .slice(0, 20); // Top 20 SKUs
+            
+            if (sortedProducts.length === 0) {
+                alert(`Không tìm thấy dữ liệu SKU cho nhãn hàng: ${brandName}`);
+                return;
+            }
             
             // Update modal title
             document.getElementById('skuModalTitle').textContent = `🏷️ SKU Trong Nhãn Hàng: ${brandName}`;
@@ -7402,12 +7409,12 @@
             
             // Collect all data for this month
             allData.forEach(row => {
-                const rowMonthKey = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, '0')}`;
+                const rowMonthKey = row.monthKey;
                 if (rowMonthKey === monthKey) {
-                    const system = row['HE THONG']?.trim();
-                    const product = row['TEN SP']?.trim();
-                    const quantity = parseFloat(row['SO LUONG']) || 0;
-                    const revenue = parseFloat(row['VAT']) || 0;
+                    const system = row['HỆ THỐNG']?.trim();
+                    const product = row['TÊN SP']?.trim();
+                    const quantity = parseFloat(row.soLuong) || 0;
+                    const revenue = parseFloat(row.vat) || 0;
                     
                     if (system && product && quantity > 0) {
                         if (!monthData[system]) {
