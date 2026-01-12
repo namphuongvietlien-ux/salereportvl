@@ -2293,9 +2293,18 @@
                 
                 if (prod.isNew) {
                     // New products: only count working days after launch
+                    console.log(`🆕 New product: ${prod.name}`);
+                    console.log(`💰 Input avgMonthlySales: ${prod.avgMonthlySales.toLocaleString()} VND`);
+                    console.log(`📦 Input avgMonthlyQty: ${prod.avgMonthlyQty.toLocaleString()} units`);
+                    console.log(`🏪 Selected systems: ${prod.systems.map(s => s.name).join(', ')}`);
+                    console.log(`📊 Total stores: ${prod.totalStores}`);
+                    
                     const workingDaysAfterLaunch = countWorkingDays(prod.restockDay, daysInMonth, today.getFullYear(), today.getMonth());
                     const adjustedSales = (prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysAfterLaunch;
                     const adjustedQty = (prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysAfterLaunch;
+                    
+                    console.log(`🗓️ Working days after launch (${prod.restockDay}/1): ${workingDaysAfterLaunch} days`);
+                    console.log(`📈 Calculated adjustment: ${adjustedSales.toLocaleString()} VND`);
                     
                     // Add to total
                     detail.totalSales += adjustedSales;
@@ -2974,22 +2983,23 @@
                 });
             });
             
+            // Calculate based on user input (monthly target)
             const avgQty = parseFloat(avgQtyInput.value);
             const price = parseFloat(priceInput.value);
             const launchDate = new Date(launchDateInput.value);
             
-            // Calculate based on remaining days in month
-            const today = new Date();
-            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            const remainingDays = Math.max(0, daysInMonth - launchDate.getDate() + 1);
+            // User input represents MONTHLY target per store
+            // Total monthly quantity = stores × monthly avg qty/store
+            const totalMonthlyQty = totalStores * avgQty;
+            const totalMonthlySales = totalMonthlyQty * price;
             
-            // Total quantity = stores × avg qty/store
-            const totalQty = totalStores * avgQty;
-            const totalSales = totalQty * price;
+            console.log(`🆕 New Product Calculation:`);
+            console.log(`📊 ${totalStores} stores × ${avgQty} pcs/store/month = ${totalMonthlyQty} pcs/month`);
+            console.log(`💰 ${totalMonthlyQty} pcs × ${price.toLocaleString()} VND = ${totalMonthlySales.toLocaleString()} VND/month`);
             
-            // Pro-rate for remaining days (assuming monthly sales)
-            const avgMonthlyQty = totalQty;
-            const avgMonthlySales = totalSales;
+            // This will be the monthly sales target
+            const avgMonthlyQty = totalMonthlyQty;
+            const avgMonthlySales = totalMonthlySales;
             
             // Check if already added
             if (manualStockoutProducts.find(p => p.name === nameInput.value.trim() && p.isNew)) {
