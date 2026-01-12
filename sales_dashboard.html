@@ -450,9 +450,9 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Mã hàng</label>
-                    <select id="skuFilter" style="min-width: 200px;">
-                        <option value="all">Tất cả mã hàng</option>
+                    <label>Sản phẩm</label>
+                    <select id="productFilter" style="min-width: 250px;">
+                        <option value="all">Tất cả sản phẩm</option>
                     </select>
                 </div>
                 <div class="filter-group" style="margin-left: auto;">
@@ -510,6 +510,36 @@
             </div>
 
             <div class="chart-grid">
+                <!-- Forecast Section -->
+                <div class="chart-card full-width">
+                    <h2>🔮 Dự Đoán Doanh Số & Số Lượng</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📅 Dự Đoán Tháng Tiếp Theo</h3>
+                            <p id="nextMonthForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
+                            <p id="nextMonthQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📊 TB Quý Hiện Tại</h3>
+                            <p id="currentQuarterAvg" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
+                            <p id="currentQuarterQtyAvg" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🎯 Dự Đoán Quý Tới</h3>
+                            <p id="nextQuarterForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
+                            <p id="nextQuarterQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🔄 Xu Hướng Chu Kỳ</h3>
+                            <p id="seasonalityTrend" style="font-size: 1.3em; font-weight: 700; margin: 0;">Đang tải...</p>
+                            <p id="seasonalityDetail" style="font-size: 0.95em; margin-top: 8px; opacity: 0.9;">...</p>
+                        </div>
+                    </div>
+                    <div class="chart-container tall">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                </div>
+
                 <div class="chart-card full-width">
                     <h2 data-i18n="salesTrend">📈 Xu Hướng Doanh Số Theo Tháng</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào điểm dữ liệu để xem chi tiết tháng</p>
@@ -1174,7 +1204,9 @@
         function initializeFilters() {
             const systems = [...new Set(allData.map(d => d['HỆ THỐNG']))].filter(Boolean).sort();
             const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
-            const skus = [...new Set(allData.map(d => d['MÃ HH']))].filter(Boolean).sort();
+            
+            // Get unique shortened product names
+            const products = [...new Set(allData.map(d => shortenProductName(d['TÊN SP'])))].filter(Boolean).sort();
 
             const systemSelect = document.getElementById('systemFilter');
             systems.forEach(system => {
@@ -1192,12 +1224,12 @@
                 brandSelect.appendChild(option);
             });
 
-            const skuSelect = document.getElementById('skuFilter');
-            skus.forEach(sku => {
+            const productSelect = document.getElementById('productFilter');
+            products.forEach(product => {
                 const option = document.createElement('option');
-                option.value = sku;
-                option.textContent = sku;
-                skuSelect.appendChild(option);
+                option.value = product;
+                option.textContent = product;
+                productSelect.appendChild(option);
             });
 
             // Add event listeners with cascading update
@@ -1211,7 +1243,7 @@
                 updateCascadingFilters();
                 updateDashboard();
             });
-            document.getElementById('skuFilter').addEventListener('change', updateDashboard);
+            document.getElementById('productFilter').addEventListener('change', updateDashboard);
         }
 
         // Update cascading filters based on current selection
@@ -1220,7 +1252,7 @@
             const endMonth = document.getElementById('endMonth').value;
             const selectedSystem = document.getElementById('systemFilter').value;
             const selectedBrand = document.getElementById('brandFilter').value;
-            const selectedSku = document.getElementById('skuFilter').value;
+            const selectedProduct = document.getElementById('productFilter').value;
 
             // Filter data based on current selections
             let filteredData = allData.filter(row => {
@@ -1247,18 +1279,18 @@
                 });
             }
 
-            // Update SKU dropdown based on selected system and brand
-            const availableSkus = [...new Set(filteredData.map(d => d['MÃ HH']))].filter(Boolean).sort();
-            const skuSelect = document.getElementById('skuFilter');
-            const currentSku = skuSelect.value;
+            // Update product dropdown based on selected system and brand (using shortened names)
+            const availableProducts = [...new Set(filteredData.map(d => shortenProductName(d['TÊN SP'])))].filter(Boolean).sort();
+            const productSelect = document.getElementById('productFilter');
+            const currentProduct = productSelect.value;
             
-            skuSelect.innerHTML = '<option value="all">Tất cả mã hàng</option>';
-            availableSkus.forEach(sku => {
+            productSelect.innerHTML = '<option value="all">Tất cả sản phẩm</option>';
+            availableProducts.forEach(product => {
                 const option = document.createElement('option');
-                option.value = sku;
-                option.textContent = sku;
-                if (sku === currentSku) option.selected = true;
-                skuSelect.appendChild(option);
+                option.value = product;
+                option.textContent = product;
+                if (product === currentProduct) option.selected = true;
+                productSelect.appendChild(option);
             });
         }
 
@@ -1308,14 +1340,14 @@
             const endMonth = document.getElementById('endMonth').value;
             const system = document.getElementById('systemFilter').value;
             const brand = document.getElementById('brandFilter').value;
-            const sku = document.getElementById('skuFilter').value;
+            const product = document.getElementById('productFilter').value;
 
             return allData.filter(row => {
                 if (startMonth && row.monthKey < startMonth) return false;
                 if (endMonth && row.monthKey > endMonth) return false;
                 if (system !== 'all' && row['HỆ THỐNG'] !== system) return false;
                 if (brand !== 'all' && row['NHÃN HÀNG'] !== brand) return false;
-                if (sku !== 'all' && row['MÃ HH'] !== sku) return false;
+                if (product !== 'all' && shortenProductName(row['TÊN SP']) !== product) return false;
                 return true;
             });
         }
@@ -1519,6 +1551,219 @@
                 `Tiềm năng tại ${systemOpportunities[0].system} (${formatCurrency(systemOpportunities[0].avgPerStore)}/cửa hàng)` :
                 'Đang tối ưu hóa toàn bộ hệ thống';
             document.getElementById('growthOpportunity').textContent = oppMessage;
+        }
+
+        // Create Forecast Chart with predictions
+        function createForecastChart(data) {
+            // Group data by month
+            const monthlyData = {};
+            data.forEach(row => {
+                const key = row.monthKey;
+                if (!monthlyData[key]) {
+                    monthlyData[key] = { vat: 0, qty: 0 };
+                }
+                monthlyData[key].vat += row.vat;
+                monthlyData[key].qty += row.soLuong || 0;
+            });
+
+            const sortedMonths = Object.keys(monthlyData).sort();
+            const historicalSales = sortedMonths.map(m => monthlyData[m].vat);
+            const historicalQty = sortedMonths.map(m => monthlyData[m].qty);
+
+            // Calculate forecasts using moving average with trend
+            const forecastMonths = 3; // Forecast next 3 months
+            const movingAvgWindow = 3;
+            
+            // Calculate trend from last 6 months
+            const recentMonths = Math.min(6, sortedMonths.length);
+            const recentData = historicalSales.slice(-recentMonths);
+            const recentQtyData = historicalQty.slice(-recentMonths);
+            
+            // Linear regression for trend
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumQtyY = 0, sumQtyXY = 0;
+            for (let i = 0; i < recentData.length; i++) {
+                sumX += i;
+                sumY += recentData[i];
+                sumXY += i * recentData[i];
+                sumX2 += i * i;
+                sumQtyY += recentQtyData[i];
+                sumQtyXY += i * recentQtyData[i];
+            }
+            
+            const n = recentData.length;
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            const slopeQty = (n * sumQtyXY - sumX * sumQtyY) / (n * sumX2 - sumX * sumX);
+            const interceptQty = (sumQtyY - slopeQty * sumX) / n;
+
+            // Calculate seasonality (monthly patterns)
+            const monthlyPattern = {};
+            sortedMonths.forEach((monthKey, idx) => {
+                const monthNum = new Date(monthKey + '-01').getMonth(); // 0-11
+                if (!monthlyPattern[monthNum]) {
+                    monthlyPattern[monthNum] = [];
+                }
+                monthlyPattern[monthNum].push(historicalSales[idx]);
+            });
+
+            // Average by month
+            const seasonalityFactors = {};
+            Object.keys(monthlyPattern).forEach(month => {
+                const avg = monthlyPattern[month].reduce((a, b) => a + b, 0) / monthlyPattern[month].length;
+                seasonalityFactors[month] = avg;
+            });
+            
+            const overallAvg = Object.values(seasonalityFactors).reduce((a, b) => a + b, 0) / Object.keys(seasonalityFactors).length;
+            Object.keys(seasonalityFactors).forEach(month => {
+                seasonalityFactors[month] = seasonalityFactors[month] / overallAvg; // Normalize
+            });
+
+            // Generate forecast months
+            const lastMonthKey = sortedMonths[sortedMonths.length - 1];
+            const lastDate = new Date(lastMonthKey + '-01');
+            const forecastLabels = [];
+            const forecastSales = [];
+            const forecastQty = [];
+            
+            for (let i = 1; i <= forecastMonths; i++) {
+                const nextDate = new Date(lastDate);
+                nextDate.setMonth(nextDate.getMonth() + i);
+                const nextMonthKey = nextDate.toISOString().substring(0, 7);
+                forecastLabels.push(nextMonthKey);
+                
+                // Trend forecast
+                const trendValue = slope * (recentData.length - 1 + i) + intercept;
+                const trendQtyValue = slopeQty * (recentQtyData.length - 1 + i) + interceptQty;
+                
+                // Apply seasonality
+                const monthNum = nextDate.getMonth();
+                const seasonalFactor = seasonalityFactors[monthNum] || 1;
+                
+                forecastSales.push(trendValue * seasonalFactor);
+                forecastQty.push(trendQtyValue * seasonalFactor);
+            }
+
+            // Update forecast KPIs
+            document.getElementById('nextMonthForecast').textContent = formatCurrency(forecastSales[0]);
+            document.getElementById('nextMonthQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(forecastQty[0]))}`;
+
+            // Current quarter average
+            const currentQuarterMonths = sortedMonths.slice(-3);
+            const currentQuarterSales = currentQuarterMonths.map(m => monthlyData[m].vat);
+            const currentQuarterQtyData = currentQuarterMonths.map(m => monthlyData[m].qty);
+            const currentQtrAvg = currentQuarterSales.reduce((a, b) => a + b, 0) / currentQuarterSales.length;
+            const currentQtrQtyAvg = currentQuarterQtyData.reduce((a, b) => a + b, 0) / currentQuarterQtyData.length;
+            
+            document.getElementById('currentQuarterAvg').textContent = formatCurrency(currentQtrAvg);
+            document.getElementById('currentQuarterQtyAvg').textContent = `Số lượng: ${formatNumber(Math.round(currentQtrQtyAvg))}`;
+
+            // Next quarter forecast (average of next 3 forecast months)
+            const nextQtrForecast = forecastSales.reduce((a, b) => a + b, 0) / forecastSales.length;
+            const nextQtrQtyForecast = forecastQty.reduce((a, b) => a + b, 0) / forecastQty.length;
+            
+            document.getElementById('nextQuarterForecast').textContent = formatCurrency(nextQtrForecast);
+            document.getElementById('nextQuarterQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(nextQtrQtyForecast))}`;
+
+            // Seasonality trend analysis
+            const lastMonthSales = historicalSales[historicalSales.length - 1];
+            const nextMonthForecast = forecastSales[0];
+            const change = ((nextMonthForecast - lastMonthSales) / lastMonthSales) * 100;
+            
+            let trendIcon = '→';
+            let trendText = 'Ổn định';
+            if (change > 5) {
+                trendIcon = '📈';
+                trendText = 'Tăng';
+            } else if (change < -5) {
+                trendIcon = '📉';
+                trendText = 'Giảm';
+            }
+            
+            document.getElementById('seasonalityTrend').textContent = `${trendIcon} ${trendText}`;
+            document.getElementById('seasonalityDetail').textContent = `Dự kiến ${change > 0 ? '+' : ''}${change.toFixed(1)}% so với tháng hiện tại`;
+
+            // Create chart
+            const ctx = document.getElementById('forecastChart');
+            if (charts.forecastChart) {
+                charts.forecastChart.destroy();
+            }
+
+            const allLabels = [...sortedMonths, ...forecastLabels];
+            const allSalesData = [...historicalSales, ...Array(forecastMonths).fill(null)];
+            const forecastData = [...Array(sortedMonths.length).fill(null), historicalSales[historicalSales.length - 1], ...forecastSales];
+
+            charts.forecastChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: allLabels,
+                    datasets: [
+                        {
+                            label: 'Doanh Số Thực Tế',
+                            data: allSalesData,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Dự Đoán',
+                            data: forecastData,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                            borderWidth: 3,
+                            borderDash: [10, 5],
+                            fill: true,
+                            tension: 0.4,
+                            pointStyle: 'triangle',
+                            pointRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { size: 14, weight: 'bold' },
+                                usePointStyle: true,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += formatCurrency(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            ticks: {
+                                callback: function(value) {
+                                    return (value / 1000000).toFixed(0) + 'M';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // Create Sales Trend Chart
@@ -3517,6 +3762,7 @@
         function updateDashboard() {
             const data = filterData();
             updateKPIs(data);
+            createForecastChart(data);
             createSalesTrendChart(data);
             createBrandTrendChart(data);
             createSystemChart(data);
