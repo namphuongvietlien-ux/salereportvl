@@ -249,6 +249,75 @@
             font-family: 'Courier New', monospace;
         }
 
+        .forecast-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .forecast-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .forecast-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 10000;
+            overflow: auto;
+        }
+
+        .forecast-modal-content {
+            background: white;
+            margin: 30px auto;
+            max-width: 95%;
+            width: 1600px;
+            border-radius: 12px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .forecast-modal-header {
+            padding: 25px;
+            border-bottom: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .forecast-modal-body {
+            padding: 30px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .detail-section {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .detail-section h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 10px;
@@ -513,18 +582,19 @@
                 <!-- Forecast Section -->
                 <div class="chart-card full-width">
                     <h2>🔮 Dự Đoán Doanh Số & Số Lượng</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào từng dự đoán để xem chi tiết theo hệ thống và sản phẩm</p>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
+                        <div class="forecast-card" onclick="showForecastDetail('nextMonth')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
                             <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📅 Dự Đoán Tháng Tiếp Theo</h3>
                             <p id="nextMonthForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
                             <p id="nextMonthQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
                         </div>
-                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white;">
+                        <div class="forecast-card" onclick="showForecastDetail('currentQuarter')" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white;">
                             <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📊 TB Quý Hiện Tại</h3>
                             <p id="currentQuarterAvg" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
                             <p id="currentQuarterQtyAvg" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
                         </div>
-                        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white;">
+                        <div class="forecast-card" onclick="showForecastDetail('nextQuarter')" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white;">
                             <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🎯 Dự Đoán Quý Tới</h3>
                             <p id="nextQuarterForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
                             <p id="nextQuarterQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
@@ -792,11 +862,97 @@
                 </div>
             </div>
         </div>
+
+        <!-- Forecast Detail Modal -->
+        <div id="forecastDetailModal" class="forecast-modal">
+            <div class="forecast-modal-content">
+                <div class="forecast-modal-header">
+                    <h2 id="forecastModalTitle">📊 Chi Tiết Dự Đoán</h2>
+                    <button onclick="closeForecastDetail()" style="background: rgba(255, 255, 255, 0.2); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">✕ Đóng</button>
+                </div>
+                <div class="forecast-modal-body">
+                    <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #3b82f6;">
+                        <h3 style="color: #1e40af; margin-bottom: 10px;">📈 Tổng Quan Dự Đoán</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                            <div>
+                                <p style="color: #64748b; font-size: 0.85em; margin: 0;">Tổng Doanh Số</p>
+                                <p id="forecastTotalSales" style="font-size: 1.4em; font-weight: 700; color: #1e40af; margin: 5px 0 0 0;">0 ₫</p>
+                            </div>
+                            <div>
+                                <p style="color: #64748b; font-size: 0.85em; margin: 0;">Tổng Số Lượng</p>
+                                <p id="forecastTotalQty" style="font-size: 1.4em; font-weight: 700; color: #10b981; margin: 5px 0 0 0;">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-grid">
+                        <div class="detail-section">
+                            <h3>🏢 Chi Tiết Theo Hệ Thống</h3>
+                            <div class="table-container" style="max-height: 500px;">
+                                <table id="forecastSystemTable" style="font-size: 0.9em;">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Hệ Thống</th>
+                                            <th class="number">Số Lượng</th>
+                                            <th class="number">Doanh Số</th>
+                                            <th class="number">% Tổng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="forecastSystemTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="detail-section">
+                            <h3>🏷️ Chi Tiết Theo Nhãn Hàng (Top 20)</h3>
+                            <div class="table-container" style="max-height: 500px;">
+                                <table id="forecastBrandTable" style="font-size: 0.9em;">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Nhãn Hàng</th>
+                                            <th class="number">Số Lượng</th>
+                                            <th class="number">Doanh Số</th>
+                                            <th class="number">% Tổng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="forecastBrandTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section" style="margin-top: 25px;">
+                        <h3>📦 Chi Tiết Theo Sản Phẩm (Top 50)</h3>
+                        <div class="table-container" style="max-height: 600px;">
+                            <table id="forecastProductTable" style="font-size: 0.85em;">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Tên Rút Gọn SP</th>
+                                        <th>Nhãn Hàng</th>
+                                        <th class="number">Số Lượng</th>
+                                        <th class="number">Doanh Số</th>
+                                        <th class="number">% Tổng</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="forecastProductTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         let allData = [];
         let charts = {};
+        let forecastDetailsData = {}; // Store forecast details
 
         // Format currency
         function formatCurrency(value) {
@@ -1682,6 +1838,9 @@
             document.getElementById('seasonalityTrend').textContent = `${trendIcon} ${trendText}`;
             document.getElementById('seasonalityDetail').textContent = `Dự kiến ${change > 0 ? '+' : ''}${change.toFixed(1)}% so với tháng hiện tại`;
 
+            // Calculate detailed forecasts by system, brand, and product
+            calculateDetailedForecasts(data, sortedMonths, forecastSales[0], forecastQty[0], currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast);
+
             // Create chart
             const ctx = document.getElementById('forecastChart');
             if (charts.forecastChart) {
@@ -1764,6 +1923,209 @@
                     }
                 }
             });
+        }
+
+        // Calculate detailed forecasts by system, brand, and product
+        function calculateDetailedForecasts(data, sortedMonths, nextMonthForecastSales, nextMonthForecastQty, currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast) {
+            // Get recent months data for proportion calculation
+            const recentMonthsCount = Math.min(3, sortedMonths.length);
+            const recentMonths = sortedMonths.slice(-recentMonthsCount);
+            
+            // Filter data for recent months
+            const recentData = data.filter(row => recentMonths.includes(row.monthKey));
+            
+            // Calculate proportions by system
+            const systemData = {};
+            recentData.forEach(row => {
+                const system = row.heThong || 'Unknown';
+                if (!systemData[system]) {
+                    systemData[system] = { vat: 0, qty: 0 };
+                }
+                systemData[system].vat += row.vat;
+                systemData[system].qty += row.soLuong || 0;
+            });
+            
+            // Calculate proportions by brand
+            const brandData = {};
+            recentData.forEach(row => {
+                const brand = row.nhanHang || 'Unknown';
+                if (!brandData[brand]) {
+                    brandData[brand] = { vat: 0, qty: 0 };
+                }
+                brandData[brand].vat += row.vat;
+                brandData[brand].qty += row.soLuong || 0;
+            });
+            
+            // Calculate proportions by product
+            const productData = {};
+            recentData.forEach(row => {
+                const product = row.tenRutGon || row.tenHang || 'Unknown';
+                const brand = row.nhanHang || 'Unknown';
+                if (!productData[product]) {
+                    productData[product] = { vat: 0, qty: 0, brand: brand };
+                }
+                productData[product].vat += row.vat;
+                productData[product].qty += row.soLuong || 0;
+            });
+            
+            // Get totals
+            const totalRecentSales = Object.values(systemData).reduce((sum, item) => sum + item.vat, 0);
+            const totalRecentQty = Object.values(systemData).reduce((sum, item) => sum + item.qty, 0);
+            
+            // Store detailed forecast data
+            forecastDetailsData = {
+                nextMonth: {
+                    totalSales: nextMonthForecastSales,
+                    totalQty: nextMonthForecastQty,
+                    systems: {},
+                    brands: {},
+                    products: {}
+                },
+                currentQuarter: {
+                    totalSales: currentQtrAvg,
+                    totalQty: currentQtrQtyAvg,
+                    systems: {},
+                    brands: {},
+                    products: {}
+                },
+                nextQuarter: {
+                    totalSales: nextQtrForecast,
+                    totalQty: nextQtrQtyForecast,
+                    systems: {},
+                    brands: {},
+                    products: {}
+                }
+            };
+            
+            // Calculate forecast for each entity using proportions
+            ['nextMonth', 'currentQuarter', 'nextQuarter'].forEach(period => {
+                const forecastSales = forecastDetailsData[period].totalSales;
+                const forecastQty = forecastDetailsData[period].totalQty;
+                
+                // By system
+                Object.keys(systemData).forEach(system => {
+                    const proportion = systemData[system].vat / totalRecentSales;
+                    const qtyProportion = systemData[system].qty / totalRecentQty;
+                    forecastDetailsData[period].systems[system] = {
+                        sales: forecastSales * proportion,
+                        qty: forecastQty * qtyProportion
+                    };
+                });
+                
+                // By brand
+                Object.keys(brandData).forEach(brand => {
+                    const proportion = brandData[brand].vat / totalRecentSales;
+                    const qtyProportion = brandData[brand].qty / totalRecentQty;
+                    forecastDetailsData[period].brands[brand] = {
+                        sales: forecastSales * proportion,
+                        qty: forecastQty * qtyProportion
+                    };
+                });
+                
+                // By product
+                Object.keys(productData).forEach(product => {
+                    const proportion = productData[product].vat / totalRecentSales;
+                    const qtyProportion = productData[product].qty / totalRecentQty;
+                    forecastDetailsData[period].products[product] = {
+                        sales: forecastSales * proportion,
+                        qty: forecastQty * qtyProportion,
+                        brand: productData[product].brand
+                    };
+                });
+            });
+        }
+
+        // Show forecast detail modal
+        function showForecastDetail(type) {
+            if (!forecastDetailsData || !forecastDetailsData[type]) {
+                alert('Dữ liệu dự đoán chưa sẵn sàng. Vui lòng thử lại!');
+                return;
+            }
+            
+            const detail = forecastDetailsData[type];
+            
+            // Set title based on type
+            const titles = {
+                'nextMonth': '📅 Chi Tiết Dự Đoán Tháng Tiếp Theo',
+                'currentQuarter': '📊 Chi Tiết Trung Bình Quý Hiện Tại',
+                'nextQuarter': '🎯 Chi Tiết Dự Đoán Quý Tới'
+            };
+            document.getElementById('forecastModalTitle').textContent = titles[type];
+            
+            // Update summary
+            document.getElementById('forecastTotalSales').textContent = formatCurrency(detail.totalSales);
+            document.getElementById('forecastTotalQty').textContent = formatNumber(Math.round(detail.totalQty));
+            
+            // Populate system table
+            const systemTableBody = document.getElementById('forecastSystemTableBody');
+            systemTableBody.innerHTML = '';
+            const sortedSystems = Object.entries(detail.systems).sort((a, b) => b[1].sales - a[1].sales);
+            sortedSystems.forEach(([system, data], idx) => {
+                const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
+                const row = `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${system}</td>
+                        <td class="number">${formatNumber(Math.round(data.qty))}</td>
+                        <td class="number">${formatCurrency(data.sales)}</td>
+                        <td class="number">${percentage}%</td>
+                    </tr>
+                `;
+                systemTableBody.innerHTML += row;
+            });
+            
+            // Populate brand table (top 20)
+            const brandTableBody = document.getElementById('forecastBrandTableBody');
+            brandTableBody.innerHTML = '';
+            const sortedBrands = Object.entries(detail.brands).sort((a, b) => b[1].sales - a[1].sales).slice(0, 20);
+            sortedBrands.forEach(([brand, data], idx) => {
+                const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
+                const row = `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${brand}</td>
+                        <td class="number">${formatNumber(Math.round(data.qty))}</td>
+                        <td class="number">${formatCurrency(data.sales)}</td>
+                        <td class="number">${percentage}%</td>
+                    </tr>
+                `;
+                brandTableBody.innerHTML += row;
+            });
+            
+            // Populate product table (top 50)
+            const productTableBody = document.getElementById('forecastProductTableBody');
+            productTableBody.innerHTML = '';
+            const sortedProducts = Object.entries(detail.products).sort((a, b) => b[1].sales - a[1].sales).slice(0, 50);
+            sortedProducts.forEach(([product, data], idx) => {
+                const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
+                const row = `
+                    <tr>
+                        <td>${idx + 1}</td>
+                        <td>${product}</td>
+                        <td>${data.brand}</td>
+                        <td class="number">${formatNumber(Math.round(data.qty))}</td>
+                        <td class="number">${formatCurrency(data.sales)}</td>
+                        <td class="number">${percentage}%</td>
+                    </tr>
+                `;
+                productTableBody.innerHTML += row;
+            });
+            
+            // Show modal
+            document.getElementById('forecastDetailModal').style.display = 'block';
+        }
+
+        // Close forecast detail modal
+        function closeForecastDetail() {
+            document.getElementById('forecastDetailModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('forecastDetailModal');
+            if (event.target === modal) {
+                closeForecastDetail();
+            }
         }
 
         // Create Sales Trend Chart
@@ -2134,17 +2496,45 @@
 
         // Create Year Comparison Chart
         function createYearComparisonChart(data) {
-            const yearData = {};
+            // Group data by year and brand
+            const yearBrandData = {};
+            const brands = new Set();
+            
             data.forEach(row => {
                 const year = row.year;
-                if (!yearData[year]) {
-                    yearData[year] = 0;
+                const brand = row.nhanHang || 'Khác';
+                
+                brands.add(brand);
+                
+                if (!yearBrandData[year]) {
+                    yearBrandData[year] = {};
                 }
-                yearData[year] += row.vat;
+                if (!yearBrandData[year][brand]) {
+                    yearBrandData[year][brand] = 0;
+                }
+                yearBrandData[year][brand] += row.vat;
             });
 
-            const years = Object.keys(yearData).sort();
-            const values = years.map(year => yearData[year]);
+            const years = Object.keys(yearBrandData).sort();
+            const brandArray = Array.from(brands).sort();
+            
+            // Generate colors for brands
+            const brandColors = [
+                '#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe',
+                '#fa709a', '#fee140', '#30cfd0', '#330867', '#a8edea', '#fed6e3',
+                '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#ff6e7f', '#bfe9ff',
+                '#fdcbf1', '#e6dee9', '#c1dfc4', '#deecdd', '#fbc2eb', '#a6c1ee'
+            ];
+            
+            // Create datasets for each brand
+            const datasets = brandArray.map((brand, idx) => {
+                return {
+                    label: brand,
+                    data: years.map(year => yearBrandData[year][brand] || 0),
+                    backgroundColor: brandColors[idx % brandColors.length],
+                    borderWidth: 0
+                };
+            });
 
             const ctx = document.getElementById('yearComparisonChart').getContext('2d');
             
@@ -2156,11 +2546,7 @@
                 type: 'bar',
                 data: {
                     labels: years,
-                    datasets: [{
-                        label: 'Doanh Số',
-                        data: values,
-                        backgroundColor: ['#667eea', '#764ba2', '#f093fb']
-                    }]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -2174,22 +2560,43 @@
                     },
                     plugins: {
                         legend: {
-                            display: false
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                font: { size: 11 },
+                                padding: 10,
+                                boxWidth: 12,
+                                usePointStyle: true
+                            }
                         },
                         tooltip: {
+                            mode: 'index',
                             callbacks: {
                                 label: function(context) {
-                                    return 'Doanh số: ' + formatCurrency(context.parsed.y);
+                                    const label = context.dataset.label || '';
+                                    const value = formatCurrency(context.parsed.y);
+                                    return `${label}: ${value}`;
+                                },
+                                footer: function(tooltipItems) {
+                                    let total = 0;
+                                    tooltipItems.forEach(item => {
+                                        total += item.parsed.y;
+                                    });
+                                    return 'Tổng: ' + formatCurrency(total);
                                 }
                             }
                         }
                     },
                     scales: {
+                        x: {
+                            stacked: true
+                        },
                         y: {
+                            stacked: true,
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
-                                    return formatCurrency(value);
+                                    return (value / 1000000).toFixed(0) + 'M';
                                 }
                             }
                         }
