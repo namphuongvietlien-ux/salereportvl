@@ -7364,25 +7364,37 @@
         function populateSKUTable(sortedProducts) {
             const tbody = document.getElementById('skuDetailTableBody');
             tbody.innerHTML = '';
-            
-            const totalRevenue = sortedProducts.reduce((sum, p) => sum + p[1].revenue, 0);
-            
-            sortedProducts.forEach((product, index) => {
-                const percentage = ((product[1].revenue / totalRevenue) * 100).toFixed(1);
+
+            // Gộp các sản phẩm cùng tên rút gọn
+            const skuMap = new Map();
+            sortedProducts.forEach(([name, info]) => {
+                const shortName = shortenProductName(name);
+                if (!skuMap.has(shortName)) {
+                    skuMap.set(shortName, { quantity: 0, revenue: 0 });
+                }
+                skuMap.get(shortName).quantity += info.quantity;
+                skuMap.get(shortName).revenue += info.revenue;
+            });
+
+            // Tính tổng doanh số sau khi gộp
+            const totalRevenue = Array.from(skuMap.values()).reduce((sum, p) => sum + p.revenue, 0);
+
+            Array.from(skuMap.entries()).forEach(([shortName, info], index) => {
+                const percentage = ((info.revenue / totalRevenue) * 100).toFixed(1);
                 const row = `
                     <tr style="border-bottom: 1px solid #e5e7eb;">
                         <td style="padding: 15px 12px; font-weight: 600; text-align: center;">${index + 1}</td>
                         <td style="padding: 15px 12px; max-width: 300px; word-wrap: break-word;">
-                            <strong>${shortenProductName(product[0])}</strong>
+                            <strong>${shortName}</strong>
                             <div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">
-                                SL: ${formatNumber(product[1].quantity)}
+                                SL: ${formatNumber(info.quantity)}
                             </div>
                         </td>
                         <td style="padding: 15px 12px; text-align: center; font-weight: 600;">
-                            ${formatNumber(product[1].quantity)}
+                            ${formatNumber(info.quantity)}
                         </td>
                         <td style="padding: 15px 12px; text-align: center; font-weight: 600; color: #059669;">
-                            ${formatCurrency(product[1].revenue)}
+                            ${formatCurrency(info.revenue)}
                         </td>
                         <td style="padding: 15px 12px; text-align: center; font-weight: 600;">
                             ${percentage}%
