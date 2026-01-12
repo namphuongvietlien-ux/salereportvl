@@ -434,6 +434,93 @@
                 align-items: center;
             }
         }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                text-align: center;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* Hide non-essential elements */
+            .filter-group,
+            button[onclick*="export"],
+            button[onclick*="print"],
+            button[onclick*="close"],
+            .loading {
+                display: none !important;
+            }
+            
+            /* Page breaks */
+            .chart-card,
+            .kpi-container {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            .chart-card.full-width {
+                page-break-before: auto;
+                page-break-after: auto;
+            }
+            
+            /* Better spacing for print */
+            .chart-card {
+                margin-bottom: 30px;
+            }
+            
+            /* Modal print styles */
+            .forecast-modal {
+                position: static !important;
+                background: white !important;
+            }
+            
+            .forecast-modal-content {
+                max-width: 100% !important;
+                max-height: 100% !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+            }
+            
+            .forecast-modal-header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* Preserve colors */
+            .kpi-card,
+            .chart-card {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* Table styles for print */
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            th, td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            
+            /* Footer for print */
+            @page {
+                margin: 1.5cm;
+                @bottom-right {
+                    content: "Trang " counter(page) " / " counter(pages);
+                }
+            }
+        }
     </style>
 </head>
 <body>
@@ -551,6 +638,23 @@
                 </div>
                 <div class="filter-group" style="margin-left: auto;">
                     <label>&nbsp;</label>
+                    <button onclick="printDashboard()" style="
+                        padding: 10px 20px;
+                        background: #10b981;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 0.95em;
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        margin-right: 10px;
+                    ">
+                        <span style="font-size: 1.2em;">🖨️</span>
+                        In Báo Cáo
+                    </button>
                     <button onclick="exportToPowerPoint()" style="
                         padding: 10px 20px;
                         background: #dc2626;
@@ -898,7 +1002,10 @@
             <div class="forecast-modal-content">
                 <div class="forecast-modal-header">
                     <h2 id="forecastModalTitle">📊 Chi Tiết Dự Đoán</h2>
-                    <button onclick="closeForecastDetail()" style="background: rgba(255, 255, 255, 0.2); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">✕ Đóng</button>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="printForecastDetail()" style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">🖨️ In</button>
+                        <button onclick="closeForecastDetail()" style="background: rgba(255, 255, 255, 0.2); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 600;">✕ Đóng</button>
+                    </div>
                 </div>
                 <div class="forecast-modal-body">
                     <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #3b82f6;">
@@ -2809,6 +2916,62 @@
             // Show adjustment in summary
             document.getElementById('stockoutAdjustment').style.display = 'block';
             document.getElementById('stockoutAdjustmentValue').textContent = '+' + formatCurrency(totalAdjustedSales);
+        }
+
+        // Print forecast detail
+        function printForecastDetail() {
+            // Hide buttons and other non-print elements temporarily
+            const modal = document.getElementById('forecastDetailModal');
+            const buttons = modal.querySelectorAll('button');
+            const stockoutBtn = document.getElementById('stockoutAnalysisBtn');
+            
+            buttons.forEach(btn => btn.style.display = 'none');
+            if (stockoutBtn) stockoutBtn.style.display = 'none';
+            
+            // Print
+            window.print();
+            
+            // Restore buttons
+            setTimeout(() => {
+                buttons.forEach(btn => btn.style.display = '');
+                if (stockoutBtn) stockoutBtn.style.display = '';
+            }, 100);
+        }
+        
+        // Print dashboard
+        function printDashboard() {
+            // Add print timestamp
+            const now = new Date();
+            const timestamp = now.toLocaleDateString('vi-VN', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            // Create temporary print info
+            const printInfo = document.createElement('div');
+            printInfo.id = 'printInfo';
+            printInfo.style.cssText = 'display: none; text-align: center; padding: 10px; font-size: 0.9em; color: #666;';
+            printInfo.innerHTML = `<p>Báo cáo được in ngày: ${timestamp}</p>`;
+            
+            document.body.insertBefore(printInfo, document.body.firstChild);
+            
+            // Show print info only during print
+            const printStyle = document.createElement('style');
+            printStyle.id = 'printStyle';
+            printStyle.textContent = '@media print { #printInfo { display: block !important; } }';
+            document.head.appendChild(printStyle);
+            
+            // Print
+            window.print();
+            
+            // Clean up
+            setTimeout(() => {
+                printInfo.remove();
+                printStyle.remove();
+            }, 100);
         }
 
         // Close modal when clicking outside
