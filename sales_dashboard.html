@@ -620,12 +620,12 @@
                             <p id="nextMonthQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
                         </div>
                         <div class="forecast-card" onclick="showForecastDetail('currentQuarter')" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white;">
-                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📊 TB Quý Hiện Tại</h3>
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📊 TB Tháng Quý Này</h3>
                             <p id="currentQuarterAvg" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
                             <p id="currentQuarterQtyAvg" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
                         </div>
                         <div class="forecast-card" onclick="showForecastDetail('nextQuarter')" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 20px; border-radius: 12px; color: white;">
-                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🎯 Dự Đoán Quý Tới</h3>
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🎯 TB Tháng Quý Tới</h3>
                             <p id="nextQuarterForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
                             <p id="nextQuarterQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
                         </div>
@@ -2126,8 +2126,8 @@
             const titles = {
                 'currentMonth': '🔥 Chi Tiết Dự Đoán Tháng Này (Tháng 1/2026)',
                 'nextMonth': '📅 Chi Tiết Dự Đoán Tháng Tiếp Theo',
-                'currentQuarter': '📊 Chi Tiết Trung Bình Quý Hiện Tại',
-                'nextQuarter': '🎯 Chi Tiết Dự Đoán Quý Tới'
+                'currentQuarter': '📊 Chi Tiết TB Tháng Quý Này (3 tháng)',
+                'nextQuarter': '🎯 Chi Tiết TB Tháng Quý Tới (dự đoán)'
             };
             document.getElementById('forecastModalTitle').textContent = titles[type];
             
@@ -2728,18 +2728,6 @@
                         điều chỉnh theo số ngày còn lại sau khi về hàng, và tăng thêm 25% do cửa hàng có xu hướng đặt nhiều hơn sau khi hết hàng.</li>
                         <li><strong>Mã mới:</strong> Dự đoán = Số cửa hàng × SL TB/cửa hàng × Giá × (Số ngày còn lại / Tổng ngày trong tháng)</li>
                     </ul>
-                </div>
-            `;
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 8px; font-size: 0.85em; color: #166534;">
-                    <strong>💡 Giải thích:</strong> Dự đoán doanh số được tính dựa trên trung bình 5 tháng gần nhất, 
-                    điều chỉnh theo số ngày còn lại sau khi về hàng, và tăng thêm 25% do cửa hàng có xu hướng đặt nhiều hơn sau khi hết hàng.
                 </div>
             `;
             
