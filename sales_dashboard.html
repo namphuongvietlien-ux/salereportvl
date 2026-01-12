@@ -2720,10 +2720,12 @@
                     adjustment < 0 ?
                     `<span style="color: #ef4444; font-weight: 600;">${formatCurrency(adjustment)}</span>` :
                     '<span style="color: #9ca3af;">-</span>';
+                // Force apply shortened name
+                const displayName = shortenProductName(product);
                 const row = `
                     <tr>
                         <td>${idx + 1}</td>
-                        <td>${product}</td>
+                        <td>${displayName}</td>
                         <td>${data.brand}</td>
                         <td class="number">${formatNumber(Math.round(data.qty))}</td>
                         <td class="number">${formatCurrency(data.sales)}</td>
@@ -2733,6 +2735,29 @@
                 `;
                 productTableBody.innerHTML += row;
             });
+            
+            // Add TOTAL row for product table
+            const totalProductQty = Object.values(detail.products).reduce((sum, data) => sum + data.qty, 0);
+            const totalProductSales = Object.values(detail.products).reduce((sum, data) => sum + data.sales, 0);
+            const totalProductAdjustment = Object.values(detail.adjustments?.products || {}).reduce((sum, adj) => sum + (adj?.sales || 0), 0);
+            const totalProductAdjustmentDisplay = totalProductAdjustment > 0 ? 
+                `<span style="color: #10b981; font-weight: 600;">+${formatCurrency(totalProductAdjustment)}</span>` : 
+                totalProductAdjustment < 0 ?
+                `<span style="color: #ef4444; font-weight: 600;">${formatCurrency(totalProductAdjustment)}</span>` :
+                '<span style="color: #9ca3af;">-</span>';
+            
+            const totalProductRow = `
+                <tr style="border-top: 2px solid #e5e7eb; background: #f9fafb; font-weight: 600;">
+                    <td style="text-align: center;">📊</td>
+                    <td style="color: #1f2937;"><strong>TOTAL</strong></td>
+                    <td style="color: #1f2937;"><strong>ALL BRANDS</strong></td>
+                    <td class="number" style="color: #1f2937;">${formatNumber(Math.round(totalProductQty))}</td>
+                    <td class="number" style="color: #1f2937;">${formatCurrency(totalProductSales)}</td>
+                    <td class="number" style="background: #fef3c7; color: #1f2937;">${totalProductAdjustmentDisplay}</td>
+                    <td class="number" style="color: #1f2937;">100.0%</td>
+                </tr>
+            `;
+            productTableBody.innerHTML += totalProductRow;
             
             // Show modal
             document.getElementById('forecastDetailModal').style.display = 'block';
