@@ -2256,13 +2256,29 @@
             const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             const surgeFactor = 1.25;
             
+            // Helper function: Count working days (Mon-Sat, exclude Sunday) between two dates
+            function countWorkingDays(startDay, endDay, year, month) {
+                let workingDays = 0;
+                for (let day = startDay; day <= endDay; day++) {
+                    const date = new Date(year, month, day);
+                    const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
+                    if (dayOfWeek !== 0) { // Exclude Sunday
+                        workingDays++;
+                    }
+                }
+                return workingDays;
+            }
+            
+            // Count total working days in month (for proper proportion calculation)
+            const totalWorkingDaysInMonth = countWorkingDays(1, daysInMonth, today.getFullYear(), today.getMonth());
+            
             // Process each manual product
             manualStockoutProducts.forEach(prod => {
                 if (prod.isNew) {
-                    // New products: only count days after launch
-                    const remainingDays = Math.max(0, daysInMonth - prod.restockDay + 1);
-                    const adjustedSales = (prod.avgMonthlySales / daysInMonth) * remainingDays;
-                    const adjustedQty = (prod.avgMonthlyQty / daysInMonth) * remainingDays;
+                    // New products: only count working days after launch
+                    const workingDaysAfterLaunch = countWorkingDays(prod.restockDay, daysInMonth, today.getFullYear(), today.getMonth());
+                    const adjustedSales = (prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysAfterLaunch;
+                    const adjustedQty = (prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysAfterLaunch;
                     
                     // Add to total
                     detail.totalSales += adjustedSales;
@@ -2315,20 +2331,20 @@
                     detail.adjustments.products[prod.name].sales += adjustedSales;
                     detail.adjustments.products[prod.name].qty += adjustedQty;
                 } else {
-                    // For STOCKOUT products: Calculate net adjustment
-                    // 1. Lost sales during stockout (từ hôm nay → ngày về hàng)
-                    const stockoutDays = Math.max(0, prod.restockDay - currentDay);
-                    const lostSales = -(prod.avgMonthlySales / daysInMonth) * stockoutDays;
-                    const lostQty = -(prod.avgMonthlyQty / daysInMonth) * stockoutDays;
+                    // For STOCKOUT products: Calculate net adjustment (working days only)
+                    // 1. Lost sales during stockout (từ hôm nay → ngày về hàng, chỉ tính ngày làm việc)
+                    const workingDaysLost = countWorkingDays(currentDay, prod.restockDay - 1, today.getFullYear(), today.getMonth());
+                    const lostSales = -(prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysLost;
+                    const lostQty = -(prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysLost;
                     
-                    // 2. Surge sales after restock (từ ngày về hàng → cuối tháng)
-                    const daysAfterRestock = Math.max(0, daysInMonth - prod.restockDay + 1);
-                    const surgeSales = (prod.avgMonthlySales / daysInMonth) * daysAfterRestock * surgeFactor;
-                    const surgeQty = (prod.avgMonthlyQty / daysInMonth) * daysAfterRestock * surgeFactor;
+                    // 2. Surge sales after restock (từ ngày về hàng → cuối tháng, chỉ tính ngày làm việc)
+                    const workingDaysAfterRestock = countWorkingDays(prod.restockDay, daysInMonth, today.getFullYear(), today.getMonth());
+                    const surgeSales = (prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysAfterRestock * surgeFactor;
+                    const surgeQty = (prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysAfterRestock * surgeFactor;
                     
-                    // 3. Normal sales for the remaining period (baseline)
-                    const normalSalesForPeriod = (prod.avgMonthlySales / daysInMonth) * daysAfterRestock;
-                    const normalQtyForPeriod = (prod.avgMonthlyQty / daysInMonth) * daysAfterRestock;
+                    // 3. Normal sales for the remaining period (baseline, chỉ tính ngày làm việc)
+                    const normalSalesForPeriod = (prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysAfterRestock;
+                    const normalQtyForPeriod = (prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysAfterRestock;
                     
                     // 4. Net adjustment = Lost + (Surge - Normal)
                     // This represents: -lost during stockout + extra surge after restock
