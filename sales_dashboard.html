@@ -2349,7 +2349,9 @@
                     detail.adjustments.products[prod.name].qty += adjustedQty;
                 } else {
                     // For STOCKOUT products: Calculate net adjustment (working days only)
-                    console.log(`💔 Stockout product: ${prod.name}, restockDay: ${prod.restockDay}, currentDay: ${currentDay}`);
+                    console.log(`💔 Stockout product: ${prod.name}`);
+                    console.log(`📊 Product avgMonthlySales (TOTAL): ${prod.avgMonthlySales.toLocaleString()} VND`);
+                    console.log(`🗓️ restockDay: ${prod.restockDay}, currentDay: ${currentDay}`);
                     
                     // 1. Lost sales during stockout (từ hôm nay → ngày về hàng, chỉ tính ngày làm việc)
                     const workingDaysLost = countWorkingDays(currentDay, prod.restockDay - 1, today.getFullYear(), today.getMonth());
@@ -2373,6 +2375,7 @@
                     const adjustedQty = lostQty + (surgeQty - normalQtyForPeriod);
                     
                     console.log(`📊 Net adjustment: ${adjustedSales.toLocaleString()} VND (${adjustedSales < 0 ? 'LOSS' : 'GAIN'})`);
+                    console.log(`💡 This adjustment will be DISTRIBUTED across systems based on actual sales data`);
                     
                     // Add to total
                     detail.totalSales += adjustedSales;
@@ -2731,32 +2734,19 @@
                 const avgMonthlySales = prod.totalSales / monthsCount;
                 const avgMonthlyQty = prod.totalQty / monthsCount;
                 
-                // Get unique systems for this product to calculate per-system average
-                const systemsWithProduct = new Set();
-                allData.forEach(row => {
-                    if (recentMonths.includes(row.monthKey) && 
-                        shortenProductName(row['TÊN SP']) === prod.name) {
-                        systemsWithProduct.add(row['HỆ THỐNG']);
-                    }
-                });
-                
-                // Calculate average per system (not total across all systems)
-                const systemCount = systemsWithProduct.size || 1;
-                const avgPerSystemMonthlySales = avgMonthlySales / systemCount;
-                const avgPerSystemMonthlyQty = avgMonthlyQty / systemCount;
-                
+                // For stockout products, we'll use the TOTAL sales (distributed across systems)
+                // The distribution will be calculated later based on actual system sales data
                 return {
                     name: prod.name,
                     fullName: prod.fullName,
                     brand: prod.brand,
                     system: prod.system,
-                    avgMonthlySales: avgPerSystemMonthlySales,
-                    avgMonthlyQty: avgPerSystemMonthlyQty,
-                    totalMonthlySales: avgMonthlySales, // Keep original for reference
-                    systemCount: systemCount
+                    avgMonthlySales: avgMonthlySales, // Total monthly sales across all systems
+                    avgMonthlyQty: avgMonthlyQty,     // Total monthly qty across all systems
+                    systemData: null // Will be populated when needed
                 };
-            }).filter(p => p.totalMonthlySales > 500000) // Filter by total, not per-system
-            .sort((a, b) => b.totalMonthlySales - a.totalMonthlySales);
+            }).filter(p => p.avgMonthlySales > 500000) // Min 500K VND total
+            .sort((a, b) => b.avgMonthlySales - a.avgMonthlySales);
             
             // Display manual input form
             displayStockoutForm(currentDay, daysInMonth, currentMonthKey);
@@ -2785,7 +2775,7 @@
                                 <option value="">-- Chọn mã sản phẩm --</option>
                                 ${availableProducts.map(p => 
                                     `<option value="${p.name}" data-brand="${p.brand}" data-sales="${p.avgMonthlySales}" data-qty="${p.avgMonthlyQty}">
-                                        ${p.name} - ${p.brand} (TB/HT: ${formatCurrency(p.avgMonthlySales)}/tháng, ${p.systemCount} HT)
+                                        ${p.name} - ${p.brand} (TB: ${formatCurrency(p.avgMonthlySales)}/tháng)
                                     </option>`
                                 ).join('')}
                             </select>
