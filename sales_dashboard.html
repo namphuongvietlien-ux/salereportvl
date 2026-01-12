@@ -1982,8 +1982,9 @@
                             const systemCode = (row['SYSTEM CODE'] || '').trim();
                             const heThong = (row['HE THONG'] || '').trim();
                             if (nam && systemCode && heThong) {
-                                const key = `${nam}_${systemCode}`;
-                                customersLookup[key] = heThong;
+                                    // Ensure template literal is correct and no stray $ or identifier
+                                    const key = nam + '_' + systemCode;
+                                    customersLookup[key] = heThong;
                             }
                         });
                         console.log('Loaded', Object.keys(customersLookup).length, 'customer system mappings');
