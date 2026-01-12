@@ -898,7 +898,7 @@
                         <div style="padding: 30px;">
                             <div style="margin-bottom: 25px;">
                                 <div style="height: 400px;">
-                                    <canvas id="modalChart2"></canvas>
+                                    <canvas id="skuAnalysisChart"></canvas>
                                 </div>
                             </div>
                             <div class="table-container" style="max-height: 500px; overflow: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
@@ -4685,7 +4685,7 @@
                     </div>
                     <div>
                         <h3 style="color: #10b981; margin-bottom: 15px;">🏷️ Top 10 Nhãn Hàng</h3>
-                        <div style="height: 300px;"><canvas id="modalChart2"></canvas></div>
+                        <div style="height: 300px;"><canvas id="brandDrillChart"></canvas></div>
                     </div>
                 </div>
                 <div>
@@ -4736,7 +4736,7 @@
                     }
                 });
                 
-                const ctx2 = document.getElementById('modalChart2').getContext('2d');
+                const ctx2 = document.getElementById('brandDrillChart').getContext('2d');
                 modalCharts.chart2 = new Chart(ctx2, {
                     type: 'bar',
                     data: {
@@ -4815,7 +4815,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
                         <h3 style="color: #10b981; margin-bottom: 15px;">🏷️ Top 10 Nhãn Hàng</h3>
-                        <div style="height: 300px;"><canvas id="modalChart2"></canvas></div>
+                        <div style="height: 300px;"><canvas id="systemBrandChart"></canvas></div>
                     </div>
                     <div>
                         <h3 style="color: #f59e0b; margin-bottom: 15px;">🏪 Top 10 Cửa Hàng</h3>
@@ -4871,7 +4871,7 @@
                     }
                 });
                 
-                const ctx2 = document.getElementById('modalChart2').getContext('2d');
+                const ctx2 = document.getElementById('systemBrandChart').getContext('2d');
                 modalCharts.chart2 = new Chart(ctx2, {
                     type: 'bar',
                     data: {
@@ -4947,7 +4947,7 @@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div>
                         <h3 style="color: #10b981; margin-bottom: 15px;">🏢 Top 10 Hệ Thống</h3>
-                        <div style="height: 300px;"><canvas id="modalChart2"></canvas></div>
+                        <div style="height: 300px;"><canvas id="systemChart1"></canvas></div>
                     </div>
                     <div>
                         <h3 style="color: #f59e0b; margin-bottom: 15px;">🔝 Top 15 Sản Phẩm</h3>
@@ -5003,7 +5003,7 @@
                     }
                 });
                 
-                const ctx2 = document.getElementById('modalChart2').getContext('2d');
+                const ctx2 = document.getElementById('systemChart1').getContext('2d');
                 modalCharts.chart2 = new Chart(ctx2, {
                     type: 'bar',
                     data: {
@@ -6723,6 +6723,7 @@
         
         // Open system-level drill-down
         function drillDownToSystem(systemName) {
+            console.log('drillDownToSystem called with:', systemName);
             currentDrillState.level = 'system';
             currentDrillState.systemName = systemName;
             currentDrillState.skuName = null;
@@ -6748,18 +6749,24 @@
 
         // Analyze SKU-level data for a specific system
         function analyzeSKUData(systemName) {
+            console.log('analyzeSKUData called with:', systemName);
             const skuAnalysis = [];
             const systemData = {};
             
             // Collect all SKU data for this system
+            console.log('allData length:', allData.length);
+            console.log('Sample row:', allData[0]);
+            let matchedRows = 0;
+            
             allData.forEach(row => {
-                const system = row['HE THONG']?.trim();
+                const system = row['HE THONG']?.trim() || row['HỆ THỐNG']?.trim();
                 const product = row['TEN SP']?.trim();
                 const store = row['TEN KH']?.trim();
-                const month = row['THANG']?.replace('T', '');
+                const month = row['THANG']?.replace('T', '') || row.monthKey;
                 const quantity = parseFloat(row['SO LUONG']) || 0;
                 
                 if (system === systemName && product && store && quantity > 0) {
+                    matchedRows++;
                     if (!systemData[product]) {
                         systemData[product] = {};
                     }
@@ -6769,6 +6776,9 @@
                     systemData[product][month] += quantity;
                 }
             });
+            
+            console.log('Matched rows for system', systemName, ':', matchedRows);
+            console.log('Products found:', Object.keys(systemData).length);
 
             // Analyze each SKU's trend
             Object.keys(systemData).forEach(product => {
@@ -6829,6 +6839,13 @@
             const increasing = skuAnalysis.filter(s => s.changePercent > 15);
             const decreasing = skuAnalysis.filter(s => s.changePercent < -15);
             const abnormal = skuAnalysis.filter(s => Math.abs(s.changePercent) > 25);
+            
+            console.log('SKU Analysis Summary:', {
+                total: skuAnalysis.length,
+                increasing: increasing.length,
+                decreasing: decreasing.length,
+                abnormal: abnormal.length
+            });
             
             document.getElementById('totalSKUCount').textContent = skuAnalysis.length;
             document.getElementById('increasingSKUCount').textContent = increasing.length;
@@ -7173,7 +7190,7 @@
         
         // Create SKU chart
         function createSKUChart(sortedProducts, type) {
-            const ctx = document.getElementById('modalChart2').getContext('2d');
+            const ctx = document.getElementById('skuAnalysisChart').getContext('2d');
             
             // Destroy existing chart
             if (skuModalChart) {
@@ -7337,7 +7354,7 @@
         
         // Create month system chart
         function createMonthSystemChart(sortedSystems) {
-            const ctx = document.getElementById('modalChart2').getContext('2d');
+            const ctx = document.getElementById('skuAnalysisChart').getContext('2d');
             
             // Destroy existing chart
             if (skuModalChart) {
