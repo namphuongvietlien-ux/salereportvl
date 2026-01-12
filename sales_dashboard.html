@@ -6139,97 +6139,169 @@
                 return;
             }
 
-            // Group data by system and count orders per month
-            const systemOrders = {};
-            const allMonths = new Set();
+            // Group data by system and month to analyze individual patterns
+            const systemData = {};
+            const allMonths = [...new Set(allData.map(row => row.monthKey))].sort();
 
+            // Build detailed data for each system
             allData.forEach(row => {
                 const system = row['HỆ THỐNG'] || 'Unknown';
                 const month = row.monthKey;
+                const sales = row.vat || 0;
                 
-                if (!systemOrders[system]) {
-                    systemOrders[system] = new Set();
+                if (!systemData[system]) {
+                    systemData[system] = {
+                        monthlyOrders: {},
+                        monthlySales: {},
+                        totalMonths: 0,
+                        activePeriods: []
+                    };
                 }
-                systemOrders[system].add(month);
-                allMonths.add(month);
+                
+                if (!systemData[system].monthlyOrders[month]) {
+                    systemData[system].monthlyOrders[month] = 0;
+                    systemData[system].monthlySales[month] = 0;
+                }
+                
+                systemData[system].monthlyOrders[month]++;
+                systemData[system].monthlySales[month] += sales;
             });
 
-            // Calculate frequency statistics
-            const monthCount = allMonths.size;
-            const systemStats = [];
-            let totalOrderFrequency = 0;
+            // Analyze each system individually
+            const systemAnalysis = [];
+            let totalAbnormalSystems = 0;
 
-            Object.entries(systemOrders).forEach(([system, months]) => {
-                const ordersPerMonth = months.size / monthCount * 30; // Approximate orders per month
-                totalOrderFrequency += ordersPerMonth;
+            Object.entries(systemData).forEach(([system, data]) => {
+                const months = Object.keys(data.monthlyOrders);
+                const orderCounts = Object.values(data.monthlyOrders);
+                const salesValues = Object.values(data.monthlySales);
                 
-                systemStats.push({
+                if (months.length < 3) return; // Skip systems with too little data
+                
+                // Calculate system's own baseline (historical average)
+                const avgOrdersPerMonth = orderCounts.reduce((a, b) => a + b, 0) / orderCounts.length;
+                const avgSalesPerMonth = salesValues.reduce((a, b) => a + b, 0) / salesValues.length;
+                
+                // Calculate standard deviation for this system
+                const orderVariance = orderCounts.reduce((sum, count) => sum + Math.pow(count - avgOrdersPerMonth, 2), 0) / orderCounts.length;
+                const orderStdDev = Math.sqrt(orderVariance);
+                
+                const salesVariance = salesValues.reduce((sum, sales) => sum + Math.pow(sales - avgSalesPerMonth, 2), 0) / salesValues.length;
+                const salesStdDev = Math.sqrt(salesVariance);
+                
+                // Define thresholds based on system's own pattern (±2σ)
+                const orderLowerThreshold = Math.max(0, avgOrdersPerMonth - 2 * orderStdDev);
+                const orderUpperThreshold = avgOrdersPerMonth + 2 * orderStdDev;
+                
+                // Find abnormal months for this system
+                const abnormalMonths = [];
+                months.forEach((month, idx) => {
+                    const orders = orderCounts[idx];
+                    const sales = salesValues[idx];
+                    
+                    if (orders < orderLowerThreshold || orders > orderUpperThreshold) {
+                        abnormalMonths.push({
+                            month,
+                            orders,
+                            sales,
+                            deviation: Math.abs(orders - avgOrdersPerMonth) / (orderStdDev || 1)
+                        });
+                    }
+                });
+                
+                // Analyze trends (last 3 months vs previous average)
+                const recentMonths = months.slice(-3);
+                const recentOrders = recentMonths.map(m => data.monthlyOrders[m]);
+                const recentAvg = recentOrders.reduce((a, b) => a + b, 0) / recentOrders.length;
+                
+                const earlierMonths = months.slice(0, -3);
+                const earlierOrders = earlierMonths.map(m => data.monthlyOrders[m]);
+                const earlierAvg = earlierOrders.length > 0 ? 
+                    earlierOrders.reduce((a, b) => a + b, 0) / earlierOrders.length : avgOrdersPerMonth;
+                
+                // Determine system status
+                let status = 'normal';
+                let issues = [];
+                let suggestions = [];
+                
+                if (abnormalMonths.length > months.length * 0.3) {
+                    status = 'abnormal';
+                    issues.push('Pattern không ổn định');
+                    suggestions.push('Kiểm tra quy trình đặt hàng và kế hoạch kinh doanh');
+                }
+                
+                if (recentAvg < earlierAvg * 0.7) {
+                    status = 'abnormal';
+                    issues.push('Giảm tần suất gần đây');
+                    suggestions.push('Kiểm tra tình trạng kinh doanh, có thể có vấn đề về dòng tiền');
+                }
+                
+                if (recentAvg > earlierAvg * 1.5) {
+                    status = 'abnormal';
+                    issues.push('Tăng đột biến gần đây');
+                    suggestions.push('Kiểm tra khả năng tồn kho, có thể cần tối ưu hóa kế hoạch đặt hàng');
+                }
+                
+                // Check for zero-order months
+                const zeroMonths = months.filter(m => data.monthlyOrders[m] === 0);
+                if (zeroMonths.length > 0) {
+                    status = 'abnormal';
+                    issues.push(`${zeroMonths.length} tháng không đặt hàng`);
+                    suggestions.push('Kiểm tra tình trạng hoạt động của hệ thống');
+                }
+                
+                if (status === 'abnormal') {
+                    totalAbnormalSystems++;
+                }
+                
+                systemAnalysis.push({
                     system,
-                    ordersPerMonth: ordersPerMonth,
-                    totalOrders: months.size,
-                    monthsCovered: months.size
+                    avgOrdersPerMonth: avgOrdersPerMonth.toFixed(1),
+                    avgSalesPerMonth: avgSalesPerMonth,
+                    totalMonths: months.length,
+                    abnormalMonths: abnormalMonths.length,
+                    recentTrend: ((recentAvg - earlierAvg) / earlierAvg * 100).toFixed(1),
+                    status,
+                    issues: issues.join(', '),
+                    suggestions: suggestions.join(' | '),
+                    stability: orderStdDev < avgOrdersPerMonth * 0.3 ? 'Ổn định' : 'Biến động',
+                    lastMonthOrders: data.monthlyOrders[months[months.length - 1]] || 0
                 });
             });
 
-            // Calculate normal range (mean ± 2 standard deviations)
-            const avgOrdersPerMonth = totalOrderFrequency / systemStats.length;
-            const variance = systemStats.reduce((sum, stat) => sum + Math.pow(stat.ordersPerMonth - avgOrdersPerMonth, 2), 0) / systemStats.length;
-            const stdDev = Math.sqrt(variance);
-            
-            const lowerThreshold = Math.max(0, avgOrdersPerMonth - 2 * stdDev);
-            const upperThreshold = avgOrdersPerMonth + 2 * stdDev;
-
-            // Categorize systems
-            const normalSystems = [];
-            const abnormalSystems = [];
-
-            systemStats.forEach(stat => {
-                if (stat.ordersPerMonth < lowerThreshold || stat.ordersPerMonth > upperThreshold) {
-                    let issue, suggestion;
-                    if (stat.ordersPerMonth > upperThreshold) {
-                        issue = 'Đặt quá thường xuyên';
-                        suggestion = 'Kiểm tra khả năng tồn kho, có thể đặt ít lần hơn với số lượng lớn hơn';
-                    } else {
-                        issue = 'Đặt quá ít';
-                        suggestion = 'Kiểm tra tình trạng kinh doanh, có thể có vấn đề về dòng tiền hoặc nhu cầu';
-                    }
-                    
-                    abnormalSystems.push({
-                        ...stat,
-                        issue,
-                        suggestion
-                    });
-                } else {
-                    normalSystems.push(stat);
-                }
-            });
-
             // Update UI
-            document.getElementById('totalSystems').textContent = systemStats.length;
-            document.getElementById('avgOrdersPerMonth').textContent = avgOrdersPerMonth.toFixed(1);
-            document.getElementById('abnormalSystems').textContent = abnormalSystems.length;
-            document.getElementById('systemsNeedCheck').textContent = abnormalSystems.length;
+            document.getElementById('totalSystems').textContent = systemAnalysis.length;
+            document.getElementById('avgOrdersPerMonth').textContent = 
+                (systemAnalysis.reduce((sum, s) => sum + parseFloat(s.avgOrdersPerMonth), 0) / systemAnalysis.length).toFixed(1);
+            document.getElementById('abnormalSystems').textContent = totalAbnormalSystems;
+            document.getElementById('systemsNeedCheck').textContent = totalAbnormalSystems;
 
             // Show/hide alert
             const alertDiv = document.getElementById('abnormalAlert');
-            if (abnormalSystems.length > 0) {
+            if (totalAbnormalSystems > 0) {
                 alertDiv.style.display = 'block';
             } else {
                 alertDiv.style.display = 'none';
             }
 
+            // Separate normal and abnormal systems
+            const normalSystems = systemAnalysis.filter(s => s.status === 'normal');
+            const abnormalSystems = systemAnalysis.filter(s => s.status === 'abnormal');
+
             // Populate normal systems table
             const normalTableBody = document.getElementById('normalSystemsTableBody');
             normalTableBody.innerHTML = '';
             normalSystems
-                .sort((a, b) => b.ordersPerMonth - a.ordersPerMonth)
+                .sort((a, b) => parseFloat(b.avgOrdersPerMonth) - parseFloat(a.avgOrdersPerMonth))
                 .forEach((stat, idx) => {
                     const row = `
                         <tr>
                             <td>${idx + 1}</td>
                             <td>${stat.system}</td>
-                            <td class="number">${stat.ordersPerMonth.toFixed(1)}</td>
-                            <td class="number"><span style="color: #10b981; font-weight: 600;">✓ Bình thường</span></td>
+                            <td class="number">${stat.avgOrdersPerMonth}</td>
+                            <td class="number">
+                                <span style="color: #10b981; font-weight: 600;">✓ ${stat.stability}</span>
+                            </td>
                         </tr>
                     `;
                     normalTableBody.innerHTML += row;
@@ -6239,16 +6311,16 @@
             const abnormalTableBody = document.getElementById('abnormalSystemsTableBody');
             abnormalTableBody.innerHTML = '';
             abnormalSystems
-                .sort((a, b) => Math.abs(b.ordersPerMonth - avgOrdersPerMonth) - Math.abs(a.ordersPerMonth - avgOrdersPerMonth))
+                .sort((a, b) => b.abnormalMonths - a.abnormalMonths)
                 .forEach((stat, idx) => {
-                    const severityColor = Math.abs(stat.ordersPerMonth - avgOrdersPerMonth) > 3 * stdDev ? '#dc2626' : '#f59e0b';
+                    const severityColor = stat.abnormalMonths > stat.totalMonths * 0.5 ? '#dc2626' : '#f59e0b';
                     const row = `
                         <tr>
                             <td>${idx + 1}</td>
                             <td>${stat.system}</td>
-                            <td class="number" style="color: ${severityColor}; font-weight: 600;">${stat.ordersPerMonth.toFixed(1)}</td>
-                            <td class="number" style="color: ${severityColor}; font-weight: 600;">${stat.issue}</td>
-                            <td style="font-size: 0.85em; max-width: 200px;">${stat.suggestion}</td>
+                            <td class="number" style="color: ${severityColor}; font-weight: 600;">${stat.avgOrdersPerMonth}</td>
+                            <td class="number" style="color: ${severityColor}; font-weight: 600;">${stat.issues}</td>
+                            <td style="font-size: 0.85em; max-width: 200px;">${stat.suggestions}</td>
                         </tr>
                     `;
                     abnormalTableBody.innerHTML += row;
@@ -6263,12 +6335,11 @@
                 block: 'start' 
             });
 
-            console.log('📊 Order Frequency Analysis Complete:', {
-                totalSystems: systemStats.length,
-                avgOrdersPerMonth: avgOrdersPerMonth.toFixed(2),
+            console.log('📊 Individual System Analysis Complete:', {
+                totalSystems: systemAnalysis.length,
                 normalSystems: normalSystems.length,
                 abnormalSystems: abnormalSystems.length,
-                thresholds: { lower: lowerThreshold.toFixed(2), upper: upperThreshold.toFixed(2) }
+                analysisMethod: 'Individual system historical pattern analysis'
             });
         }
 
