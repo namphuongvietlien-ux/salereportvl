@@ -1640,55 +1640,64 @@
                     const earlierQty = earlierMonths.length > 0 ? earlierMonths.map(m => monthlyData[m]) : [];
                     const earlierAvg = earlierQty.length > 0 ? earlierQty.reduce((a, b) => a + b, 0) / earlierQty.length : 0;
                     const changePercent = earlierAvg > 0 ? ((recentAvg - earlierAvg) / earlierAvg) * 100 : 0;
-                    let trend = '→';
-                    let recommendation = '';
-                    if (changePercent > 20) {
-                        trend = '📈';
-                        recommendation = 'Tăng mạnh - Đẩy mạnh bán hàng';
-                    } else if (changePercent > 5) {
-                        trend = '📈';
-                        recommendation = 'Tăng nhẹ - Theo dõi';
-                    } else if (changePercent < -20) {
-                        trend = '📉';
-                        recommendation = 'Giảm mạnh - Kiểm tra nguyên nhân';
-                    } else if (changePercent < -5) {
-                        trend = '📉';
-                        recommendation = 'Giảm nhẹ - Theo dõi thêm';
-                    }
-                    if (orderFreq <= 2 && avgQty < 10) {
-                        recommendation = 'Tần suất thấp - Có thể ngưng cung cấp';
-                    }
-                    storeAnalysis.push({
-                        store,
-                        earlierAvg,
-                        recentAvg,
-                        changePercent,
-                        totalQty,
-                        orderFreq,
-                        trend,
-                        recommendation,
-                        monthCount: months.length
-                    });
-                }
-            });
-            // Sắp xếp theo % thay đổi giảm dần
-            storeAnalysis.sort((a, b) => b.changePercent - a.changePercent);
-            // Render bảng
-            const tbody = document.getElementById('storeAnalysisTableBody');
-            tbody.innerHTML = '';
-            storeAnalysis.forEach((store, index) => {
-                const rowColor = store.changePercent > 20 ? '#ecfdf5' : store.changePercent < -20 ? '#fef2f2' : store.orderFreq <= 2 ? '#fefbf2' : '#ffffff';
-                const row = `
-                    <tr style="background: ${rowColor}; border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 12px; text-align: center; font-weight: 600;">${index + 1}</td>
-                        <td style="padding: 12px; max-width: 180px; word-wrap: break-word;"><strong>${store.store}</strong><div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">${store.monthCount} tháng data • Tổng: ${store.totalQty}</div></td>
-                        <td style="padding: 12px; text-align: center;">${store.earlierAvg.toFixed(0)}</td>
-                        <td style="padding: 12px; text-align: center;">${store.recentAvg.toFixed(0)}</td>
-                        <td style="padding: 12px; text-align: center; font-weight: 600; color: ${store.changePercent > 0 ? '#059669' : '#dc2626'};">${store.changePercent > 0 ? '+' : ''}${store.changePercent.toFixed(1)}%</td>
-                        <td style="padding: 12px; text-align: center; font-weight: 600;">${store.totalQty}</td>
-                        <td style="padding: 12px; text-align: center; font-size: 1.2em;">${store.trend}</td>
-                        <td style="padding: 12px; font-size: 0.85em; max-width: 200px;">${store.recommendation}</td>
-                    </tr>
+                    let skuModalChart = null;
+
+                    // Show SKU analysis for selected system
+                    function showSystemDrillDown(systemName) {
+                        console.log('showSystemDrillDown called with:', systemName);
+                        // Lấy giá trị timeline filter
+                        let startMonth = document.getElementById('startMonth')?.value;
+                        let endMonth = document.getElementById('endMonth')?.value;
+                        if (!startMonth) startMonth = '2023-01';
+                        if (!endMonth) endMonth = '2025-12';
+
+                        // Lọc dữ liệu theo hệ thống và khoảng thời gian
+                        const filteredData = allData.filter(row => {
+                            const system = row['HỆ THỐNG']?.trim();
+                            const monthKey = row.monthKey;
+                            return system === systemName && monthKey >= startMonth && monthKey <= endMonth;
+                        });
+
+                        const systemData = {};
+                        filteredData.forEach(row => {
+                            const product = row['TÊN SP']?.trim();
+                            const quantity = parseFloat(row.soLuong) || 0;
+                            const revenue = parseFloat(row.vat) || 0;
+                            if (product) {
+                                if (!systemData[product]) {
+                                    systemData[product] = {
+                                        quantity: 0,
+                                        revenue: 0
+                                    };
+                                }
+                                systemData[product].quantity += quantity;
+                                systemData[product].revenue += revenue;
+                            }
+                        });
+
+                        console.log('systemData collected:', Object.keys(systemData).length, 'products');
+
+                        // Sort by revenue
+                        const sortedProducts = Object.entries(systemData)
+                            .sort((a, b) => b[1].revenue - a[1].revenue)
+                            .slice(0, 20); // Top 20 SKUs
+
+                        console.log('sortedProducts:', sortedProducts.length, 'items');
+
+                        if (sortedProducts.length === 0) {
+                            alert(`Không tìm thấy dữ liệu SKU cho hệ thống: ${systemName}`);
+                            return;
+                        }
+
+                        // Update modal title
+                        document.getElementById('skuModalTitle').textContent = `🏢 SKU Trong Hệ Thống: ${systemName}`;
+
+                        // Create chart
+                        createSKUChart(sortedProducts, 'system');
+                        // Populate table
+                        populateSKUTable(sortedProducts);
+                        // Show modal
+                        document.getElementById('skuAnalysisModal').style.display = 'block';
                 `;
                 tbody.innerHTML += row;
             });
