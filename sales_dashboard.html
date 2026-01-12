@@ -441,6 +441,17 @@
                 background: white;
             }
             
+            /* When printing modal, hide everything except modal */
+            body.printing-modal #dashboard,
+            body.printing-modal .header,
+            body.printing-modal #loading {
+                display: none !important;
+            }
+            
+            body.printing-modal .forecast-modal {
+                display: block !important;
+            }
+            
             .header {
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white;
@@ -2920,6 +2931,9 @@
 
         // Print forecast detail
         function printForecastDetail() {
+            // Mark body as printing modal only
+            document.body.classList.add('printing-modal');
+            
             // Hide buttons and other non-print elements temporarily
             const modal = document.getElementById('forecastDetailModal');
             const buttons = modal.querySelectorAll('button');
@@ -2931,10 +2945,11 @@
             // Print
             window.print();
             
-            // Restore buttons
+            // Restore everything
             setTimeout(() => {
                 buttons.forEach(btn => btn.style.display = '');
                 if (stockoutBtn) stockoutBtn.style.display = '';
+                document.body.classList.remove('printing-modal');
             }, 100);
         }
         
