@@ -524,6 +524,40 @@
                 padding: 8px;
             }
             
+            /* Remove height restrictions for printing */
+            .table-container,
+            .forecast-modal-body,
+            .detail-section {
+                max-height: none !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+            
+            /* Ensure all table rows are visible */
+            tbody tr {
+                display: table-row !important;
+            }
+            
+            /* Prevent table breaks across pages when possible */
+            .detail-section {
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+            
+            /* But allow long tables to break */
+            .detail-section table {
+                page-break-inside: auto;
+            }
+            
+            /* Keep table headers on each page */
+            thead {
+                display: table-header-group;
+            }
+            
+            tbody {
+                display: table-row-group;
+            }
+            
             /* Footer for print */
             @page {
                 margin: 1.5cm;
@@ -3371,15 +3405,63 @@
             buttons.forEach(btn => btn.style.display = 'none');
             if (stockoutBtn) stockoutBtn.style.display = 'none';
             
-            // Print
-            window.print();
+            // Expand all table containers to show all content
+            const tableContainers = modal.querySelectorAll('.table-container');
+            const originalStyles = [];
             
-            // Restore everything
+            tableContainers.forEach((container, index) => {
+                // Store original styles
+                originalStyles[index] = {
+                    maxHeight: container.style.maxHeight,
+                    overflow: container.style.overflow,
+                    height: container.style.height
+                };
+                
+                // Remove height restrictions
+                container.style.maxHeight = 'none';
+                container.style.overflow = 'visible';
+                container.style.height = 'auto';
+            });
+            
+            // Also expand modal body
+            const modalBody = modal.querySelector('.forecast-modal-body');
+            let originalBodyStyle = null;
+            if (modalBody) {
+                originalBodyStyle = {
+                    maxHeight: modalBody.style.maxHeight,
+                    overflow: modalBody.style.overflow
+                };
+                modalBody.style.maxHeight = 'none';
+                modalBody.style.overflow = 'visible';
+            }
+            
+            // Wait a moment for DOM to update, then print
             setTimeout(() => {
-                buttons.forEach(btn => btn.style.display = '');
-                if (stockoutBtn) stockoutBtn.style.display = '';
-                document.body.classList.remove('printing-modal');
-            }, 100);
+                window.print();
+                
+                // Restore everything
+                setTimeout(() => {
+                    buttons.forEach(btn => btn.style.display = '');
+                    if (stockoutBtn) stockoutBtn.style.display = '';
+                    
+                    // Restore table container styles
+                    tableContainers.forEach((container, index) => {
+                        if (originalStyles[index]) {
+                            container.style.maxHeight = originalStyles[index].maxHeight;
+                            container.style.overflow = originalStyles[index].overflow;
+                            container.style.height = originalStyles[index].height;
+                        }
+                    });
+                    
+                    // Restore modal body
+                    if (modalBody && originalBodyStyle) {
+                        modalBody.style.maxHeight = originalBodyStyle.maxHeight;
+                        modalBody.style.overflow = originalBodyStyle.overflow;
+                    }
+                    
+                    document.body.classList.remove('printing-modal');
+                }, 100);
+            }, 50);
         }
         
         // Print dashboard
