@@ -1047,13 +1047,25 @@
                             </div>
                             <div id="stockoutAdjustment" style="display: none;">
                                 <p style="color: #64748b; font-size: 0.85em; margin: 0;">Điều Chỉnh Đứt Hàng</p>
-                                <p id="stockoutAdjustmentValue" style="font-size: 1.4em; font-weight: 700; color: #f59e0b; margin: 5px 0 0 0;">+0 ₫</p>
+                                <p id="stockoutAdjustmentValue" style="font-size: 1.4em; font-weight: 700; margin: 5px 0 0 0;">0 ₫</p>
                             </div>
                         </div>
                     </div>
 
                     <div id="stockoutAnalysisSection" style="display: none; background: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #f59e0b;">
-                        <h3 style="color: #92400e; margin-bottom: 15px;">⚠️ Phân Tích Sản Phẩm Đứt Hàng</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #92400e; margin: 0;">⚠️ Phân Tích Sản Phẩm Đứt Hàng</h3>
+                            <button onclick="clearAllStockoutProducts()" style="
+                                padding: 8px 16px;
+                                background: #dc2626;
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                font-size: 0.9em;
+                                font-weight: 600;
+                                cursor: pointer;
+                            ">🗑️ Xóa Tất Cả</button>
+                        </div>
                         <div id="stockoutContent"></div>
                     </div>
 
@@ -2506,6 +2518,26 @@
             
             return detail;
         }
+        
+        // Clear all stockout products
+        function clearAllStockoutProducts() {
+            if (manualStockoutProducts.length === 0) {
+                alert('Danh sách đã trống');
+                return;
+            }
+            
+            if (confirm(`Xóa tất cả ${manualStockoutProducts.length} sản phẩm trong danh sách?`)) {
+                manualStockoutProducts = [];
+                
+                // Re-render the list
+                const today = new Date();
+                const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                renderStockoutProductsList(today.getDate(), daysInMonth);
+                
+                // Refresh modal if open
+                refreshForecastModalIfOpen();
+            }
+        }
 
         // Show forecast detail modal
         function showForecastDetail(type) {
@@ -2532,6 +2564,27 @@
             // Update summary
             document.getElementById('forecastTotalSales').textContent = formatCurrency(detail.totalSales);
             document.getElementById('forecastTotalQty').textContent = formatNumber(Math.round(detail.totalQty));
+            
+            // Calculate total adjustment
+            let totalAdjustment = 0;
+            if (detail.adjustments) {
+                Object.values(detail.adjustments.products).forEach(adj => {
+                    totalAdjustment += adj.sales;
+                });
+            }
+            
+            // Show/hide adjustment
+            const adjustmentDiv = document.getElementById('stockoutAdjustment');
+            const adjustmentValueDiv = document.getElementById('stockoutAdjustmentValue');
+            if (Math.abs(totalAdjustment) > 1000) {
+                adjustmentDiv.style.display = 'block';
+                const color = totalAdjustment > 0 ? '#10b981' : '#ef4444';
+                const sign = totalAdjustment > 0 ? '+' : '';
+                adjustmentValueDiv.style.color = color;
+                adjustmentValueDiv.textContent = `${sign}${formatCurrency(totalAdjustment)}`;
+            } else {
+                adjustmentDiv.style.display = 'none';
+            }
             
             // Populate system table
             const systemTableBody = document.getElementById('forecastSystemTableBody');
