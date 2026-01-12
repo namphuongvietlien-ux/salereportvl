@@ -3107,7 +3107,9 @@
             });
             
             // Re-render list
+            const today = new Date();
             const currentDay = today.getDate();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             renderStockoutProductsList(currentDay, daysInMonth);
             
             // Refresh forecast modal if it's open
