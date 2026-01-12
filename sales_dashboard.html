@@ -2726,15 +2726,37 @@
             });
             
             // Calculate averages and prepare product list
-            availableProducts = Object.values(productData).map(prod => ({
-                name: prod.name,
-                fullName: prod.fullName,
-                brand: prod.brand,
-                system: prod.system,
-                avgMonthlySales: prod.totalSales / prod.monthsWithSales.size,
-                avgMonthlyQty: prod.totalQty / prod.monthsWithSales.size
-            })).filter(p => p.avgMonthlySales > 500000) // Min 500K VND
-            .sort((a, b) => b.avgMonthlySales - a.avgMonthlySales);
+            availableProducts = Object.values(productData).map(prod => {
+                const monthsCount = prod.monthsWithSales.size;
+                const avgMonthlySales = prod.totalSales / monthsCount;
+                const avgMonthlyQty = prod.totalQty / monthsCount;
+                
+                // Get unique systems for this product to calculate per-system average
+                const systemsWithProduct = new Set();
+                allData.forEach(row => {
+                    if (recentMonths.includes(row.monthKey) && 
+                        shortenProductName(row['TÊN SP']) === prod.name) {
+                        systemsWithProduct.add(row['HỆ THỐNG']);
+                    }
+                });
+                
+                // Calculate average per system (not total across all systems)
+                const systemCount = systemsWithProduct.size || 1;
+                const avgPerSystemMonthlySales = avgMonthlySales / systemCount;
+                const avgPerSystemMonthlyQty = avgMonthlyQty / systemCount;
+                
+                return {
+                    name: prod.name,
+                    fullName: prod.fullName,
+                    brand: prod.brand,
+                    system: prod.system,
+                    avgMonthlySales: avgPerSystemMonthlySales,
+                    avgMonthlyQty: avgPerSystemMonthlyQty,
+                    totalMonthlySales: avgMonthlySales, // Keep original for reference
+                    systemCount: systemCount
+                };
+            }).filter(p => p.totalMonthlySales > 500000) // Filter by total, not per-system
+            .sort((a, b) => b.totalMonthlySales - a.totalMonthlySales);
             
             // Display manual input form
             displayStockoutForm(currentDay, daysInMonth, currentMonthKey);
@@ -2763,7 +2785,7 @@
                                 <option value="">-- Chọn mã sản phẩm --</option>
                                 ${availableProducts.map(p => 
                                     `<option value="${p.name}" data-brand="${p.brand}" data-sales="${p.avgMonthlySales}" data-qty="${p.avgMonthlyQty}">
-                                        ${p.name} - ${p.brand} (TB: ${formatCurrency(p.avgMonthlySales)}/tháng)
+                                        ${p.name} - ${p.brand} (TB/HT: ${formatCurrency(p.avgMonthlySales)}/tháng, ${p.systemCount} HT)
                                     </option>`
                                 ).join('')}
                             </select>
