@@ -583,7 +583,12 @@
                 <div class="chart-card full-width">
                     <h2>🔮 Dự Đoán Doanh Số & Số Lượng</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào từng dự đoán để xem chi tiết theo hệ thống và sản phẩm</p>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                        <div class="forecast-card" onclick="showForecastDetail('currentMonth')" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🔥 Dự Đoán Tháng Này</h3>
+                            <p id="currentMonthForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
+                            <p id="currentMonthQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
+                        </div>
                         <div class="forecast-card" onclick="showForecastDetail('nextMonth')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
                             <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📅 Dự Đoán Tháng Tiếp Theo</h3>
                             <p id="nextMonthForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
@@ -1799,9 +1804,19 @@
                 forecastQty.push(trendQtyValue * seasonalFactor);
             }
 
-            // Update forecast KPIs
-            document.getElementById('nextMonthForecast').textContent = formatCurrency(forecastSales[0]);
-            document.getElementById('nextMonthQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(forecastQty[0]))}`;
+            // Current month forecast (month 0 in forecast)
+            const currentMonthForecastSales = forecastSales[0];
+            const currentMonthForecastQty = forecastQty[0];
+            
+            // Update forecast KPIs - Current Month (new)
+            document.getElementById('currentMonthForecast').textContent = formatCurrency(currentMonthForecastSales);
+            document.getElementById('currentMonthQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(currentMonthForecastQty))}`;
+            
+            // Update forecast KPIs - Next Month (month 1 in forecast)
+            const nextMonthForecastSales = forecastSales[1] || forecastSales[0];
+            const nextMonthForecastQty = forecastQty[1] || forecastQty[0];
+            document.getElementById('nextMonthForecast').textContent = formatCurrency(nextMonthForecastSales);
+            document.getElementById('nextMonthQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(nextMonthForecastQty))}`;
 
             // Current quarter average
             const currentQuarterMonths = sortedMonths.slice(-3);
@@ -1839,7 +1854,7 @@
             document.getElementById('seasonalityDetail').textContent = `Dự kiến ${change > 0 ? '+' : ''}${change.toFixed(1)}% so với tháng hiện tại`;
 
             // Calculate detailed forecasts by system, brand, and product
-            calculateDetailedForecasts(data, sortedMonths, forecastSales[0], forecastQty[0], currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast);
+            calculateDetailedForecasts(data, sortedMonths, currentMonthForecastSales, currentMonthForecastQty, nextMonthForecastSales, nextMonthForecastQty, currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast);
 
             // Create chart
             const ctx = document.getElementById('forecastChart');
@@ -1882,6 +1897,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const monthKey = sortedMonths[index];
+                            showMonthDrillDown(monthKey);
+                        }
+                    },
                     interaction: {
                         intersect: false,
                         mode: 'index'
@@ -1926,7 +1948,7 @@
         }
 
         // Calculate detailed forecasts by system, brand, and product
-        function calculateDetailedForecasts(data, sortedMonths, nextMonthForecastSales, nextMonthForecastQty, currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast) {
+        function calculateDetailedForecasts(data, sortedMonths, currentMonthForecastSales, currentMonthForecastQty, nextMonthForecastSales, nextMonthForecastQty, currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast) {
             // Get recent months data for proportion calculation
             const recentMonthsCount = Math.min(3, sortedMonths.length);
             const recentMonths = sortedMonths.slice(-recentMonthsCount);
@@ -1974,6 +1996,13 @@
             
             // Store detailed forecast data
             forecastDetailsData = {
+                currentMonth: {
+                    totalSales: currentMonthForecastSales,
+                    totalQty: currentMonthForecastQty,
+                    systems: {},
+                    brands: {},
+                    products: {}
+                },
                 nextMonth: {
                     totalSales: nextMonthForecastSales,
                     totalQty: nextMonthForecastQty,
@@ -1998,7 +2027,7 @@
             };
             
             // Calculate forecast for each entity using proportions
-            ['nextMonth', 'currentQuarter', 'nextQuarter'].forEach(period => {
+            ['currentMonth', 'nextMonth', 'currentQuarter', 'nextQuarter'].forEach(period => {
                 const forecastSales = forecastDetailsData[period].totalSales;
                 const forecastQty = forecastDetailsData[period].totalQty;
                 
@@ -2046,6 +2075,7 @@
             
             // Set title based on type
             const titles = {
+                'currentMonth': '🔥 Chi Tiết Dự Đoán Tháng Này (Tháng 1/2026)',
                 'nextMonth': '📅 Chi Tiết Dự Đoán Tháng Tiếp Theo',
                 'currentQuarter': '📊 Chi Tiết Trung Bình Quý Hiện Tại',
                 'nextQuarter': '🎯 Chi Tiết Dự Đoán Quý Tới'
@@ -2589,10 +2619,10 @@
                     },
                     scales: {
                         x: {
-                            stacked: true
+                            stacked: false
                         },
                         y: {
-                            stacked: true,
+                            stacked: false,
                             beginAtZero: true,
                             ticks: {
                                 callback: function(value) {
@@ -3356,6 +3386,193 @@
             }, 100);
         }
 
+        // Store Drill-Down
+        function showStoreDrillDown(storeName) {
+            const storeData = allData.filter(d => d['CỬA HÀNG'] === storeName);
+            
+            if (storeData.length === 0) {
+                alert('Không có dữ liệu cho cửa hàng này');
+                return;
+            }
+            
+            document.getElementById('modalTitle').textContent = `🏪 Chi Tiết Cửa Hàng: ${storeName}`;
+            
+            // Calculate totals
+            let totalSales = 0;
+            let totalQty = 0;
+            const uniqueOrders = new Set();
+            
+            storeData.forEach(row => {
+                totalSales += row.vat || 0;
+                totalQty += row.soLuong || 0;
+                uniqueOrders.add(row['SO HD']);
+            });
+            
+            const avgOrderValue = uniqueOrders.size > 0 ? totalSales / uniqueOrders.size : 0;
+            
+            // Monthly data
+            const monthlyData = {};
+            storeData.forEach(row => {
+                const month = row.monthKey;
+                if (!monthlyData[month]) {
+                    monthlyData[month] = { sales: 0, qty: 0 };
+                }
+                monthlyData[month].sales += row.vat || 0;
+                monthlyData[month].qty += row.soLuong || 0;
+            });
+            
+            const months = Object.keys(monthlyData).sort();
+            
+            // Top brands
+            const brandData = {};
+            storeData.forEach(row => {
+                const brand = row['NHÃN HÀNG'] || 'Unknown';
+                if (!brandData[brand]) {
+                    brandData[brand] = { sales: 0, qty: 0 };
+                }
+                brandData[brand].sales += row.vat || 0;
+                brandData[brand].qty += row.soLuong || 0;
+            });
+            
+            const topBrands = Object.entries(brandData)
+                .sort((a, b) => b[1].sales - a[1].sales)
+                .slice(0, 10);
+            
+            // Top products
+            const productData = {};
+            storeData.forEach(row => {
+                const product = row['TÊN SP'] || 'Unknown';
+                if (!productData[product]) {
+                    productData[product] = { sales: 0, qty: 0 };
+                }
+                productData[product].sales += row.vat || 0;
+                productData[product].qty += row.soLuong || 0;
+            });
+            
+            const topProducts = Object.entries(productData)
+                .sort((a, b) => b[1].sales - a[1].sales)
+                .slice(0, 10);
+            
+            const html = `
+                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white; margin-bottom: 30px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Tổng Doanh Số</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatCurrency(totalSales)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Tổng Số Lượng</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatNumber(totalQty)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Số Đơn Hàng</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatNumber(uniqueOrders.size)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.9em; opacity: 0.9;">Giá TB/Đơn</div>
+                            <div style="font-size: 1.3em; font-weight: 600; margin-top: 5px;">${formatCurrency(avgOrderValue)}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 30px;">
+                    <h3 style="color: #3b82f6; margin-bottom: 15px;">📈 Doanh Số Theo Tháng</h3>
+                    <div style="height: 300px;"><canvas id="modalChart1"></canvas></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div>
+                        <h3 style="color: #10b981; margin-bottom: 15px;">🏷️ Top 10 Nhãn Hàng</h3>
+                        <div class="table-container" style="max-height: 350px; overflow: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb;">#</th>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb;">Nhãn Hàng</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb;">SL</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb;">DS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topBrands.map((b, i) => `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${i + 1}</td>
+                                            <td style="padding: 8px; font-weight: 600;">${b[0]}</td>
+                                            <td style="padding: 8px; text-align: right;">${formatNumber(b[1].qty)}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #10b981;">${formatCurrency(b[1].sales)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="color: #f59e0b; margin-bottom: 15px;">📦 Top 10 Sản Phẩm</h3>
+                        <div class="table-container" style="max-height: 350px; overflow: auto;">
+                            <table style="width: 100%;">
+                                <thead style="position: sticky; top: 0; background: white;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">#</th>
+                                        <th style="text-align: left; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">Sản Phẩm</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">SL</th>
+                                        <th style="text-align: right; padding: 8px; border-bottom: 2px solid #e5e7eb; font-size: 0.9em;">DS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topProducts.map((p, i) => `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px; font-size: 0.9em;">${i + 1}</td>
+                                            <td style="padding: 8px; font-size: 0.85em;">${p[0]}</td>
+                                            <td style="padding: 8px; text-align: right; font-size: 0.9em;">${formatNumber(p[1].qty)}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #f59e0b; font-size: 0.9em;">${formatCurrency(p[1].sales)}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('drillDownModal').style.display = 'block';
+            
+            setTimeout(() => {
+                const ctx1 = document.getElementById('modalChart1').getContext('2d');
+                modalCharts.chart1 = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Doanh Số',
+                            data: months.map(m => monthlyData[m].sales),
+                            backgroundColor: '#667eea'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => 'Doanh số: ' + formatCurrency(context.parsed.y)
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (v) => formatCurrency(v)
+                                }
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        }
+
         // Create Top Products Chart
         function createTopProductsChart(data) {
             const productData = {};
@@ -3637,6 +3854,8 @@
             
             sorted.forEach((storeInfo, index) => {
                 const row = tbody.insertRow();
+                row.style.cursor = 'pointer';
+                row.onclick = () => showStoreDrillDown(storeInfo.store);
                 row.innerHTML = `
                     <td>${index + 1}</td>
                     <td style="text-align: left;">${storeInfo.store}</td>
@@ -3645,6 +3864,7 @@
                     <td class="number" style="background: #fffbeb; color: #d97706;">${formatCurrency(storeInfo.totalSales)}</td>
                     <td class="number">${formatCurrency(storeInfo.avgPerOrder)}</td>
                 `;
+                row.title = 'Click để xem chi tiết cửa hàng';
             });
         }
 
