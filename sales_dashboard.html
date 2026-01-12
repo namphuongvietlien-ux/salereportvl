@@ -450,9 +450,9 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Mã hàng (SKU)</label>
-                    <select id="skuFilter" style="min-width: 150px;">
-                        <option value="all">Tất cả SKU</option>
+                    <label>Sản phẩm</label>
+                    <select id="productFilter" style="min-width: 200px;">
+                        <option value="all">Tất cả sản phẩm</option>
                     </select>
                 </div>
                 <div class="filter-group" style="margin-left: auto;">
@@ -1174,7 +1174,7 @@
         function initializeFilters() {
             const systems = [...new Set(allData.map(d => d['HỆ THỐNG']))].filter(Boolean).sort();
             const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
-            const skus = [...new Set(allData.map(d => d['MÃ HH']))].filter(Boolean).sort();
+            const products = [...new Set(allData.map(d => d['TÊN SP']))].filter(Boolean).sort();
 
             const systemSelect = document.getElementById('systemFilter');
             systems.forEach(system => {
@@ -1192,20 +1192,74 @@
                 brandSelect.appendChild(option);
             });
 
-            const skuSelect = document.getElementById('skuFilter');
-            skus.forEach(sku => {
+            const productSelect = document.getElementById('productFilter');
+            products.forEach(product => {
                 const option = document.createElement('option');
-                option.value = sku;
-                option.textContent = sku;
-                skuSelect.appendChild(option);
+                option.value = product;
+                option.textContent = product;
+                productSelect.appendChild(option);
             });
 
-            // Add event listeners
+            // Add event listeners with cascading update
             document.getElementById('startMonth').addEventListener('change', updateDashboard);
             document.getElementById('endMonth').addEventListener('change', updateDashboard);
-            document.getElementById('systemFilter').addEventListener('change', updateDashboard);
-            document.getElementById('brandFilter').addEventListener('change', updateDashboard);
-            document.getElementById('skuFilter').addEventListener('change', updateDashboard);
+            document.getElementById('systemFilter').addEventListener('change', () => {
+                updateCascadingFilters();
+                updateDashboard();
+            });
+            document.getElementById('brandFilter').addEventListener('change', () => {
+                updateCascadingFilters();
+                updateDashboard();
+            });
+            document.getElementById('productFilter').addEventListener('change', updateDashboard);
+        }
+
+        // Update cascading filters based on current selection
+        function updateCascadingFilters() {
+            const startMonth = document.getElementById('startMonth').value;
+            const endMonth = document.getElementById('endMonth').value;
+            const selectedSystem = document.getElementById('systemFilter').value;
+            const selectedBrand = document.getElementById('brandFilter').value;
+            const selectedProduct = document.getElementById('productFilter').value;
+
+            // Filter data based on current selections
+            let filteredData = allData.filter(row => {
+                if (startMonth && row.monthKey < startMonth) return false;
+                if (endMonth && row.monthKey > endMonth) return false;
+                if (selectedSystem !== 'all' && row['HỆ THỐNG'] !== selectedSystem) return false;
+                if (selectedBrand !== 'all' && row['NHÃN HÀNG'] !== selectedBrand) return false;
+                return true;
+            });
+
+            // Update brand dropdown based on selected system
+            if (selectedSystem !== 'all') {
+                const availableBrands = [...new Set(filteredData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
+                const brandSelect = document.getElementById('brandFilter');
+                const currentBrand = brandSelect.value;
+                
+                brandSelect.innerHTML = '<option value="all">Tất cả nhãn hàng</option>';
+                availableBrands.forEach(brand => {
+                    const option = document.createElement('option');
+                    option.value = brand;
+                    option.textContent = brand;
+                    if (brand === currentBrand) option.selected = true;
+                    brandSelect.appendChild(option);
+                });
+            }
+
+            // Update product dropdown based on selected system and brand
+            const availableProducts = [...new Set(filteredData.map(d => d['TÊN SP']))].filter(Boolean).sort();
+            const productSelect = document.getElementById('productFilter');
+            const currentProduct = productSelect.value;
+            
+            productSelect.innerHTML = '<option value="all">Tất cả sản phẩm</option>';
+            availableProducts.forEach(product => {
+                const option = document.createElement('option');
+                option.value = product;
+                option.textContent = product;
+                if (product === currentProduct) option.selected = true;
+                productSelect.appendChild(option);
+            });
         }
 
         // Quick timeline filter
@@ -1254,14 +1308,14 @@
             const endMonth = document.getElementById('endMonth').value;
             const system = document.getElementById('systemFilter').value;
             const brand = document.getElementById('brandFilter').value;
-            const sku = document.getElementById('skuFilter').value;
+            const product = document.getElementById('productFilter').value;
 
             return allData.filter(row => {
                 if (startMonth && row.monthKey < startMonth) return false;
                 if (endMonth && row.monthKey > endMonth) return false;
                 if (system !== 'all' && row['HỆ THỐNG'] !== system) return false;
                 if (brand !== 'all' && row['NHÃN HÀNG'] !== brand) return false;
-                if (sku !== 'all' && row['MÃ HH'] !== sku) return false;
+                if (product !== 'all' && row['TÊN SP'] !== product) return false;
                 return true;
             });
         }
