@@ -2272,8 +2272,13 @@
             // Count total working days in month (for proper proportion calculation)
             const totalWorkingDaysInMonth = countWorkingDays(1, daysInMonth, today.getFullYear(), today.getMonth());
             
+            console.log(`📅 Working days calculation: ${totalWorkingDaysInMonth} working days in month`);
+            console.log(`📋 Processing ${manualStockoutProducts.length} manual products`);
+            
             // Process each manual product
             manualStockoutProducts.forEach(prod => {
+                console.log(`🔍 Processing product: ${prod.name}, isNew: ${prod.isNew}`);
+                
                 if (prod.isNew) {
                     // New products: only count working days after launch
                     const workingDaysAfterLaunch = countWorkingDays(prod.restockDay, daysInMonth, today.getFullYear(), today.getMonth());
@@ -2332,10 +2337,14 @@
                     detail.adjustments.products[prod.name].qty += adjustedQty;
                 } else {
                     // For STOCKOUT products: Calculate net adjustment (working days only)
+                    console.log(`💔 Stockout product: ${prod.name}, restockDay: ${prod.restockDay}, currentDay: ${currentDay}`);
+                    
                     // 1. Lost sales during stockout (từ hôm nay → ngày về hàng, chỉ tính ngày làm việc)
                     const workingDaysLost = countWorkingDays(currentDay, prod.restockDay - 1, today.getFullYear(), today.getMonth());
                     const lostSales = -(prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysLost;
                     const lostQty = -(prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysLost;
+                    
+                    console.log(`📉 Lost: ${workingDaysLost} working days = ${lostSales.toLocaleString()} VND`);
                     
                     // 2. Surge sales after restock (từ ngày về hàng → cuối tháng, chỉ tính ngày làm việc)
                     const workingDaysAfterRestock = countWorkingDays(prod.restockDay, daysInMonth, today.getFullYear(), today.getMonth());
@@ -2350,6 +2359,8 @@
                     // This represents: -lost during stockout + extra surge after restock
                     const adjustedSales = lostSales + (surgeSales - normalSalesForPeriod);
                     const adjustedQty = lostQty + (surgeQty - normalQtyForPeriod);
+                    
+                    console.log(`📊 Net adjustment: ${adjustedSales.toLocaleString()} VND (${adjustedSales < 0 ? 'LOSS' : 'GAIN'})`);
                     
                     // Add to total
                     detail.totalSales += adjustedSales;
@@ -2475,6 +2486,7 @@
             sortedSystems.forEach(([system, data], idx) => {
                 const percentage = (data.sales / detail.totalSales * 100).toFixed(1);
                 const adjustment = detail.adjustments?.systems?.[system]?.sales || 0;
+                console.log(`🏢 System ${system}: adjustment = ${adjustment}`);
                 const adjustmentDisplay = adjustment > 0 ? 
                     `<span style="color: #10b981; font-weight: 600;">+${formatCurrency(adjustment)}</span>` : 
                     adjustment < 0 ?
