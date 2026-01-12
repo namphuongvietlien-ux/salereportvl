@@ -7168,7 +7168,7 @@
             
             // Collect all SKU data for this system
             allData.forEach(row => {
-                const system = row['HE THONG']?.trim();
+                const system = row['HE THONG']?.trim() || row['HỆ THỐNG']?.trim();
                 const product = row['TEN SP']?.trim();
                 const quantity = parseFloat(row['SO LUONG']) || 0;
                 const revenue = parseFloat(row['VAT']) || 0;
@@ -7185,10 +7185,19 @@
                 }
             });
             
+            console.log('systemData collected:', Object.keys(systemData).length, 'products');
+            
             // Sort by revenue
             const sortedProducts = Object.entries(systemData)
                 .sort((a, b) => b[1].revenue - a[1].revenue)
                 .slice(0, 20); // Top 20 SKUs
+            
+            console.log('sortedProducts:', sortedProducts.length, 'items');
+            
+            if (sortedProducts.length === 0) {
+                alert(`Không tìm thấy dữ liệu SKU cho hệ thống: ${systemName}`);
+                return;
+            }
             
             // Update modal title
             document.getElementById('skuModalTitle').textContent = `🏢 SKU Trong Hệ Thống: ${systemName}`;
@@ -7264,7 +7273,15 @@
                 window.storeChart.destroy();
             }
             
-            const chartType = type === 'brand' ? 'bar' : type === 'store' ? 'bar' : 'doughnut';
+            const chartType = (type === 'brand' || type === 'store' || type === 'system') ? 'bar' : 'doughnut';
+            
+            console.log('Creating chart:', {
+                type: chartType,
+                dataLength: sortedProducts.length,
+                labels: sortedProducts.slice(0, 3).map(p => p[0]),
+                revenues: sortedProducts.slice(0, 3).map(p => p[1].revenue)
+            });
+            
             const colors = type === 'brand' ? 
                 ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
                  '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'] :
