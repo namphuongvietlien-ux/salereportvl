@@ -1937,7 +1937,7 @@
             // Calculate proportions by system
             const systemData = {};
             recentData.forEach(row => {
-                const system = row.heThong || 'Unknown';
+                const system = row['HỆ THỐNG'] || 'Unknown';
                 if (!systemData[system]) {
                     systemData[system] = { vat: 0, qty: 0 };
                 }
@@ -1948,7 +1948,7 @@
             // Calculate proportions by brand
             const brandData = {};
             recentData.forEach(row => {
-                const brand = row.nhanHang || 'Unknown';
+                const brand = row['NHÃN HÀNG'] || 'Unknown';
                 if (!brandData[brand]) {
                     brandData[brand] = { vat: 0, qty: 0 };
                 }
@@ -1959,8 +1959,8 @@
             // Calculate proportions by product
             const productData = {};
             recentData.forEach(row => {
-                const product = row.tenRutGon || row.tenHang || 'Unknown';
-                const brand = row.nhanHang || 'Unknown';
+                const product = row['TÊN SP'] || 'Unknown';
+                const brand = row['NHÃN HÀNG'] || 'Unknown';
                 if (!productData[product]) {
                     productData[product] = { vat: 0, qty: 0, brand: brand };
                 }
@@ -2502,7 +2502,7 @@
             
             data.forEach(row => {
                 const year = row.year;
-                const brand = row.nhanHang || 'Khác';
+                const brand = row['NHÃN HÀNG'] || 'Khác';
                 
                 brands.add(brand);
                 
