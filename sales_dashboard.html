@@ -2388,6 +2388,15 @@
                             }
                         });
                         
+                        // Fallback: if no recent data, use current forecast's system distribution
+                        if (productTotalInSystems === 0) {
+                            console.warn(`No recent system distribution for ${prod.name}, using forecast proportions`);
+                            Object.entries(detail.systems).forEach(([system, sysData]) => {
+                                productSystemDistribution[system] = sysData.sales;
+                                productTotalInSystems += sysData.sales;
+                            });
+                        }
+                        
                         // Distribute adjustment to systems proportionally
                         if (productTotalInSystems > 0) {
                             Object.entries(productSystemDistribution).forEach(([system, systemSales]) => {
@@ -2407,6 +2416,8 @@
                                     detail.adjustments.systems[system].qty += systemQtyAdjustment;
                                 }
                             });
+                        } else {
+                            console.error(`Cannot distribute adjustment for ${prod.name}: no system data found`);
                         }
                     }
                 }
