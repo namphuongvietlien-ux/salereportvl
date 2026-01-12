@@ -4432,6 +4432,15 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const monthKey = months[index];
+                            const year = selectedYear;
+                            console.log('Month chart clicked:', `${year}-${monthKey.padStart(2, '0')}`);
+                            showMonthDrillDown(`${year}-${monthKey.padStart(2, '0')}`);
+                        }
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -4477,6 +4486,14 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     indexAxis: 'y',
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const systemName = sortedSystems[index][0];
+                            console.log('System chart clicked:', systemName);
+                            showSystemDrillDown(systemName);
+                        }
+                    },
                     plugins: {
                         legend: { display: false },
                         tooltip: {
@@ -6704,14 +6721,6 @@
         // ORDER FREQUENCY DRILL-DOWN FUNCTIONS
         // ==========================================
         
-        // Global variables for drill-down state
-        let currentDrillState = {
-            level: 'overview', // 'overview' | 'system' | 'sku'
-            systemName: null,
-            skuName: null,
-            data: {}
-        };
-
         // Open system-level drill-down
         function drillDownToSystem(systemName) {
             currentDrillState.level = 'system';
@@ -7263,6 +7272,154 @@
                 skuModalChart.destroy();
                 skuModalChart = null;
             }
+        }
+
+        // Show month drill-down details
+        function showMonthDrillDown(monthKey) {
+            console.log('showMonthDrillDown called with:', monthKey);
+            const monthData = {};
+            
+            // Collect all data for this month
+            allData.forEach(row => {
+                const rowMonthKey = `${row.date.getFullYear()}-${String(row.date.getMonth() + 1).padStart(2, '0')}`;
+                if (rowMonthKey === monthKey) {
+                    const system = row['HE THONG']?.trim();
+                    const product = row['TEN SP']?.trim();
+                    const quantity = parseFloat(row['SO LUONG']) || 0;
+                    const revenue = parseFloat(row['VAT']) || 0;
+                    
+                    if (system && product && quantity > 0) {
+                        if (!monthData[system]) {
+                            monthData[system] = {};
+                        }
+                        if (!monthData[system][product]) {
+                            monthData[system][product] = {
+                                quantity: 0,
+                                revenue: 0
+                            };
+                        }
+                        monthData[system][product].quantity += quantity;
+                        monthData[system][product].revenue += revenue;
+                    }
+                }
+            });
+            
+            // Create system summary
+            const systemSummary = {};
+            Object.keys(monthData).forEach(system => {
+                systemSummary[system] = {
+                    totalRevenue: 0,
+                    totalProducts: 0
+                };
+                Object.keys(monthData[system]).forEach(product => {
+                    systemSummary[system].totalRevenue += monthData[system][product].revenue;
+                    systemSummary[system].totalProducts += 1;
+                });
+            });
+            
+            const sortedSystems = Object.entries(systemSummary)
+                .sort((a, b) => b[1].totalRevenue - a[1].totalRevenue)
+                .slice(0, 20);
+            
+            // Update modal title
+            const [year, month] = monthKey.split('-');
+            document.getElementById('skuModalTitle').textContent = `📅 Chi Tiết Tháng ${parseInt(month)}/${year}`;
+            
+            // Create chart showing top systems for this month
+            createMonthSystemChart(sortedSystems);
+            
+            // Populate table with system details
+            populateMonthTable(sortedSystems, systemSummary);
+            
+            // Show modal
+            document.getElementById('skuAnalysisModal').style.display = 'block';
+        }
+        
+        // Create month system chart
+        function createMonthSystemChart(sortedSystems) {
+            const ctx = document.getElementById('modalChart2').getContext('2d');
+            
+            // Destroy existing chart
+            if (skuModalChart) {
+                skuModalChart.destroy();
+            }
+            
+            const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
+                           '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'];
+            
+            skuModalChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: sortedSystems.map(s => s[0]),
+                    datasets: [{
+                        label: 'Doanh Số',
+                        data: sortedSystems.map(s => s[1].totalRevenue),
+                        backgroundColor: colors
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, activeElements) => {
+                        if (activeElements.length > 0) {
+                            const index = activeElements[0].index;
+                            const systemName = sortedSystems[index][0];
+                            console.log('Month system clicked:', systemName);
+                            showSystemDrillDown(systemName);
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return context.label + ': ' + formatCurrency(context.parsed) + ` (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Populate month table
+        function populateMonthTable(sortedSystems, systemSummary) {
+            const tbody = document.getElementById('skuDetailTableBody');
+            tbody.innerHTML = '';
+            
+            const totalRevenue = sortedSystems.reduce((sum, s) => sum + s[1].totalRevenue, 0);
+            
+            sortedSystems.forEach((system, index) => {
+                const percentage = ((system[1].totalRevenue / totalRevenue) * 100).toFixed(1);
+                const row = `
+                    <tr style="border-bottom: 1px solid #e5e7eb; cursor: pointer;" 
+                        onclick="showSystemDrillDown('${system[0].replace(/'/g, "\\'")}')"
+                        onmouseover="this.style.backgroundColor='#f3f4f6'" 
+                        onmouseout="this.style.backgroundColor='white'">
+                        <td style="padding: 15px 12px; font-weight: 600; text-align: center;">${index + 1}</td>
+                        <td style="padding: 15px 12px; max-width: 300px; word-wrap: break-word;">
+                            <strong>${system[0]}</strong>
+                            <div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">
+                                ${system[1].totalProducts} sản phẩm
+                            </div>
+                        </td>
+                        <td style="padding: 15px 12px; text-align: center; font-weight: 600;">
+                            ${formatNumber(system[1].totalProducts)}
+                        </td>
+                        <td style="padding: 15px 12px; text-align: center; font-weight: 600; color: #059669;">
+                            ${formatCurrency(system[1].totalRevenue)}
+                        </td>
+                        <td style="padding: 15px 12px; text-align: center; font-weight: 600;">
+                            ${percentage}%
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
         }
 
         // Initialize
