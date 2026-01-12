@@ -2343,6 +2343,50 @@
                             detail.adjustments.brands[brand].sales += adjustedSales;
                             detail.adjustments.brands[brand].qty += adjustedQty;
                         }
+                        
+                        // Distribute to systems based on product's current distribution
+                        // Calculate product's system distribution from recent data
+                        const productSystemDistribution = {};
+                        let productTotalInSystems = 0;
+                        
+                        // Get recent months for distribution
+                        const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+                        const recentMonths = sortedMonths.slice(-3);
+                        
+                        allData.forEach(row => {
+                            if (recentMonths.includes(row.monthKey) && 
+                                shortenProductName(row['TÊN SP']) === prod.name) {
+                                const system = row['HỆ THỐNG'];
+                                if (system) {
+                                    if (!productSystemDistribution[system]) {
+                                        productSystemDistribution[system] = 0;
+                                    }
+                                    productSystemDistribution[system] += row.vat || 0;
+                                    productTotalInSystems += row.vat || 0;
+                                }
+                            }
+                        });
+                        
+                        // Distribute adjustment to systems proportionally
+                        if (productTotalInSystems > 0) {
+                            Object.entries(productSystemDistribution).forEach(([system, systemSales]) => {
+                                const systemProportion = systemSales / productTotalInSystems;
+                                const systemAdjustment = adjustedSales * systemProportion;
+                                const systemQtyAdjustment = adjustedQty * systemProportion;
+                                
+                                if (detail.systems[system]) {
+                                    detail.systems[system].sales += systemAdjustment;
+                                    detail.systems[system].qty += systemQtyAdjustment;
+                                    
+                                    // Track system adjustment
+                                    if (!detail.adjustments.systems[system]) {
+                                        detail.adjustments.systems[system] = { sales: 0, qty: 0 };
+                                    }
+                                    detail.adjustments.systems[system].sales += systemAdjustment;
+                                    detail.adjustments.systems[system].qty += systemQtyAdjustment;
+                                }
+                            });
+                        }
                     }
                 }
             });
