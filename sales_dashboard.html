@@ -2200,165 +2200,552 @@
             // Reset stockout analysis
             document.getElementById('stockoutAnalysisSection').style.display = 'none';
             document.getElementById('stockoutAdjustment').style.display = 'none';
+            manualStockoutProducts = []; // Clear the list
         }
 
-        // Analyze stockouts (product gaps)
+        // Global variable for stockout products list
+        let manualStockoutProducts = [];
+        let availableProducts = [];
+
+        // Analyze stockouts (product gaps) - MANUAL SELECTION
         function analyzeStockouts() {
             if (!allData || allData.length === 0) {
                 alert('Không có dữ liệu để phân tích');
                 return;
             }
             
-            // Get last 12 months
-            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
-            const last12Months = sortedMonths.slice(-12);
+            // Get current month info
+            const today = new Date();
+            const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+            const currentDay = today.getDate();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             
-            // Analyze each product for gaps
-            const productGaps = {};
+            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            const recentMonths = sortedMonths.slice(-6, -1); // Last 5 months
+            
+            // Get all available products with their average sales
             const productData = {};
             
-            // Group data by product
             allData.forEach(row => {
                 const product = row['TÊN SP'];
-                if (!product) return;
+                const month = row.monthKey;
+                
+                if (!product || !recentMonths.includes(month)) return;
                 
                 const shortName = shortenProductName(product);
-                const month = row.monthKey;
                 
                 if (!productData[shortName]) {
                     productData[shortName] = {
                         name: shortName,
+                        fullName: product,
                         brand: row['NHÃN HÀNG'],
-                        months: new Set(),
+                        system: row['HỆ THỐNG'],
+                        monthsWithSales: new Set(),
                         totalSales: 0,
-                        totalQty: 0,
-                        avgMonthlySales: 0,
-                        avgMonthlyQty: 0
+                        totalQty: 0
                     };
                 }
                 
-                productData[shortName].months.add(month);
+                productData[shortName].monthsWithSales.add(month);
                 productData[shortName].totalSales += row.vat || 0;
                 productData[shortName].totalQty += row.soLuong || 0;
             });
             
-            // Calculate averages and find gaps
-            const stockoutProducts = [];
+            // Calculate averages and prepare product list
+            availableProducts = Object.values(productData).map(prod => ({
+                name: prod.name,
+                fullName: prod.fullName,
+                brand: prod.brand,
+                system: prod.system,
+                avgMonthlySales: prod.totalSales / prod.monthsWithSales.size,
+                avgMonthlyQty: prod.totalQty / prod.monthsWithSales.size
+            })).filter(p => p.avgMonthlySales > 500000) // Min 500K VND
+            .sort((a, b) => b.avgMonthlySales - a.avgMonthlySales);
             
-            Object.values(productData).forEach(prod => {
-                const monthsWithData = Array.from(prod.months).filter(m => last12Months.includes(m));
-                
-                if (monthsWithData.length === 0) return;
-                
-                // Calculate average
-                prod.avgMonthlySales = prod.totalSales / monthsWithData.length;
-                prod.avgMonthlyQty = prod.totalQty / monthsWithData.length;
-                
-                // Find gaps (months without data in last 12 months)
-                const gaps = [];
-                last12Months.forEach((month, idx) => {
-                    if (!prod.months.has(month)) {
-                        // Check if this is a real gap (not at beginning or end)
-                        const prevMonthHasData = idx > 0 && prod.months.has(last12Months[idx - 1]);
-                        const nextMonthHasData = idx < last12Months.length - 1 && prod.months.has(last12Months[idx + 1]);
-                        
-                        if (prevMonthHasData || nextMonthHasData) {
-                            gaps.push(month);
-                        }
-                    }
-                });
-                
-                // If product has gaps and significant sales, add to list
-                if (gaps.length > 0 && prod.avgMonthlySales > 1000000) { // Min 1M VND average
-                    stockoutProducts.push({
-                        ...prod,
-                        gaps: gaps,
-                        gapCount: gaps.length,
-                        lostSales: gaps.length * prod.avgMonthlySales,
-                        lostQty: gaps.length * prod.avgMonthlyQty
-                    });
-                }
-            });
-            
-            // Sort by lost sales
-            stockoutProducts.sort((a, b) => b.lostSales - a.lostSales);
-            
-            // Calculate total adjustment (20-30% increase for affected products)
-            const adjustmentFactor = 1.25; // 25% average
-            let totalAdjustment = 0;
-            let totalAdjustedQty = 0;
-            
-            stockoutProducts.forEach(prod => {
-                totalAdjustment += prod.avgMonthlySales * adjustmentFactor - prod.avgMonthlySales;
-                totalAdjustedQty += prod.avgMonthlyQty * adjustmentFactor - prod.avgMonthlyQty;
-            });
-            
-            // Display results
+            // Display manual input form
+            displayStockoutForm(currentDay, daysInMonth, currentMonthKey);
+        }
+        
+        // Display form to manually add stockout products
+        function displayStockoutForm(currentDay, daysInMonth, currentMonthKey) {
             const content = document.getElementById('stockoutContent');
+            const today = new Date();
+            const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`;
+            const maxDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
             
-            if (stockoutProducts.length === 0) {
-                content.innerHTML = `
-                    <p style="color: #059669; font-weight: 600;">✅ Không phát hiện sản phẩm nào bị đứt hàng trong 12 tháng qua</p>
-                `;
-            } else {
-                content.innerHTML = `
-                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                        <p style="margin: 0 0 10px 0; color: #92400e;"><strong>Phát hiện ${stockoutProducts.length} sản phẩm có dấu hiệu đứt hàng</strong></p>
-                        <p style="margin: 0; font-size: 0.9em; color: #78350f;">
-                            💡 <strong>Giả định:</strong> Khi hàng về, cửa hàng sẽ đặt dồn đơn với số lượng tăng <strong>20-30%</strong> so với bình thường.
-                        </p>
-                        <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #78350f;">
-                            📈 <strong>Điều chỉnh dự đoán:</strong> +${formatCurrency(totalAdjustment)} (${formatNumber(Math.round(totalAdjustedQty))} sản phẩm)
-                        </p>
-                    </div>
-                    
-                    <div class="table-container" style="max-height: 400px; overflow: auto;">
-                        <table style="width: 100%; background: white; font-size: 0.85em;">
-                            <thead style="position: sticky; top: 0; background: white;">
-                                <tr>
-                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">#</th>
-                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Sản Phẩm</th>
-                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Nhãn</th>
-                                    <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">Số Tháng Đứt</th>
-                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Tháng Đứt</th>
-                                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">TB/Tháng</th>
-                                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">Mất Ước Tính</th>
-                                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">Điều Chỉnh +25%</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${stockoutProducts.slice(0, 30).map((prod, idx) => {
-                                    const adjustment = prod.avgMonthlySales * adjustmentFactor - prod.avgMonthlySales;
-                                    const gapsDisplay = prod.gaps.slice(0, 3).map(m => {
-                                        const [y, mo] = m.split('-');
-                                        return `${mo}/${y}`;
-                                    }).join(', ') + (prod.gaps.length > 3 ? '...' : '');
-                                    
-                                    return `
-                                        <tr style="border-bottom: 1px solid #e5e7eb;">
-                                            <td style="padding: 8px;">${idx + 1}</td>
-                                            <td style="padding: 8px; font-weight: 600;">${prod.name}</td>
-                                            <td style="padding: 8px;">${prod.brand}</td>
-                                            <td style="padding: 8px; text-align: center; font-weight: 600; color: #dc2626;">${prod.gapCount}</td>
-                                            <td style="padding: 8px; font-size: 0.8em; color: #64748b;">${gapsDisplay}</td>
-                                            <td style="padding: 8px; text-align: right;">${formatCurrency(prod.avgMonthlySales)}</td>
-                                            <td style="padding: 8px; text-align: right; color: #ef4444;">${formatCurrency(prod.lostSales)}</td>
-                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #f59e0b;">+${formatCurrency(adjustment)}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
+            content.innerHTML = `
+                <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #3b82f6;">
+                    <p style="margin: 0 0 10px 0; color: #1e40af;"><strong>📝 Thêm Sản Phẩm Đứt Hàng Thủ Công</strong></p>
+                    <p style="margin: 0; font-size: 0.9em; color: #1e3a8a;">
+                        Chọn mã sản phẩm và ngày dự kiến về hàng để hệ thống tính toán lại dự đoán doanh số tháng này.
+                    </p>
+                </div>
                 
-                // Show adjustment in summary
-                document.getElementById('stockoutAdjustment').style.display = 'block';
-                document.getElementById('stockoutAdjustmentValue').textContent = '+' + formatCurrency(totalAdjustment);
-            }
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e7eb;">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Chọn Sản Phẩm</label>
+                            <select id="stockoutProductSelect" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                                <option value="">-- Chọn mã sản phẩm --</option>
+                                ${availableProducts.map(p => 
+                                    `<option value="${p.name}" data-brand="${p.brand}" data-sales="${p.avgMonthlySales}" data-qty="${p.avgMonthlyQty}">
+                                        ${p.name} - ${p.brand} (TB: ${formatCurrency(p.avgMonthlySales)}/tháng)
+                                    </option>`
+                                ).join('')}
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Ngày Về Hàng</label>
+                            <input type="date" id="stockoutRestockDate" 
+                                   min="${minDate}" 
+                                   max="${maxDate}" 
+                                   value="${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-20"
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                        </div>
+                        <div>
+                            <button onclick="addStockoutProduct()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; white-space: nowrap;">
+                                ➕ Thêm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f59e0b;">
+                    <p style="margin: 0 0 10px 0; color: #92400e;"><strong>🆕 Thêm Mã Hàng Mới</strong></p>
+                    <p style="margin: 0; font-size: 0.9em; color: #78350f;">
+                        Dự đoán doanh số nếu về thêm mã hàng mới cho các hệ thống.
+                    </p>
+                </div>
+                
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e7eb;">
+                    <div style="display: grid; gap: 15px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Tên Sản Phẩm Mới</label>
+                                <input type="text" id="newProductName" placeholder="Nhập tên mã hàng mới..." 
+                                       style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Nhãn Hàng</label>
+                                <input type="text" id="newProductBrand" placeholder="Nhập nhãn hàng..." 
+                                       style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">SL TB/Cửa Hàng</label>
+                                <input type="number" id="newProductAvgQty" placeholder="Số lượng..." value="10" min="1"
+                                       style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Giá Bán (VND)</label>
+                                <input type="number" id="newProductPrice" placeholder="Giá..." value="50000" min="0"
+                                       style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Ngày Ra Mắt</label>
+                                <input type="date" id="newProductLaunchDate" 
+                                       min="${minDate}" 
+                                       max="${maxDate}" 
+                                       value="${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-15"
+                                       style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Chọn Hệ Thống Bán Hàng</label>
+                            <div id="systemCheckboxes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; background: #f9fafb;">
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <button onclick="addNewProduct()" style="padding: 12px 24px; background: #f59e0b; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1em;">
+                                ➕ Thêm Mã Mới
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="stockoutProductsList"></div>
+            `;
+            
+            // Populate system checkboxes
+            populateSystemCheckboxes();
             
             // Show section
             document.getElementById('stockoutAnalysisSection').style.display = 'block';
+            
+            // Render existing products if any
+            renderStockoutProductsList(currentDay, daysInMonth);
+        }
+        
+        // Populate system checkboxes with store counts
+        function populateSystemCheckboxes() {
+            if (!allData || allData.length === 0) return;
+            
+            // Get unique systems and their store counts
+            const systemStores = {};
+            
+            allData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                const store = row['Tên CH'];
+                
+                if (!system || !store) return;
+                
+                if (!systemStores[system]) {
+                    systemStores[system] = new Set();
+                }
+                systemStores[system].add(store);
+            });
+            
+            // Sort by store count
+            const sortedSystems = Object.entries(systemStores)
+                .map(([system, stores]) => ({ system, storeCount: stores.size }))
+                .sort((a, b) => b.storeCount - a.storeCount);
+            
+            // Render checkboxes
+            const container = document.getElementById('systemCheckboxes');
+            container.innerHTML = sortedSystems.map(({ system, storeCount }) => `
+                <label style="display: flex; align-items: center; padding: 8px; background: white; border-radius: 4px; cursor: pointer; border: 1px solid #e5e7eb;">
+                    <input type="checkbox" value="${system}" data-stores="${storeCount}" 
+                           style="margin-right: 8px; cursor: pointer; width: 18px; height: 18px;">
+                    <span style="flex: 1; font-size: 0.9em;">
+                        <strong>${system}</strong>
+                        <span style="color: #6b7280; font-size: 0.85em; margin-left: 5px;">(${storeCount} CH)</span>
+                    </span>
+                </label>
+            `).join('');
+        }
+        
+        // Add new product to forecast
+        function addNewProduct() {
+            const nameInput = document.getElementById('newProductName');
+            const brandInput = document.getElementById('newProductBrand');
+            const avgQtyInput = document.getElementById('newProductAvgQty');
+            const priceInput = document.getElementById('newProductPrice');
+            const launchDateInput = document.getElementById('newProductLaunchDate');
+            const checkboxes = document.querySelectorAll('#systemCheckboxes input[type="checkbox"]:checked');
+            
+            // Validation
+            if (!nameInput.value.trim()) {
+                alert('Vui lòng nhập tên sản phẩm');
+                return;
+            }
+            
+            if (!brandInput.value.trim()) {
+                alert('Vui lòng nhập nhãn hàng');
+                return;
+            }
+            
+            if (!avgQtyInput.value || avgQtyInput.value <= 0) {
+                alert('Vui lòng nhập số lượng trung bình/cửa hàng');
+                return;
+            }
+            
+            if (!priceInput.value || priceInput.value <= 0) {
+                alert('Vui lòng nhập giá bán');
+                return;
+            }
+            
+            if (checkboxes.length === 0) {
+                alert('Vui lòng chọn ít nhất 1 hệ thống');
+                return;
+            }
+            
+            if (!launchDateInput.value) {
+                alert('Vui lòng chọn ngày ra mắt');
+                return;
+            }
+            
+            // Calculate total stores and forecast
+            let totalStores = 0;
+            const selectedSystems = [];
+            
+            checkboxes.forEach(cb => {
+                const storeCount = parseInt(cb.getAttribute('data-stores'));
+                totalStores += storeCount;
+                selectedSystems.push({
+                    name: cb.value,
+                    storeCount: storeCount
+                });
+            });
+            
+            const avgQty = parseFloat(avgQtyInput.value);
+            const price = parseFloat(priceInput.value);
+            const launchDate = new Date(launchDateInput.value);
+            
+            // Calculate based on remaining days in month
+            const today = new Date();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            const remainingDays = Math.max(0, daysInMonth - launchDate.getDate() + 1);
+            
+            // Total quantity = stores × avg qty/store
+            const totalQty = totalStores * avgQty;
+            const totalSales = totalQty * price;
+            
+            // Pro-rate for remaining days (assuming monthly sales)
+            const avgMonthlyQty = totalQty;
+            const avgMonthlySales = totalSales;
+            
+            // Check if already added
+            if (manualStockoutProducts.find(p => p.name === nameInput.value.trim() && p.isNew)) {
+                alert('Sản phẩm này đã có trong danh sách');
+                return;
+            }
+            
+            // Add to list with special flag for new products
+            manualStockoutProducts.push({
+                name: nameInput.value.trim(),
+                brand: brandInput.value.trim(),
+                avgMonthlySales: avgMonthlySales,
+                avgMonthlyQty: avgMonthlyQty,
+                restockDate: launchDate,
+                restockDay: launchDate.getDate(),
+                isNew: true,
+                systems: selectedSystems,
+                totalStores: totalStores,
+                avgQtyPerStore: avgQty,
+                price: price
+            });
+            
+            // Re-render list
+            const currentDay = today.getDate();
+            renderStockoutProductsList(currentDay, daysInMonth);
+            
+            // Reset form
+            nameInput.value = '';
+            brandInput.value = '';
+            avgQtyInput.value = '10';
+            priceInput.value = '50000';
+            launchDateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-15`;
+            checkboxes.forEach(cb => cb.checked = false);
+        }
+        
+        // Add product to stockout list
+        function addStockoutProduct() {
+            const select = document.getElementById('stockoutProductSelect');
+            const dateInput = document.getElementById('stockoutRestockDate');
+            
+            if (!select.value) {
+                alert('Vui lòng chọn sản phẩm');
+                return;
+            }
+            
+            if (!dateInput.value) {
+                alert('Vui lòng chọn ngày về hàng');
+                return;
+            }
+            
+            const productName = select.value;
+            const option = select.options[select.selectedIndex];
+            const brand = option.getAttribute('data-brand');
+            const avgSales = parseFloat(option.getAttribute('data-sales'));
+            const avgQty = parseFloat(option.getAttribute('data-qty'));
+            const restockDate = new Date(dateInput.value);
+            
+            // Check if already added
+            if (manualStockoutProducts.find(p => p.name === productName)) {
+                alert('Sản phẩm này đã có trong danh sách');
+                return;
+            }
+            
+            // Add to list
+            manualStockoutProducts.push({
+                name: productName,
+                brand: brand,
+                avgMonthlySales: avgSales,
+                avgMonthlyQty: avgQty,
+                restockDate: restockDate,
+                restockDay: restockDate.getDate()
+            });
+            
+            // Get current day info
+            const today = new Date();
+            const currentDay = today.getDate();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            
+            // Re-render list
+            renderStockoutProductsList(currentDay, daysInMonth);
+            
+            // Reset form
+            select.value = '';
+            dateInput.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-20`;
+        }
+        
+        // Remove product from stockout list
+        function removeStockoutProduct(index) {
+            manualStockoutProducts.splice(index, 1);
+            
+            const today = new Date();
+            const currentDay = today.getDate();
+            const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+            
+            renderStockoutProductsList(currentDay, daysInMonth);
+        }
+        
+        // Render stockout products list with calculations
+        function renderStockoutProductsList(currentDay, daysInMonth) {
+            const listDiv = document.getElementById('stockoutProductsList');
+            
+            if (manualStockoutProducts.length === 0) {
+                listDiv.innerHTML = `
+                    <div style="padding: 30px; text-align: center; color: #9ca3af; background: #f9fafb; border-radius: 8px; border: 2px dashed #e5e7eb;">
+                        <p style="margin: 0; font-size: 1.1em;">Chưa có sản phẩm nào trong danh sách</p>
+                        <p style="margin: 5px 0 0 0; font-size: 0.9em;">Chọn sản phẩm và ngày về hàng ở trên để bắt đầu</p>
+                    </div>
+                `;
+                document.getElementById('stockoutAdjustment').style.display = 'none';
+                return;
+            }
+            
+            // Calculate for each product
+            const surgeFactor = 1.25; // 25% increase
+            let totalAdjustedSales = 0;
+            let totalAdjustedQty = 0;
+            let totalMissedSales = 0;
+            
+            const productsWithCalc = manualStockoutProducts.map(prod => {
+                const remainingDays = Math.max(0, daysInMonth - prod.restockDay + 1);
+                const daysPassed = Math.min(currentDay, prod.restockDay);
+                
+                const missedSales = (prod.avgMonthlySales / daysInMonth) * daysPassed;
+                const adjustedSales = (prod.avgMonthlySales / daysInMonth) * remainingDays * surgeFactor;
+                const adjustedQty = (prod.avgMonthlyQty / daysInMonth) * remainingDays * surgeFactor;
+                
+                totalMissedSales += missedSales;
+                totalAdjustedSales += adjustedSales;
+                totalAdjustedQty += adjustedQty;
+                
+                return {
+                    ...prod,
+                    remainingDays,
+                    daysPassed,
+                    missedSales,
+                    adjustedSales,
+                    adjustedQty
+                };
+            });
+            
+            const today = new Date();
+            const currentMonthName = today.toLocaleDateString('vi-VN', { month: 'long', year: 'numeric' });
+            
+            // Separate new products from stockout products
+            const stockoutProds = productsWithCalc.filter(p => !p.isNew);
+            const newProds = productsWithCalc.filter(p => p.isNew);
+            
+            listDiv.innerHTML = `
+                ${manualStockoutProducts.some(p => !p.isNew) ? `
+                <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #f59e0b;">
+                    <p style="margin: 0 0 10px 0; color: #92400e;"><strong>⚠️ Danh sách ${stockoutProds.length} sản phẩm đứt hàng ${currentMonthName}</strong></p>
+                    <p style="margin: 0; font-size: 0.9em; color: #78350f;">
+                        📅 <strong>Hôm nay:</strong> Ngày ${currentDay}/${today.getMonth() + 1}/${today.getFullYear()} 
+                        (Còn ${daysInMonth - currentDay} ngày trong tháng)
+                    </p>
+                    <p style="margin: 8px 0 0 0; font-size: 0.9em; color: #78350f;">
+                        📈 <strong>Hệ số tăng:</strong> +25% (cửa hàng đặt dồn đơn sau khi hết hàng)
+                    </p>
+                </div>
+                ` : ''}
+                
+                ${manualStockoutProducts.some(p => p.isNew) ? `
+                <div style="background: #d1fae5; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #10b981;">
+                    <p style="margin: 0 0 10px 0; color: #065f46;"><strong>🆕 Danh sách ${newProds.length} mã hàng mới dự kiến ra mắt</strong></p>
+                    <p style="margin: 0; font-size: 0.9em; color: #047857;">
+                        💡 Dự đoán dựa trên số lượng cửa hàng × SL trung bình/cửa hàng × giá bán
+                    </p>
+                </div>
+                ` : ''}
+                
+                <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="font-size: 0.85em; color: #6b7280; margin-bottom: 5px;">Doanh số đã mất</div>
+                            <div style="font-size: 1.2em; font-weight: 700; color: #ef4444;">${formatCurrency(totalMissedSales)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85em; color: #6b7280; margin-bottom: 5px;">Dự đoán còn lại (+25%)</div>
+                            <div style="font-size: 1.2em; font-weight: 700; color: #10b981;">${formatCurrency(totalAdjustedSales)}</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85em; color: #6b7280; margin-bottom: 5px;">Số lượng ước tính</div>
+                            <div style="font-size: 1.2em; font-weight: 700; color: #3b82f6;">${formatNumber(Math.round(totalAdjustedQty))}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="table-container" style="max-height: 400px; overflow: auto;">
+                    <table style="width: 100%; background: white; font-size: 0.85em;">
+                        <thead style="position: sticky; top: 0; background: white;">
+                            <tr>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">#</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Loại</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Sản Phẩm</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Nhãn</th>
+                                <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Hệ Thống</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">Đã Mất</th>
+                                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">Ra Mắt/Về</th>
+                                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">Còn Lại</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">DS Dự Đoán</th>
+                                <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">SL Dự Đoán</th>
+                                <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productsWithCalc.map((prod, idx) => {
+                                const systemInfo = prod.isNew ? 
+                                    prod.systems.map(s => `${s.name} (${s.storeCount})`).join(', ') : 
+                                    '-';
+                                const typeLabel = prod.isNew ? 
+                                    '<span style="background: #d1fae5; color: #065f46; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; font-weight: 600;">MỚI</span>' :
+                                    '<span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px; font-size: 0.8em; font-weight: 600;">ĐỨT</span>';
+                                    
+                                return `
+                                <tr style="border-bottom: 1px solid #e5e7eb; background: ${idx % 2 === 0 ? '#fafafa' : 'white'};">
+                                    <td style="padding: 8px;">${idx + 1}</td>
+                                    <td style="padding: 8px;">${typeLabel}</td>
+                                    <td style="padding: 8px; font-weight: 600; color: #1f2937;">${prod.name}</td>
+                                    <td style="padding: 8px; color: #6b7280;">${prod.brand}</td>
+                                    <td style="padding: 8px; font-size: 0.8em; color: #6b7280; max-width: 200px;" title="${systemInfo}">${prod.isNew ? `${prod.totalStores} CH` : '-'}</td>
+                                    <td style="padding: 8px; text-align: right; color: #ef4444; font-weight: 600;">${prod.missedSales > 0 ? '-' + formatCurrency(prod.missedSales) : '-'}</td>
+                                    <td style="padding: 8px; text-align: center; color: #059669;">${prod.restockDay}/${today.getMonth() + 1}</td>
+                                    <td style="padding: 8px; text-align: center; color: #6b7280;">${prod.remainingDays}d</td>
+                                    <td style="padding: 8px; text-align: right; font-weight: 700; color: #10b981;">${formatCurrency(prod.adjustedSales)}</td>
+                                    <td style="padding: 8px; text-align: right; color: #3b82f6;">${formatNumber(Math.round(prod.adjustedQty))}</td>
+                                    <td style="padding: 8px; text-align: center;">
+                                        <button onclick="removeStockoutProduct(${idx})" style="padding: 5px 10px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85em;">
+                                            🗑️
+                                        </button>
+                                    </td>
+                                </tr>
+                            `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 8px; font-size: 0.85em; color: #166534;">
+                    <strong>💡 Giải thích:</strong> 
+                    <ul style="margin: 5px 0 0 0; padding-left: 20px;">
+                        <li><strong>Đứt hàng:</strong> Dự đoán doanh số được tính dựa trên trung bình 5 tháng gần nhất, 
+                        điều chỉnh theo số ngày còn lại sau khi về hàng, và tăng thêm 25% do cửa hàng có xu hướng đặt nhiều hơn sau khi hết hàng.</li>
+                        <li><strong>Mã mới:</strong> Dự đoán = Số cửa hàng × SL TB/cửa hàng × Giá × (Số ngày còn lại / Tổng ngày trong tháng)</li>
+                    </ul>
+                </div>
+            `;
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div style="margin-top: 15px; padding: 12px; background: #f0fdf4; border-radius: 8px; font-size: 0.85em; color: #166534;">
+                    <strong>💡 Giải thích:</strong> Dự đoán doanh số được tính dựa trên trung bình 5 tháng gần nhất, 
+                    điều chỉnh theo số ngày còn lại sau khi về hàng, và tăng thêm 25% do cửa hàng có xu hướng đặt nhiều hơn sau khi hết hàng.
+                </div>
+            `;
+            
+            // Show adjustment in summary
+            document.getElementById('stockoutAdjustment').style.display = 'block';
+            document.getElementById('stockoutAdjustmentValue').textContent = '+' + formatCurrency(totalAdjustedSales);
         }
 
         // Close modal when clicking outside
