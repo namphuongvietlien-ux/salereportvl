@@ -1159,10 +1159,28 @@
         function shortenProductName(fullName) {
             if (!fullName) return 'N/A';
             
+            // Normalize spacing first
+            const normalizedName = fullName.trim().replace(/\s+/g, ' ');
+            
             // Check lookup table first
+            if (productNameLookup[normalizedName]) {
+                return productNameLookup[normalizedName];
+            }
+            
+            // Try exact match from original name
             const trimmedName = fullName.trim();
             if (productNameLookup[trimmedName]) {
                 return productNameLookup[trimmedName];
+            }
+            
+            // Debug: Log when lookup fails for key products
+            if (normalizedName.includes('Pin Fujitsu') || normalizedName.includes('Baking Soda')) {
+                console.log(`🔍 Lookup miss for: "${normalizedName}"`);
+                // Try to find similar keys
+                const similarKeys = Object.keys(productNameLookup).filter(key => 
+                    key.includes('Pin Fujitsu') || key.includes('Baking Soda')
+                ).slice(0, 3);
+                console.log(`📝 Similar keys:`, similarKeys);
             }
             
             // Fallback: Remove content in parentheses (product codes)
