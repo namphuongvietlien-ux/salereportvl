@@ -1533,6 +1533,19 @@
                                 </div>
                             </div>
 
+                            <!-- SKU Analysis Chart -->
+                            <div style="
+                                background: white;
+                                border-radius: 12px;
+                                padding: 20px;
+                                margin-bottom: 25px;
+                                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+                                border: 1px solid #e2e8f0;
+                            ">
+                                <h4 style="color: #1e40af; margin-bottom: 15px; text-align: center;">📈 Phân Tích Trend SKU Theo Tháng</h4>
+                                <canvas id="skuAnalysisSystemChart" style="max-height: 400px;"></canvas>
+                            </div>
+
                             <!-- Store Analysis Table -->
                             <div class="table-container" style="
                                 max-height: 600px;
@@ -6916,6 +6929,15 @@
             
             // Store data for potential further drill-down
             currentDrillState.data.skus = skuAnalysis;
+            
+            // Create SKU chart in system drill modal
+            const chartData = skuAnalysis.slice(0, 20).map(sku => [sku.fullProduct, { 
+                revenue: sku.totalQty * 1000, // Approximate revenue 
+                quantity: sku.totalQty 
+            }]);
+            
+            createSKUChart(chartData, 'system', 'skuAnalysisSystemChart');
+            console.log('✅ Called createSKUChart for system drill-down modal with', chartData.length, 'SKUs');
         }
 
         // Open SKU-level drill-down (store analysis)
@@ -7189,12 +7211,20 @@
         }
         
         // Create SKU chart
-        function createSKUChart(sortedProducts, type) {
-            const ctx = document.getElementById('skuAnalysisChart').getContext('2d');
+        function createSKUChart(sortedProducts, type, canvasId = 'skuAnalysisChart') {
+            console.log('createSKUChart called with:', sortedProducts.length, 'products, type:', type, 'canvas:', canvasId);
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) {
+                console.error(`Canvas ${canvasId} not found!`);
+                return;
+            }
+            const context = ctx.getContext('2d');
             
-            // Destroy existing chart
-            if (skuModalChart) {
+            // Destroy existing chart for this canvas
+            if (skuModalChart && canvasId === 'skuAnalysisChart') {
                 skuModalChart.destroy();
+            } else if (window.skuSystemChart && canvasId === 'skuAnalysisSystemChart') {
+                window.skuSystemChart.destroy();
             }
             
             const chartType = type === 'brand' ? 'bar' : 'doughnut';
@@ -7204,7 +7234,7 @@
                 ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
                  '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'];
             
-            skuModalChart = new Chart(ctx, {
+            const chart = new Chart(ctx, {
                 type: chartType,
                 data: {
                     labels: sortedProducts.map(p => shortenProductName(p[0])),
@@ -7247,6 +7277,15 @@
                     } : undefined
                 }
             });
+            
+            // Store chart reference based on canvas
+            if (canvasId === 'skuAnalysisChart') {
+                skuModalChart = chart;
+            } else if (canvasId === 'skuAnalysisSystemChart') {
+                window.skuSystemChart = chart;
+            }
+            
+            console.log(`✅ Chart created successfully for ${canvasId}`);
         }
         
         // Populate SKU table
