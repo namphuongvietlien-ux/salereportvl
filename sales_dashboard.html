@@ -1159,10 +1159,10 @@
         function shortenProductName(fullName) {
             if (!fullName) return 'N/A';
             
-            // Normalize spacing first
+            // Normalize spacing first - replace multiple spaces with single space
             const normalizedName = fullName.trim().replace(/\s+/g, ' ');
             
-            // Check lookup table first
+            // Check lookup table with normalized name
             if (productNameLookup[normalizedName]) {
                 return productNameLookup[normalizedName];
             }
@@ -1173,13 +1173,24 @@
                 return productNameLookup[trimmedName];
             }
             
+            // Try fuzzy matching - look for similar keys in lookup table
+            const lookupKeys = Object.keys(productNameLookup);
+            for (const key of lookupKeys) {
+                // Normalize lookup key too
+                const normalizedKey = key.replace(/\s+/g, ' ').trim();
+                if (normalizedKey === normalizedName) {
+                    console.log(`✅ Fuzzy match found: "${normalizedName}" -> "${productNameLookup[key]}"`);
+                    return productNameLookup[key];
+                }
+            }
+            
             // Debug: Log when lookup fails for key products
             if (normalizedName.includes('Pin Fujitsu') || normalizedName.includes('Baking Soda')) {
                 console.log(`🔍 Lookup miss for: "${normalizedName}"`);
                 // Try to find similar keys
-                const similarKeys = Object.keys(productNameLookup).filter(key => 
+                const similarKeys = lookupKeys.filter(key => 
                     key.includes('Pin Fujitsu') || key.includes('Baking Soda')
-                ).slice(0, 3);
+                ).slice(0, 2);
                 console.log(`📝 Similar keys:`, similarKeys);
             }
             
@@ -1221,11 +1232,19 @@
                             const tenRutGon = (row['TEN RUT GON'] || '').trim();
                             const nhan = (row['NHAN'] || '').trim();
                             if (tenSP && tenRutGon) {
+                                // Store both original and normalized versions
                                 productNameLookup[tenSP] = tenRutGon;
                                 productBrandLookup[tenSP] = nhan || 'N/A';
+                                
+                                // Also store normalized version
+                                const normalizedKey = tenSP.replace(/\s+/g, ' ');
+                                if (normalizedKey !== tenSP) {
+                                    productNameLookup[normalizedKey] = tenRutGon;
+                                    productBrandLookup[normalizedKey] = nhan || 'N/A';
+                                }
                             }
                         });
-                        console.log('Loaded', Object.keys(productNameLookup).length, 'product name mappings with brands');
+                        console.log('Loaded', Object.keys(productNameLookup).length, 'product name mappings with brands (including normalized)');
                         resolve();
                     },
                     error: function(error) {
