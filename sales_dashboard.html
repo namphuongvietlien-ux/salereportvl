@@ -902,8 +902,23 @@
                 </div>
                 <div class="forecast-modal-body">
                     <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #3b82f6;">
-                        <h3 style="color: #1e40af; margin-bottom: 10px;">📈 Tổng Quan Dự Đoán</h3>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <h3 style="color: #1e40af; margin: 0;">📈 Tổng Quan Dự Đoán</h3>
+                            <button id="stockoutAnalysisBtn" onclick="analyzeStockouts()" style="
+                                padding: 8px 16px;
+                                background: #ef4444;
+                                color: white;
+                                border: none;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 0.9em;
+                                font-weight: 600;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                🔍 Phân Tích Đứt Hàng
+                            </button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmin(200px, 1fr)); gap: 15px;">
                             <div>
                                 <p style="color: #64748b; font-size: 0.85em; margin: 0;">Tổng Doanh Số</p>
                                 <p id="forecastTotalSales" style="font-size: 1.4em; font-weight: 700; color: #1e40af; margin: 5px 0 0 0;">0 ₫</p>
@@ -912,7 +927,16 @@
                                 <p style="color: #64748b; font-size: 0.85em; margin: 0;">Tổng Số Lượng</p>
                                 <p id="forecastTotalQty" style="font-size: 1.4em; font-weight: 700; color: #10b981; margin: 5px 0 0 0;">0</p>
                             </div>
+                            <div id="stockoutAdjustment" style="display: none;">
+                                <p style="color: #64748b; font-size: 0.85em; margin: 0;">Điều Chỉnh Đứt Hàng</p>
+                                <p id="stockoutAdjustmentValue" style="font-size: 1.4em; font-weight: 700; color: #f59e0b; margin: 5px 0 0 0;">+0 ₫</p>
+                            </div>
                         </div>
+                    </div>
+
+                    <div id="stockoutAnalysisSection" style="display: none; background: #fef3c7; padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid #f59e0b;">
+                        <h3 style="color: #92400e; margin-bottom: 15px;">⚠️ Phân Tích Sản Phẩm Đứt Hàng</h3>
+                        <div id="stockoutContent"></div>
                     </div>
 
                     <div class="detail-grid">
@@ -2173,6 +2197,168 @@
         // Close forecast detail modal
         function closeForecastDetail() {
             document.getElementById('forecastDetailModal').style.display = 'none';
+            // Reset stockout analysis
+            document.getElementById('stockoutAnalysisSection').style.display = 'none';
+            document.getElementById('stockoutAdjustment').style.display = 'none';
+        }
+
+        // Analyze stockouts (product gaps)
+        function analyzeStockouts() {
+            if (!allData || allData.length === 0) {
+                alert('Không có dữ liệu để phân tích');
+                return;
+            }
+            
+            // Get last 12 months
+            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            const last12Months = sortedMonths.slice(-12);
+            
+            // Analyze each product for gaps
+            const productGaps = {};
+            const productData = {};
+            
+            // Group data by product
+            allData.forEach(row => {
+                const product = row['TÊN SP'];
+                if (!product) return;
+                
+                const shortName = shortenProductName(product);
+                const month = row.monthKey;
+                
+                if (!productData[shortName]) {
+                    productData[shortName] = {
+                        name: shortName,
+                        brand: row['NHÃN HÀNG'],
+                        months: new Set(),
+                        totalSales: 0,
+                        totalQty: 0,
+                        avgMonthlySales: 0,
+                        avgMonthlyQty: 0
+                    };
+                }
+                
+                productData[shortName].months.add(month);
+                productData[shortName].totalSales += row.vat || 0;
+                productData[shortName].totalQty += row.soLuong || 0;
+            });
+            
+            // Calculate averages and find gaps
+            const stockoutProducts = [];
+            
+            Object.values(productData).forEach(prod => {
+                const monthsWithData = Array.from(prod.months).filter(m => last12Months.includes(m));
+                
+                if (monthsWithData.length === 0) return;
+                
+                // Calculate average
+                prod.avgMonthlySales = prod.totalSales / monthsWithData.length;
+                prod.avgMonthlyQty = prod.totalQty / monthsWithData.length;
+                
+                // Find gaps (months without data in last 12 months)
+                const gaps = [];
+                last12Months.forEach((month, idx) => {
+                    if (!prod.months.has(month)) {
+                        // Check if this is a real gap (not at beginning or end)
+                        const prevMonthHasData = idx > 0 && prod.months.has(last12Months[idx - 1]);
+                        const nextMonthHasData = idx < last12Months.length - 1 && prod.months.has(last12Months[idx + 1]);
+                        
+                        if (prevMonthHasData || nextMonthHasData) {
+                            gaps.push(month);
+                        }
+                    }
+                });
+                
+                // If product has gaps and significant sales, add to list
+                if (gaps.length > 0 && prod.avgMonthlySales > 1000000) { // Min 1M VND average
+                    stockoutProducts.push({
+                        ...prod,
+                        gaps: gaps,
+                        gapCount: gaps.length,
+                        lostSales: gaps.length * prod.avgMonthlySales,
+                        lostQty: gaps.length * prod.avgMonthlyQty
+                    });
+                }
+            });
+            
+            // Sort by lost sales
+            stockoutProducts.sort((a, b) => b.lostSales - a.lostSales);
+            
+            // Calculate total adjustment (20-30% increase for affected products)
+            const adjustmentFactor = 1.25; // 25% average
+            let totalAdjustment = 0;
+            let totalAdjustedQty = 0;
+            
+            stockoutProducts.forEach(prod => {
+                totalAdjustment += prod.avgMonthlySales * adjustmentFactor - prod.avgMonthlySales;
+                totalAdjustedQty += prod.avgMonthlyQty * adjustmentFactor - prod.avgMonthlyQty;
+            });
+            
+            // Display results
+            const content = document.getElementById('stockoutContent');
+            
+            if (stockoutProducts.length === 0) {
+                content.innerHTML = `
+                    <p style="color: #059669; font-weight: 600;">✅ Không phát hiện sản phẩm nào bị đứt hàng trong 12 tháng qua</p>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <p style="margin: 0 0 10px 0; color: #92400e;"><strong>Phát hiện ${stockoutProducts.length} sản phẩm có dấu hiệu đứt hàng</strong></p>
+                        <p style="margin: 0; font-size: 0.9em; color: #78350f;">
+                            💡 <strong>Giả định:</strong> Khi hàng về, cửa hàng sẽ đặt dồn đơn với số lượng tăng <strong>20-30%</strong> so với bình thường.
+                        </p>
+                        <p style="margin: 10px 0 0 0; font-size: 0.9em; color: #78350f;">
+                            📈 <strong>Điều chỉnh dự đoán:</strong> +${formatCurrency(totalAdjustment)} (${formatNumber(Math.round(totalAdjustedQty))} sản phẩm)
+                        </p>
+                    </div>
+                    
+                    <div class="table-container" style="max-height: 400px; overflow: auto;">
+                        <table style="width: 100%; background: white; font-size: 0.85em;">
+                            <thead style="position: sticky; top: 0; background: white;">
+                                <tr>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">#</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Sản Phẩm</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Nhãn</th>
+                                    <th style="padding: 8px; text-align: center; border-bottom: 2px solid #e5e7eb;">Số Tháng Đứt</th>
+                                    <th style="padding: 8px; text-align: left; border-bottom: 2px solid #e5e7eb;">Tháng Đứt</th>
+                                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">TB/Tháng</th>
+                                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">Mất Ước Tính</th>
+                                    <th style="padding: 8px; text-align: right; border-bottom: 2px solid #e5e7eb;">Điều Chỉnh +25%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${stockoutProducts.slice(0, 30).map((prod, idx) => {
+                                    const adjustment = prod.avgMonthlySales * adjustmentFactor - prod.avgMonthlySales;
+                                    const gapsDisplay = prod.gaps.slice(0, 3).map(m => {
+                                        const [y, mo] = m.split('-');
+                                        return `${mo}/${y}`;
+                                    }).join(', ') + (prod.gaps.length > 3 ? '...' : '');
+                                    
+                                    return `
+                                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                                            <td style="padding: 8px;">${idx + 1}</td>
+                                            <td style="padding: 8px; font-weight: 600;">${prod.name}</td>
+                                            <td style="padding: 8px;">${prod.brand}</td>
+                                            <td style="padding: 8px; text-align: center; font-weight: 600; color: #dc2626;">${prod.gapCount}</td>
+                                            <td style="padding: 8px; font-size: 0.8em; color: #64748b;">${gapsDisplay}</td>
+                                            <td style="padding: 8px; text-align: right;">${formatCurrency(prod.avgMonthlySales)}</td>
+                                            <td style="padding: 8px; text-align: right; color: #ef4444;">${formatCurrency(prod.lostSales)}</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: 600; color: #f59e0b;">+${formatCurrency(adjustment)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                // Show adjustment in summary
+                document.getElementById('stockoutAdjustment').style.display = 'block';
+                document.getElementById('stockoutAdjustmentValue').textContent = '+' + formatCurrency(totalAdjustment);
+            }
+            
+            // Show section
+            document.getElementById('stockoutAnalysisSection').style.display = 'block';
         }
 
         // Close modal when clicking outside
