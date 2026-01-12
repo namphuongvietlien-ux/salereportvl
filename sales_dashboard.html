@@ -1605,6 +1605,94 @@
     </div>
 
     <script>
+        // Phân tích và hiển thị dữ liệu chi tiết theo cửa hàng cho bảng Store Analysis
+        function populateStoreAnalysisTable(systemName, skuName) {
+            const storeAnalysis = [];
+            const storeData = {};
+            // Thu thập dữ liệu từng cửa hàng cho SKU này
+            allData.forEach(row => {
+                const system = row['HỆ THỐNG']?.trim();
+                const product = row['TÊN SP']?.trim();
+                const store = row['CỬA HÀNG']?.trim();
+                const month = row.monthKey;
+                const quantity = parseFloat(row.soLuong) || 0;
+                if (system === systemName && product === skuName && store && quantity > 0) {
+                    if (!storeData[store]) storeData[store] = {};
+                    if (!storeData[store][month]) storeData[store][month] = 0;
+                    storeData[store][month] += quantity;
+                }
+            });
+
+            // Phân tích từng cửa hàng
+            Object.keys(storeData).forEach(store => {
+                const monthlyData = storeData[store];
+                const months = Object.keys(monthlyData).sort();
+                const quantities = months.map(m => monthlyData[m]);
+                if (months.length >= 2) {
+                    const totalQty = quantities.reduce((a, b) => a + b, 0);
+                    const avgQty = totalQty / quantities.length;
+                    const orderFreq = months.length;
+                    // So sánh gần đây vs trước đó
+                    const recentMonths = months.slice(-3);
+                    const recentQty = recentMonths.map(m => monthlyData[m]);
+                    const recentAvg = recentQty.reduce((a, b) => a + b, 0) / recentQty.length;
+                    const earlierMonths = months.slice(0, -3);
+                    const earlierQty = earlierMonths.length > 0 ? earlierMonths.map(m => monthlyData[m]) : [];
+                    const earlierAvg = earlierQty.length > 0 ? earlierQty.reduce((a, b) => a + b, 0) / earlierQty.length : 0;
+                    const changePercent = earlierAvg > 0 ? ((recentAvg - earlierAvg) / earlierAvg) * 100 : 0;
+                    let trend = '→';
+                    let recommendation = '';
+                    if (changePercent > 20) {
+                        trend = '📈';
+                        recommendation = 'Tăng mạnh - Đẩy mạnh bán hàng';
+                    } else if (changePercent > 5) {
+                        trend = '📈';
+                        recommendation = 'Tăng nhẹ - Theo dõi';
+                    } else if (changePercent < -20) {
+                        trend = '📉';
+                        recommendation = 'Giảm mạnh - Kiểm tra nguyên nhân';
+                    } else if (changePercent < -5) {
+                        trend = '📉';
+                        recommendation = 'Giảm nhẹ - Theo dõi thêm';
+                    }
+                    if (orderFreq <= 2 && avgQty < 10) {
+                        recommendation = 'Tần suất thấp - Có thể ngưng cung cấp';
+                    }
+                    storeAnalysis.push({
+                        store,
+                        earlierAvg,
+                        recentAvg,
+                        changePercent,
+                        totalQty,
+                        orderFreq,
+                        trend,
+                        recommendation,
+                        monthCount: months.length
+                    });
+                }
+            });
+            // Sắp xếp theo % thay đổi giảm dần
+            storeAnalysis.sort((a, b) => b.changePercent - a.changePercent);
+            // Render bảng
+            const tbody = document.getElementById('storeAnalysisTableBody');
+            tbody.innerHTML = '';
+            storeAnalysis.forEach((store, index) => {
+                const rowColor = store.changePercent > 20 ? '#ecfdf5' : store.changePercent < -20 ? '#fef2f2' : store.orderFreq <= 2 ? '#fefbf2' : '#ffffff';
+                const row = `
+                    <tr style="background: ${rowColor}; border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">${index + 1}</td>
+                        <td style="padding: 12px; max-width: 180px; word-wrap: break-word;"><strong>${store.store}</strong><div style="font-size: 0.8em; color: #6b7280; margin-top: 4px;">${store.monthCount} tháng data • Tổng: ${store.totalQty}</div></td>
+                        <td style="padding: 12px; text-align: center;">${store.earlierAvg.toFixed(0)}</td>
+                        <td style="padding: 12px; text-align: center;">${store.recentAvg.toFixed(0)}</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600; color: ${store.changePercent > 0 ? '#059669' : '#dc2626'};">${store.changePercent > 0 ? '+' : ''}${store.changePercent.toFixed(1)}%</td>
+                        <td style="padding: 12px; text-align: center; font-weight: 600;">${store.totalQty}</td>
+                        <td style="padding: 12px; text-align: center; font-size: 1.2em;">${store.trend}</td>
+                        <td style="padding: 12px; font-size: 0.85em; max-width: 200px;">${store.recommendation}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
         let allData = [];
         let charts = {};
         let forecastDetailsData = {}; // Store forecast details
@@ -6960,9 +7048,9 @@
             currentDrillState.level = 'sku';
             currentDrillState.systemName = systemName;
             currentDrillState.skuName = skuName;
-            
+
             const shortName = shortenProductName(skuName);
-            
+
             // Update modal title and breadcrumb
             document.getElementById('drillModalTitle').textContent = `🏪 Phân Tích Cửa Hàng - ${shortName}`;
             document.getElementById('drillBreadcrumb').innerHTML = `
@@ -6972,13 +7060,13 @@
                 <span style="margin: 0 8px; color: #9ca3af;">›</span>
                 <span style="color: #374151; font-weight: 600;">${shortName}</span>
             `;
-            
+
             // Show SKU level content
             document.getElementById('systemLevelContent').style.display = 'none';
             document.getElementById('skuLevelContent').style.display = 'block';
-            
-            // Analyze store data for this SKU
-            analyzeStoreData(systemName, skuName);
+
+            // Phân tích và hiển thị bảng cửa hàng tự động
+            populateStoreAnalysisTable(systemName, skuName);
         }
 
         // Analyze store-level data for a specific SKU
@@ -7270,7 +7358,7 @@
                 return;
             }
             const context = ctx.getContext('2d');
-            
+
             // Destroy existing chart for this canvas
             if (skuModalChart && canvasId === 'skuAnalysisChart') {
                 skuModalChart.destroy();
@@ -7279,29 +7367,35 @@
             } else if (window.storeChart && canvasId === 'storeAnalysisChart') {
                 window.storeChart.destroy();
             }
-            
-            const chartType = (type === 'brand' || type === 'store' || type === 'system') ? 'bar' : 'doughnut';
-            
-            console.log('Creating chart:', {
-                type: chartType,
-                dataLength: sortedProducts.length,
-                labels: sortedProducts.slice(0, 3).map(p => p[0]),
-                revenues: sortedProducts.slice(0, 3).map(p => p[1].revenue)
+
+            // Gộp dữ liệu theo tên rút gọn
+            const skuMap = new Map();
+            sortedProducts.forEach(([name, info]) => {
+                const shortName = shortenProductName(name);
+                if (!skuMap.has(shortName)) {
+                    skuMap.set(shortName, { quantity: 0, revenue: 0 });
+                }
+                skuMap.get(shortName).quantity += info.quantity;
+                skuMap.get(shortName).revenue += info.revenue;
             });
-            
+
+            const chartType = (type === 'brand' || type === 'store' || type === 'system') ? 'bar' : 'doughnut';
+
             const colors = type === 'brand' ? 
                 ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
                  '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'] :
                 ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3',
                  '#ff9a9e', '#fecfef', '#ffecd2', '#fcb69f', '#a8e6cf', '#dcedc1', '#ffd3a5', '#fd9853', '#c2e9fb', '#a1c4fd'];
-            
+
+            const skuEntries = Array.from(skuMap.entries());
+
             const chart = new Chart(ctx, {
                 type: chartType,
                 data: {
-                    labels: sortedProducts.map(p => shortenProductName(p[0])),
+                    labels: skuEntries.map(([shortName]) => shortName),
                     datasets: [{
                         label: 'Doanh Số',
-                        data: sortedProducts.map(p => p[1].revenue),
+                        data: skuEntries.map(([_, info]) => info.revenue),
                         backgroundColor: chartType === 'bar' ? '#667eea' : colors
                     }]
                 },
