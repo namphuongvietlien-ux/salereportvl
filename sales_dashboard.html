@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Báo Cáo Doanh Số 2023-2025</title>
+    <!-- Inline favicon to avoid 404s -->
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGD4DwABBAEAffA6NQAAAABJRU5ErkJggg==" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
@@ -7390,13 +7392,18 @@
         // Show SKU analysis for selected system
         function showSystemDrillDown(systemName, overrideData) {
             console.log('showSystemDrillDown called with:', systemName);
-            // Ưu tiên dữ liệu được truyền trực tiếp (ví dụ: yearData, monthData)
-            // Sau đó tới currentDrillDownContext (nếu đang trong year/month drill-down)
+            // Ưu tiên dữ liệu được truyền trực tiếp (ví dụ: yearData, monthData, brandData)
+            // Sau đó tới currentDrillDownContext (year / month / brand / product)
             // Cuối cùng mới tới currentFilteredData hoặc allData
             let baseData = overrideData;
-            if (!baseData && currentDrillDownContext && (currentDrillDownContext.type === 'year' || currentDrillDownContext.type === 'month')) {
-                baseData = currentDrillDownContext.baseData;
+
+            if (!baseData && currentDrillDownContext && currentDrillDownContext.baseData && currentDrillDownContext.baseData.length) {
+                const ctxType = currentDrillDownContext.type;
+                if (ctxType === 'year' || ctxType === 'month' || ctxType === 'brand' || ctxType === 'product') {
+                    baseData = currentDrillDownContext.baseData;
+                }
             }
+
             if (!baseData || baseData.length === 0) {
                 baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
             }
@@ -7406,7 +7413,9 @@
                 systemName,
                 rows: baseData.length,
                 years: [...new Set(baseData.map(d => d.year))],
-                monthKeys: [...new Set(baseData.map(d => d.monthKey))].slice(0, 6)
+                brands: [...new Set(baseData.map(d => d['NHÃN HÀNG']))],
+                monthKeys: [...new Set(baseData.map(d => d.monthKey))].slice(0, 6),
+                contextType: currentDrillDownContext ? currentDrillDownContext.type : null
             });
             // #endregion
             const systemData = {};
