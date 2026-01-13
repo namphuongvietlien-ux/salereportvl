@@ -926,6 +926,21 @@
                     <div class="chart-container tall">
                         <canvas id="topProductsChart"></canvas>
                     </div>
+                    <div class="table-container" style="margin-top: 20px; max-height: 500px; overflow: auto;">
+                        <table id="topProductsTable" style="width: 100%; border-collapse: collapse;">
+                            <thead style="position: sticky; top: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; z-index: 10;">
+                                <tr>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600;">#</th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; min-width: 250px;">Tên Sản Phẩm</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600;">Tổng Số Lượng</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600;">Doanh Số</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600;">% Tổng</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topProductsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <div class="chart-card full-width">
@@ -1699,6 +1714,15 @@
 
         // Format currency
         function formatCurrency(value) {
+            // #region agent log
+            console.log('[DEBUG formatCurrency]', { value, type: typeof value, isNaN: isNaN(value), isFinite: isFinite(value) });
+            // #endregion
+            if (value === null || value === undefined || isNaN(value) || !isFinite(value)) {
+                // #region agent log
+                console.warn('[DEBUG formatCurrency] Invalid value:', { value, type: typeof value });
+                // #endregion
+                return '0 ₫';
+            }
             return new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
                 currency: 'VND',
@@ -4309,8 +4333,9 @@
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
                             const systemName = sorted[index][0];
-                            console.log('System clicked:', systemName);
-                            showSystemDrillDown(systemName);
+                            console.log('System clicked (Main SystemChart):', systemName);
+                            // Truyền luôn data đã filter hiện tại để SKU breakdown bám theo filter
+                            showSystemDrillDown(systemName, data);
                         }
                     },
                     plugins: {
@@ -4517,6 +4542,17 @@
             // Filter data for selected year - use current filtered data if available
             const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
             const yearData = baseData.filter(d => d.year === year);
+
+            // #region agent log
+            console.log('[DEBUG YearDrillDown] year', year, 'baseData years:', [...new Set(baseData.map(d => d.year))], 'yearData rows:', yearData.length);
+            // #endregion
+
+            // Lưu context để các drill-down khác (system, brand, SKU) có thể giữ nguyên filter theo năm
+            currentDrillDownContext = {
+                type: 'year',
+                year,
+                baseData: yearData
+            };
             
             // Update title
             document.getElementById('drillDownTitle').textContent = `📊 Chi Tiết Năm ${year}`;
@@ -4611,8 +4647,9 @@
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
                             const systemName = sortedSystems[index][0];
-                            console.log('System chart clicked:', systemName);
-                            showSystemDrillDown(systemName);
+                            console.log('System chart clicked (YearDrillDown):', { systemName, year });
+                            // Truyền dữ liệu đã filter theo năm để giữ đúng context
+                            showSystemDrillDown(systemName, yearData);
                         }
                     },
                     plugins: {
@@ -5624,7 +5661,19 @@
                         quantity: 0
                     };
                 }
-                productData[shortName].sales += row.vat || 0;
+                // #region agent log
+                if (shortName === '453 G' || shortName.includes('453')) {
+                    console.log('[DEBUG TopProducts] Aggregating sales for 453 G', {
+                        shortName,
+                        rowVat: row.vat,
+                        rowVatType: typeof row.vat,
+                        currentSales: productData[shortName].sales,
+                        currentSalesType: typeof productData[shortName].sales
+                    });
+                }
+                // #endregion
+                const vatValue = Number(row.vat) || 0;
+                productData[shortName].sales += vatValue;
                 productData[shortName].quantity += row.soLuong || 0;
             });
 
@@ -5632,6 +5681,19 @@
                 .filter(item => item[1].sales > 0)
                 .sort((a, b) => b[1].sales - a[1].sales)
                 .slice(0, 20);
+            // #region agent log
+            const topProduct = sorted.find(s => s[1].name === '453 G' || s[1].name.includes('453'));
+            if (topProduct) {
+                console.log('[DEBUG TopProducts] Sorted 453 G data', {
+                    name: topProduct[1].name,
+                    sales: topProduct[1].sales,
+                    salesType: typeof topProduct[1].sales,
+                    isNaN: isNaN(topProduct[1].sales),
+                    isFinite: isFinite(topProduct[1].sales),
+                    index: sorted.indexOf(topProduct)
+                });
+            }
+            // #endregion
 
             const ctx = document.getElementById('topProductsChart').getContext('2d');
             
@@ -5678,9 +5740,35 @@
                                 },
                                 label: function(context) {
                                     const index = context.dataIndex;
+                                    // #region agent log
+                                    const productName = sorted[index] ? sorted[index][1].name : 'unknown';
+                                    const logData = {
+                                        index: index,
+                                        productName: productName,
+                                        contextRaw: context.raw,
+                                        contextRawType: typeof context.raw,
+                                        contextParsedX: context.parsed ? context.parsed.x : undefined,
+                                        contextParsedY: context.parsed ? context.parsed.y : undefined,
+                                        sortedSales: sorted[index] ? sorted[index][1].sales : undefined,
+                                        sortedSalesType: sorted[index] ? typeof sorted[index][1].sales : undefined
+                                    };
+                                    if (productName === '453 G' || productName.includes('453')) {
+                                        console.log('[DEBUG Tooltip] 453 G - Initial context:', logData);
+                                    }
+                                    // #endregion
+                                    // Lấy trực tiếp value từ dataset để tránh NaN
+                                    let salesValue = context.raw;
+                                    if (typeof salesValue !== 'number' || !isFinite(salesValue)) {
+                                        salesValue = Number(sorted[index][1].sales) || 0;
+                                    }
+                                    // #region agent log
+                                    if (productName === '453 G' || productName.includes('453')) {
+                                        console.log('[DEBUG Tooltip] 453 G - Final salesValue:', {salesValue, type: typeof salesValue, isNaN: isNaN(salesValue), isFinite: isFinite(salesValue)});
+                                    }
+                                    // #endregion
                                     return [
                                         'Mã: ' + sorted[index][0],
-                                        'Doanh số: ' + formatCurrency(context.parsed.x),
+                                        'Doanh số: ' + formatCurrency(salesValue),
                                         'Số lượng: ' + formatNumber(sorted[index][1].quantity)
                                     ];
                                 }
@@ -5700,11 +5788,46 @@
                 }
             });
 
+            // Update top products table below chart
+            updateTopProductsTable(sorted, data);
+            
             // Update yearly product analysis table
             updateYearlyProductTable(data);
             
             // Update store frequency table
             updateStoreFrequencyTable(data);
+        }
+
+        // Update Top Products Table
+        function updateTopProductsTable(sortedProducts, filteredData) {
+            const tbody = document.getElementById('topProductsTableBody');
+            if (!tbody) return;
+            
+            // Calculate total sales for percentage calculation
+            const totalSales = filteredData.reduce((sum, row) => sum + (row.vat || 0), 0);
+            
+            tbody.innerHTML = '';
+            
+            sortedProducts.forEach((product, index) => {
+                const productInfo = product[1];
+                const sales = productInfo.sales || 0;
+                const quantity = productInfo.quantity || 0;
+                const percentage = totalSales > 0 ? (sales / totalSales * 100).toFixed(1) : '0.0';
+                
+                const row = document.createElement('tr');
+                row.style.borderBottom = '1px solid #e5e7eb';
+                row.innerHTML = `
+                    <td style="padding: 12px; text-align: center; color: #667eea; font-weight: 600;">${index + 1}</td>
+                    <td style="padding: 12px;">
+                        <div style="font-weight: 600; color: #1e293b;">${productInfo.name}</div>
+                        <div style="font-size: 0.85em; color: #64748b; margin-top: 2px;">SL: ${formatNumber(quantity)}</div>
+                    </td>
+                    <td style="padding: 12px; text-align: center; color: #475569;">${formatNumber(quantity)}</td>
+                    <td style="padding: 12px; text-align: center; font-weight: 600; color: #3b82f6;">${formatCurrency(sales)}</td>
+                    <td style="padding: 12px; text-align: center; color: #10b981; font-weight: 600;">${percentage}%</td>
+                `;
+                tbody.appendChild(row);
+            });
         }
 
         // Create Store Activity Chart (Active stores per month by system)
@@ -7265,11 +7388,27 @@
         let skuModalChart = null;
         
         // Show SKU analysis for selected system
-        function showSystemDrillDown(systemName) {
+        function showSystemDrillDown(systemName, overrideData) {
             console.log('showSystemDrillDown called with:', systemName);
-            // Use current filtered data if available, otherwise use allData
-            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
-            console.log('baseData sample (first 5 rows):', baseData.slice(0, 5));
+            // Ưu tiên dữ liệu được truyền trực tiếp (ví dụ: yearData, monthData)
+            // Sau đó tới currentDrillDownContext (nếu đang trong year/month drill-down)
+            // Cuối cùng mới tới currentFilteredData hoặc allData
+            let baseData = overrideData;
+            if (!baseData && currentDrillDownContext && (currentDrillDownContext.type === 'year' || currentDrillDownContext.type === 'month')) {
+                baseData = currentDrillDownContext.baseData;
+            }
+            if (!baseData || baseData.length === 0) {
+                baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+            }
+
+            // #region agent log
+            console.log('[DEBUG showSystemDrillDown] baseData stats', {
+                systemName,
+                rows: baseData.length,
+                years: [...new Set(baseData.map(d => d.year))],
+                monthKeys: [...new Set(baseData.map(d => d.monthKey))].slice(0, 6)
+            });
+            // #endregion
             const systemData = {};
             
             // Collect all SKU data for this system
@@ -7444,10 +7583,29 @@
                             callbacks: {
                                 label: function(context) {
                                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = chartType === 'doughnut' ? 
-                                        ` (${((context.parsed / total) * 100).toFixed(1)}%)` : '';
-                                    return (chartType === 'bar' ? 'Doanh số: ' : context.label + ': ') + 
-                                           formatCurrency(context.parsed) + percentage;
+                                    
+                                    // Lấy giá trị numeric từ context.parsed (có thể là object {x,y})
+                                    let parsedValue = context.parsed;
+                                    if (parsedValue && typeof parsedValue === 'object') {
+                                        if (typeof parsedValue.x === 'number') {
+                                            parsedValue = parsedValue.x;
+                                        } else if (typeof parsedValue.y === 'number') {
+                                            parsedValue = parsedValue.y;
+                                        }
+                                    }
+                                    if (typeof parsedValue !== 'number' || !isFinite(parsedValue)) {
+                                        parsedValue = 0;
+                                    }
+
+                                    const percentage = chartType === 'doughnut' && total > 0
+                                        ? ` (${((parsedValue / total) * 100).toFixed(1)}%)`
+                                        : '';
+
+                                    const prefix = chartType === 'bar'
+                                        ? 'Doanh số: '
+                                        : context.label + ': ';
+
+                                    return prefix + formatCurrency(parsedValue) + percentage;
                                 }
                             }
                         }
@@ -7625,7 +7783,11 @@
                             const index = activeElements[0].index;
                             const systemName = sortedSystems[index][0];
                             console.log('Month system clicked:', systemName);
-                            showSystemDrillDown(systemName);
+                            // Nếu đang có context drill-down (ví dụ: một tháng cụ thể), ưu tiên dùng context đó
+                            const baseData = currentDrillDownContext && currentDrillDownContext.type === 'month'
+                                ? currentDrillDownContext.baseData
+                                : null;
+                            showSystemDrillDown(systemName, baseData);
                         }
                     },
                     plugins: {
