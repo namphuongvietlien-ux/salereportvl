@@ -7252,6 +7252,8 @@
         // Show SKU analysis for selected system
         function showSystemDrillDown(systemName) {
             console.log('showSystemDrillDown called with:', systemName);
+            // Log allData sample
+            console.log('allData sample (first 5 rows):', allData.slice(0, 5));
             const systemData = {};
             
             // Collect all SKU data for this system
@@ -7321,6 +7323,8 @@
                     }
                     brandData[product].quantity += quantity;
                     brandData[product].revenue += revenue;
+            // Log systemData after collect
+            console.log('systemData:', systemData);
                 }
             });
             
@@ -7352,6 +7356,7 @@
         // Create SKU chart
         function createSKUChart(sortedProducts, type, canvasId = 'skuAnalysisChart') {
             console.log('createSKUChart called with:', sortedProducts.length, 'products, type:', type, 'canvas:', canvasId);
+            console.log('createSKUChart input sortedProducts:', sortedProducts);
             const ctx = document.getElementById(canvasId);
             if (!ctx) {
                 console.error(`Canvas ${canvasId} not found!`);
@@ -7456,6 +7461,7 @@
         
         // Populate SKU table
         function populateSKUTable(sortedProducts) {
+            console.log('populateSKUTable input sortedProducts:', sortedProducts);
             const tbody = document.getElementById('skuDetailTableBody');
             tbody.innerHTML = '';
 
