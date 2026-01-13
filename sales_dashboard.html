@@ -2676,7 +2676,9 @@
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
                             const monthKey = sortedMonths[index];
-                            showMonthDrillDown(monthKey);
+                            // Pass current filtered data to drill-down
+                            const currentData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+                            showMonthDrillDown(monthKey, currentData);
                         }
                     },
                     interaction: {
@@ -4512,8 +4514,9 @@
         // Show Year Drill-Down Modal
         let drillDownCharts = {};
         function showYearDrillDown(year) {
-            // Filter data for selected year
-            const yearData = allData.filter(d => d.year === year);
+            // Filter data for selected year - use current filtered data if available
+            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+            const yearData = baseData.filter(d => d.year === year);
             
             // Update title
             document.getElementById('drillDownTitle').textContent = `📊 Chi Tiết Năm ${year}`;
@@ -4554,7 +4557,9 @@
                             const monthKey = months[index];
                             const year = selectedYear;
                             console.log('Month chart clicked:', `${year}-${monthKey.padStart(2, '0')}`);
-                            showMonthDrillDown(`${year}-${monthKey.padStart(2, '0')}`);
+                            // Use current filtered data for drill-down
+                            const currentData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+                            showMonthDrillDown(`${year}-${monthKey.padStart(2, '0')}`, currentData);
                         }
                     },
                     plugins: {
@@ -4759,7 +4764,9 @@
         
         // Month Drill-Down
         function showMonthDrillDown(monthKey, filteredData) {
-            const monthData = filteredData.filter(d => d.monthKey === monthKey);
+            // Use provided filteredData, or current filtered data, or allData as fallback
+            const baseData = filteredData || (currentFilteredData.length > 0 ? currentFilteredData : allData);
+            const monthData = baseData.filter(d => d.monthKey === monthKey);
             const [year, month] = monthKey.split('-');
             const monthName = `Tháng ${parseInt(month)}/${year}`;
             
@@ -5007,7 +5014,9 @@
         
         // Brand Drill-Down
         function showBrandDrillDown(brandName) {
-            const brandData = allData.filter(d => d['NHÃN HÀNG'] === brandName);
+            // Use current filtered data if available, otherwise use allData
+            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+            const brandData = baseData.filter(d => d['NHÃN HÀNG'] === brandName);
             currentDrillDownContext = {
                 type: 'brand',
                 name: brandName,
@@ -5139,8 +5148,10 @@
         
         // Product Drill-Down
         function showProductDrillDown(productName, productKey) {
+            // Use current filtered data if available, otherwise use allData
+            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
             // Filter data for this product (using shortened name)
-            const productData = allData.filter(d => {
+            const productData = baseData.filter(d => {
                 const shortName = shortenProductName(d['TÊN SP']);
                 return shortName === productName;
             });
@@ -6402,8 +6413,12 @@
         }
 
         // Update dashboard
+        // Store current filtered data globally for drill-down functions
+        let currentFilteredData = [];
+
         function updateDashboard() {
             const data = filterData();
+            currentFilteredData = data; // Store for drill-down functions
             updateKPIs(data);
             createForecastChart(data);
             createSalesTrendChart(data);
@@ -7252,12 +7267,13 @@
         // Show SKU analysis for selected system
         function showSystemDrillDown(systemName) {
             console.log('showSystemDrillDown called with:', systemName);
-            // Log allData sample
-            console.log('allData sample (first 5 rows):', allData.slice(0, 5));
+            // Use current filtered data if available, otherwise use allData
+            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+            console.log('baseData sample (first 5 rows):', baseData.slice(0, 5));
             const systemData = {};
             
             // Collect all SKU data for this system
-            allData.forEach(row => {
+            baseData.forEach(row => {
                 const system = row['HỆ THỐNG']?.trim();
                 const product = row['TÊN SP']?.trim();
                 const quantity = parseFloat(row.soLuong) || 0;
@@ -7302,13 +7318,15 @@
             document.getElementById('skuAnalysisModal').style.display = 'block';
         }
         
-        // Show SKU analysis for selected brand
-        function showBrandDrillDown(brandName) {
-            console.log('showBrandDrillDown called with:', brandName);
+        // Show SKU analysis for selected brand (duplicate function - using filtered data)
+        function showBrandDrillDownSKU(brandName) {
+            console.log('showBrandDrillDownSKU called with:', brandName);
+            // Use current filtered data if available, otherwise use allData
+            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
             const brandData = {};
             
             // Collect all SKU data for this brand
-            allData.forEach(row => {
+            baseData.forEach(row => {
                 const brand = row['NHÃN HÀNG']?.trim();
                 const product = row['TÊN SP']?.trim();
                 const quantity = parseFloat(row.soLuong) || 0;
@@ -7515,12 +7533,14 @@
         }
 
         // Show month drill-down details
-        function showMonthDrillDown(monthKey) {
-            console.log('showMonthDrillDown called with:', monthKey);
+        function showMonthDrillDownSKU(monthKey) {
+            console.log('showMonthDrillDownSKU called with:', monthKey);
+            // Use current filtered data if available, otherwise use allData
+            const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
             const monthData = {};
             
             // Collect all data for this month
-            allData.forEach(row => {
+            baseData.forEach(row => {
                 const rowMonthKey = row.monthKey;
                 if (rowMonthKey === monthKey) {
                     const system = row['HỆ THỐNG']?.trim();
