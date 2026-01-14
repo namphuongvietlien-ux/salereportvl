@@ -6285,16 +6285,18 @@
             const topSystems = Object.entries(systemData).sort((a, b) => b[1] - a[1]).slice(0, 10);
             
             // Top Products
+            // Group products by shortened name ONLY (gộp các mã HH 453G lại thành một dòng)
             const productData = {};
             brandData.forEach(row => {
                 const product = shortenProductName(row['TÊN SP']);
-                const sku = row['MÃ HH'];
-                const key = `${product} (${sku})`;
-                if (!productData[key]) productData[key] = { sales: 0, qty: 0 };
-                productData[key].sales += row.vat;
-                productData[key].qty += row.soLuong || 0;
+                if (!product) return;
+                if (!productData[product]) productData[product] = { sales: 0, qty: 0 };
+                productData[product].sales += row.vat;
+                productData[product].qty += row.soLuong || 0;
             });
-            const topProducts = Object.entries(productData).sort((a, b) => b[1].sales - a[1].sales).slice(0, 15);
+            const topProducts = Object.entries(productData)
+                .sort((a, b) => b[1].sales - a[1].sales)
+                .slice(0, 15);
             
             let html = `
                 <div style="display: flex; justify-content: flex-end; margin-bottom: 20px; padding: 10px; background: #f8fafc; border-radius: 8px;">
