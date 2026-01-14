@@ -2403,11 +2403,13 @@
             
             initializeFilters();
             initLanguage();
-            loadTargets(); // Load saved targets
+            loadTargets(); // Load saved targets first
+            updateDashboard();
+            // Update forecast display after targets are loaded
             setTimeout(() => {
+                updateForecastDisplayWithTargets();
                 setDefaultTargetVsActualMonth();
             }, 500);
-            updateDashboard();
         }
 
         // Initialize filters
@@ -8401,6 +8403,9 @@
                 const saved = localStorage.getItem('salesTargets');
                 if (saved) {
                     targetData = JSON.parse(saved);
+                    console.log('Targets loaded:', Object.keys(targetData).length, 'months');
+                } else {
+                    console.log('No saved targets found');
                 }
             } catch (e) {
                 console.error('Error loading targets:', e);
@@ -9487,9 +9492,14 @@
                     }
                 }
                 
-                if (chartInstance) {
+                if (chartInstance && chartInstance.config) {
                     // Clone chart configuration
                     const config = JSON.parse(JSON.stringify(chartInstance.config));
+                    
+                    // Ensure options object exists
+                    if (!config.options) {
+                        config.options = {};
+                    }
                     
                     // Update canvas reference
                     config.options.responsive = true;
@@ -9501,14 +9511,24 @@
                     }
                     
                     // Create new chart in fullscreen modal
-                    fullscreenChart = new Chart(canvas, config);
-                    
-                    // Resize chart to fit container
-                    setTimeout(() => {
-                        if (fullscreenChart) {
-                            fullscreenChart.resize();
-                        }
-                    }, 100);
+                    try {
+                        fullscreenChart = new Chart(canvas, config);
+                        
+                        // Resize chart to fit container
+                        setTimeout(() => {
+                            if (fullscreenChart) {
+                                fullscreenChart.resize();
+                            }
+                        }, 100);
+                    } catch (error) {
+                        console.error('Error creating fullscreen chart:', error);
+                        alert('Không thể hiển thị biểu đồ fullscreen. Vui lòng thử lại.');
+                        closeChartFullscreen();
+                    }
+                } else {
+                    console.error('Chart instance not found for:', chartId);
+                    alert('Không tìm thấy biểu đồ. Vui lòng thử lại.');
+                    closeChartFullscreen();
                 }
             }
             
