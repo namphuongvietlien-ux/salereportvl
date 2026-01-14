@@ -1101,7 +1101,7 @@
                 </div>
 
                 <!-- Target Management Section -->
-                <div class="chart-card full-width">
+                <div id="targetManagementSection" class="chart-card full-width">
                     <h2>🎯 Quản Lý Target Doanh Số</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">Nhập target tổng hoặc theo nhãn hàng, hệ thống sẽ tự động phân bổ theo tỷ lệ và khả năng tăng trưởng</p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
@@ -1155,7 +1155,7 @@
                     </div>
                     
                     <!-- Export/Import Target Data -->
-                    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; color: white;">
+                    <div id="exportImportTargetSection" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; color: white;">
                         <h3 style="font-size: 1.1em; margin-bottom: 15px;">💾 Quản Lý Dữ Liệu Target</h3>
                         <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">Export/Import target để backup hoặc chia sẻ giữa các máy</p>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -2170,13 +2170,42 @@
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
+                    console.log('🔍 Parsed saved user:', {
+                        username: currentUser.username,
+                        name: currentUser.name,
+                        role: currentUser.role,
+                        hasPermissions: !!currentUser.permissions,
+                        editTarget: currentUser.permissions?.editTarget
+                    });
                     // Verify user still exists in users.json
                     if (usersData && usersData.users) {
                         const userExists = usersData.users.find(u => u.username === currentUser.username);
                         if (userExists) {
-                            currentUser = { ...userExists, ...currentUser }; // Merge with latest user data
+                            console.log('🔍 Found user in usersData:', {
+                                username: userExists.username,
+                                role: userExists.role,
+                                editTarget: userExists.permissions?.editTarget,
+                                importExport: userExists.permissions?.importExport
+                            });
+                            // Merge with latest user data (preserve permissions from users.json)
+                            currentUser = { 
+                                ...userExists,  // Start with users.json data (has correct permissions)
+                                ...currentUser, // Then apply saved user data (but permissions from users.json take priority)
+                                permissions: userExists.permissions // Explicitly use permissions from users.json
+                            };
+                            console.log('✅ User session found (merged):', {
+                                name: currentUser.name,
+                                role: currentUser.role,
+                                editTarget: currentUser.permissions?.editTarget,
+                                importExport: currentUser.permissions?.importExport
+                            });
+                            // #region agent log
+                            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2175',message:'User session found and merged',data:{currentUserName:currentUser.name,editTarget:currentUser.permissions?.editTarget,importExport:currentUser.permissions?.importExport},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'P3'})}).catch(()=>{});
+                            // #endregion
                             showDashboard();
                             return true;
+                        } else {
+                            console.warn('⚠️ User not found in usersData:', currentUser.username);
                         }
                     }
                 } catch (e) {
@@ -2205,7 +2234,19 @@
                 currentUser = { ...user };
                 delete currentUser.password; // Don't store password
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                console.log('✅ Login successful for:', currentUser.name);
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2205',message:'Login successful',data:{currentUserName:currentUser.name,allDataLength:allData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+                // #endregion
                 showDashboard();
+                // Load data if not already loaded
+                if (!allData || allData.length === 0) {
+                    console.log('📥 Loading data after login...');
+                    loadAllData();
+                } else {
+                    console.log('✅ Data already loaded, updating dashboard...');
+                    updateDashboard();
+                }
             } else {
                 errorDiv.classList.add('show');
                 setTimeout(() => errorDiv.classList.remove('show'), 3000);
@@ -2228,11 +2269,25 @@
         
         // Show dashboard
         function showDashboard() {
+            console.log('📊 showDashboard() called for user:', currentUser?.name);
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2230',message:'showDashboard called',data:{currentUserName:currentUser?.name,allDataLength:allData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            
             document.getElementById('loginModal').classList.add('hidden');
             document.getElementById('dashboard').style.display = 'block';
             document.getElementById('userInfo').style.display = 'flex';
             document.getElementById('userName').textContent = currentUser.name || currentUser.username;
             document.getElementById('userRole').textContent = getRoleLabel(currentUser.role);
+            
+            // If data is already loaded, update dashboard immediately
+            if (allData && allData.length > 0) {
+                console.log('✅ Data already loaded, updating dashboard...');
+                updateDashboard();
+            } else {
+                console.log('⏳ Data not loaded yet, will be loaded by initializeAuth...');
+            }
+            
             // Apply permissions after a short delay to ensure DOM is ready
             setTimeout(() => {
                 applyPermissions();
@@ -2251,28 +2306,47 @@
         
         // Apply permissions - hide/show UI elements
         function applyPermissions() {
-            if (!currentUser || !currentUser.permissions) return;
+            console.log('🔒 applyPermissions() called', {
+                hasCurrentUser: !!currentUser,
+                userName: currentUser?.name,
+                userRole: currentUser?.role,
+                hasPermissions: !!currentUser?.permissions,
+                editTarget: currentUser?.permissions?.editTarget,
+                importExport: currentUser?.permissions?.importExport,
+                viewAll: currentUser?.permissions?.viewAll
+            });
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2308',message:'applyPermissions called',data:{hasCurrentUser:!!currentUser,userName:currentUser?.name,userRole:currentUser?.role,editTarget:currentUser?.permissions?.editTarget,importExport:currentUser?.permissions?.importExport},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'P1'})}).catch(()=>{});
+            // #endregion
+            
+            if (!currentUser || !currentUser.permissions) {
+                console.warn('⚠️ No currentUser or permissions in applyPermissions()');
+                return;
+            }
             
             const perms = currentUser.permissions;
             
             // Hide import/export section if not allowed
             if (!perms.importExport) {
+                console.log('🔒 Hiding import/export section (no importExport permission)');
                 setTimeout(() => {
-                    const exportBtn = document.querySelector('button[onclick="exportTargetData()"]');
-                    if (exportBtn) {
-                        const exportImportDiv = exportBtn.closest('div[style*="linear-gradient(135deg, #10b981"]');
-                        if (exportImportDiv) {
-                            exportImportDiv.style.display = 'none';
-                        }
+                    const exportImportSection = document.getElementById('exportImportTargetSection');
+                    if (exportImportSection) {
+                        exportImportSection.style.display = 'none';
                     }
                 }, 100);
+            } else {
+                console.log('✅ Showing import/export section (has importExport permission)');
             }
             
             // Hide target management inputs if not allowed to edit
             if (!perms.editTarget) {
+                console.warn('⚠️ Hiding target inputs (no editTarget permission)');
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2330',message:'Hiding target inputs - no editTarget',data:{userName:currentUser?.name,editTarget:perms.editTarget},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'P2'})}).catch(()=>{});
+                // #endregion
                 setTimeout(() => {
-                    const targetCard = document.querySelector('h2:contains("🎯 Quản Lý Target Doanh Số")')?.closest('.chart-card') ||
-                                     Array.from(document.querySelectorAll('h2')).find(h => h.textContent.includes('🎯 Quản Lý Target'))?.closest('.chart-card');
+                    const targetCard = document.getElementById('targetManagementSection');
                     if (targetCard) {
                         // Hide all input fields and buttons
                         const inputs = targetCard.querySelectorAll('input[type="number"], input[type="month"], button[onclick*="Target"], button[onclick*="setBulkTargets"]');
@@ -2289,35 +2363,99 @@
                         }
                     }
                 }, 100);
+            } else {
+                console.log('✅ Showing target inputs (has editTarget permission)');
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2350',message:'Showing target inputs - has editTarget',data:{userName:currentUser?.name,editTarget:perms.editTarget},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'P1'})}).catch(()=>{});
+                // #endregion
+                // Remove read-only message if exists
+                setTimeout(() => {
+                    const targetCard = document.getElementById('targetManagementSection');
+                    if (targetCard) {
+                        const readOnlyMsg = targetCard.querySelector('.read-only-msg');
+                        if (readOnlyMsg) {
+                            readOnlyMsg.remove();
+                        }
+                        // Show all inputs
+                        const inputs = targetCard.querySelectorAll('input[type="number"], input[type="month"], button[onclick*="Target"], button[onclick*="setBulkTargets"]');
+                        inputs.forEach(input => {
+                            input.style.display = '';
+                        });
+                    }
+                }, 100);
             }
+        }
+        
+        // Normalize store name for comparison (uppercase, trim)
+        function normalizeStoreNameForCompare(storeName) {
+            if (!storeName) return '';
+            return String(storeName).trim().toUpperCase();
         }
         
         // Filter data based on user permissions
         function filterDataByPermissions(data) {
-            if (!currentUser || !currentUser.permissions) return data;
+            if (!currentUser || !currentUser.permissions) {
+                console.log('⚠️ No currentUser or permissions, returning all data');
+                return data;
+            }
             
             const perms = currentUser.permissions;
             
             // Admin and supervisor can see all
             if (perms.viewAll) {
+                console.log(`✅ User ${currentUser.name} has viewAll permission, returning all ${data.length} rows`);
                 return data;
             }
             
             // Sales can only see their assigned systems/stores
+            // Normalize store names in permissions
+            const normalizedStores = perms.stores && perms.stores.length > 0 
+                ? perms.stores.map(s => normalizeStoreNameForCompare(s))
+                : [];
+            const normalizedSystems = perms.systems && perms.systems.length > 0
+                ? perms.systems.map(s => String(s).trim())
+                : [];
+            
+            console.log(`🔒 Filtering data for ${currentUser.name}:`, {
+                totalRows: data.length,
+                allowedStores: normalizedStores.length,
+                allowedSystems: normalizedSystems.length,
+                sampleStores: normalizedStores.slice(0, 5)
+            });
+            
+            // Check for Fujitsu data specifically
+            const fujitsuData = data.filter(row => {
+                const system = row['HỆ THỐNG'] ? String(row['HỆ THỐNG']).trim() : '';
+                return system && system.toUpperCase().includes('FUJITSU');
+            });
+            if (fujitsuData.length > 0) {
+                const fujitsuStores = [...new Set(fujitsuData.map(r => normalizeStoreNameForCompare(r['CỬA HÀNG'])))];
+                const fujitsuSystems = [...new Set(fujitsuData.map(r => String(r['HỆ THỐNG']).trim()))];
+                console.log(`🔍 Fujitsu data found: ${fujitsuData.length} rows`, {
+                    systems: fujitsuSystems,
+                    stores: fujitsuStores.slice(0, 10),
+                    userAllowedStores: normalizedStores.slice(0, 10),
+                    hasMatchingStores: fujitsuStores.some(s => normalizedStores.includes(s))
+                });
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2358',message:'Fujitsu data check',data:{fujitsuDataLength:fujitsuData.length,fujitsuStores:fujitsuStores.slice(0,5),userAllowedStores:normalizedStores.slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+                // #endregion
+            }
+            
             const filtered = data.filter(row => {
-                const system = row['HỆ THỐNG'];
-                const store = row['CỬA HÀNG'];
+                const system = row['HỆ THỐNG'] ? String(row['HỆ THỐNG']).trim() : '';
+                const store = normalizeStoreNameForCompare(row['CỬA HÀNG']);
                 
                 // Check if system is allowed
-                if (perms.systems && perms.systems.length > 0) {
-                    if (!system || !perms.systems.includes(system)) {
+                if (normalizedSystems.length > 0) {
+                    if (!system || !normalizedSystems.includes(system)) {
                         return false;
                     }
                 }
                 
                 // Check if store is allowed (if specified)
-                if (perms.stores && perms.stores.length > 0) {
-                    if (!store || !perms.stores.includes(store)) {
+                if (normalizedStores.length > 0) {
+                    if (!store || !normalizedStores.includes(store)) {
                         return false;
                     }
                 }
@@ -2325,7 +2463,26 @@
                 return true;
             });
             
+            // Check if Fujitsu data was filtered out
+            const filteredFujitsu = filtered.filter(row => {
+                const system = row['HỆ THỐNG'] ? String(row['HỆ THỐNG']).trim() : '';
+                return system && system.toUpperCase().includes('FUJITSU');
+            });
+            if (fujitsuData.length > 0 && filteredFujitsu.length === 0) {
+                console.warn(`⚠️ Fujitsu data filtered out: ${fujitsuData.length} rows → 0 rows`);
+                console.warn('Reason: User does not have permissions for Fujitsu stores');
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2390',message:'Fujitsu filtered out',data:{fujitsuDataLength:fujitsuData.length,filteredFujitsuLength:0,userName:currentUser.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H'})}).catch(()=>{});
+                // #endregion
+            }
+            
             console.log(`🔒 Data filtered: ${data.length} → ${filtered.length} rows (${currentUser.name})`);
+            if (filtered.length === 0 && data.length > 0) {
+                console.warn('⚠️ All data filtered out! Checking sample store names from data:');
+                const sampleStores = [...new Set(data.slice(0, 100).map(r => normalizeStoreNameForCompare(r['CỬA HÀNG'])))].slice(0, 10);
+                console.warn('Sample stores in data:', sampleStores);
+                console.warn('Allowed stores:', normalizedStores.slice(0, 10));
+            }
             return filtered;
         }
         let charts = {};
@@ -2633,6 +2790,10 @@
 
         // Load all CSV files
         async function loadAllData() {
+            console.log('🚀 Starting loadAllData()...');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2631',message:'loadAllData started',data:{hasCurrentUser:!!currentUser,currentUserName:currentUser?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
             // Load lookup tables first
             await loadProductNameLookup();
             await loadCustomers();
@@ -2771,6 +2932,11 @@
             const apr2025VAT = apr2025Final.reduce((sum, row) => sum + row.vat, 0);
             console.log('📅 Apr 2025: Raw:', apr2025Raw.length, '→ Final:', apr2025Final.length, 'rows, VAT:', apr2025VAT.toLocaleString('vi-VN'), 'VND');
             
+            console.log('✅ Data loaded, updating UI...');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2800',message:'Data loaded, updating UI',data:{allDataLength:allData.length,hasCurrentUser:!!currentUser},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            
             document.getElementById('loading').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
             
@@ -2778,13 +2944,18 @@
             initLanguage();
             // Load targets (async) and then update dashboard
             loadTargets().then(() => {
+                console.log('✅ Targets loaded, calling updateDashboard()...');
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:2810',message:'Calling updateDashboard',data:{allDataLength:allData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
                 updateDashboard();
                 // Update forecast display after targets are loaded
                 setTimeout(() => {
                     updateForecastDisplayWithTargets();
                     setDefaultTargetVsActualMonth();
                 }, 500);
-            }).catch(() => {
+            }).catch((e) => {
+                console.error('❌ Error loading targets:', e);
                 // If loadTargets fails, still update dashboard
                 updateDashboard();
             });
@@ -3250,8 +3421,8 @@
             const currentMonthDisplay = `Tháng ${parseInt(currentMonth)}/${currentYear}`;
             document.getElementById('currentMonthForecast').textContent = formatCurrency(currentMonthForecastSales);
             
-            // Get target for current month if exists
-            const currentMonthTarget = targetData[currentMonthLabel]?.total || 0;
+            // Get target for current month (user-specific for sales, total for admin/supervisor)
+            const currentMonthTarget = getUserTarget(currentMonthLabel);
             let currentMonthQtyText = `${currentMonthDisplay} - SL: ${formatNumber(Math.round(currentMonthForecastQty))}`;
             if (currentMonthTarget > 0) {
                 const achievementPercent = (currentMonthForecastSales / currentMonthTarget * 100).toFixed(1);
@@ -3267,8 +3438,8 @@
             const nextMonthDisplay = `Tháng ${parseInt(nextMonth)}/${nextYear}`;
             document.getElementById('nextMonthForecast').textContent = formatCurrency(nextMonthForecastSales);
             
-            // Get target for next month if exists
-            const nextMonthTarget = targetData[nextMonthLabel]?.total || 0;
+            // Get target for next month (user-specific for sales, total for admin/supervisor)
+            const nextMonthTarget = getUserTarget(nextMonthLabel);
             let nextMonthQtyText = `${nextMonthDisplay} - SL: ${formatNumber(Math.round(nextMonthForecastQty))}`;
             if (nextMonthTarget > 0) {
                 const achievementPercent = (nextMonthForecastSales / nextMonthTarget * 100).toFixed(1);
@@ -3292,8 +3463,8 @@
             
             document.getElementById('nextQuarterForecast').textContent = formatCurrency(nextQtrForecast);
             
-            // Calculate average target for next quarter if all forecast months have targets
-            const nextQtrTargets = forecastLabels.map(monthKey => targetData[monthKey]?.total || 0).filter(t => t > 0);
+            // Calculate average target for next quarter if all forecast months have targets (user-specific)
+            const nextQtrTargets = forecastLabels.map(monthKey => getUserTarget(monthKey)).filter(t => t > 0);
             let nextQtrQtyText = `Số lượng: ${formatNumber(Math.round(nextQtrQtyForecast))}`;
             if (nextQtrTargets.length > 0) {
                 const avgTarget = nextQtrTargets.reduce((a, b) => a + b, 0) / nextQtrTargets.length;
@@ -3340,9 +3511,9 @@
             const firstForecastValue = forecastSales[0];
             const connectionData = [...Array(sortedMonths.length - 1).fill(null), lastHistoricalValue, firstForecastValue, ...Array(forecastMonths - 1).fill(null)];
             
-            // Create target line for forecast months
+            // Create target line for forecast months (user-specific)
             const targetDataLine = forecastLabels.map(monthKey => {
-                return targetData[monthKey]?.total || null;
+                return getUserTarget(monthKey) || null;
             });
             const targetLineData = [...Array(sortedMonths.length).fill(null), ...targetDataLine];
 
@@ -3905,6 +4076,69 @@
             // Update summary
             document.getElementById('forecastTotalSales').textContent = formatCurrency(detail.totalSales);
             document.getElementById('forecastTotalQty').textContent = formatNumber(Math.round(detail.totalQty));
+            
+            // Get user-specific target for this forecast period
+            // Calculate forecast month labels based on current date and forecast type
+            let forecastTarget = 0;
+            let forecastTargetPercent = '-';
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth() + 1; // 1-12
+            
+            if (type === 'currentMonth') {
+                // Current month forecast is next month (first forecast month)
+                const forecastDate = new Date(currentYear, currentMonth, 1); // Next month
+                const currentMonthLabel = `${forecastDate.getFullYear()}-${String(forecastDate.getMonth() + 1).padStart(2, '0')}`;
+                forecastTarget = getUserTarget(currentMonthLabel);
+                if (forecastTarget > 0) {
+                    forecastTargetPercent = ((detail.totalSales / forecastTarget) * 100).toFixed(1);
+                }
+            } else if (type === 'nextMonth') {
+                // Next month forecast is second forecast month
+                const forecastDate = new Date(currentYear, currentMonth + 1, 1); // Month after next
+                const nextMonthLabel = `${forecastDate.getFullYear()}-${String(forecastDate.getMonth() + 1).padStart(2, '0')}`;
+                forecastTarget = getUserTarget(nextMonthLabel);
+                if (forecastTarget > 0) {
+                    forecastTargetPercent = ((detail.totalSales / forecastTarget) * 100).toFixed(1);
+                }
+            } else if (type === 'nextQuarter') {
+                // Average target for next quarter forecast months (next 3 months)
+                const nextQtrTargets = [];
+                for (let i = 1; i <= 3; i++) {
+                    const forecastDate = new Date(currentYear, currentMonth + i - 1, 1);
+                    const monthKey = `${forecastDate.getFullYear()}-${String(forecastDate.getMonth() + 1).padStart(2, '0')}`;
+                    const target = getUserTarget(monthKey);
+                    if (target > 0) {
+                        nextQtrTargets.push(target);
+                    }
+                }
+                if (nextQtrTargets.length > 0) {
+                    forecastTarget = nextQtrTargets.reduce((a, b) => a + b, 0) / nextQtrTargets.length;
+                    if (forecastTarget > 0) {
+                        forecastTargetPercent = ((detail.totalSales / forecastTarget) * 100).toFixed(1);
+                    }
+                }
+            }
+            
+            // Update target display if element exists
+            const forecastTargetElement = document.getElementById('forecastTarget');
+            if (forecastTargetElement) {
+                if (forecastTarget > 0) {
+                    const targetColor = parseFloat(forecastTargetPercent) >= 100 ? '#10b981' : parseFloat(forecastTargetPercent) >= 80 ? '#f59e0b' : '#ef4444';
+                    forecastTargetElement.innerHTML = `
+                        <div style="margin-top: 10px; padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid ${targetColor};">
+                            <div style="font-size: 0.9em; color: #6b7280; margin-bottom: 5px;">🎯 Target (${currentUser?.name || 'User'}):</div>
+                            <div style="font-size: 1.2em; font-weight: 700; color: ${targetColor};">
+                                ${formatCurrency(forecastTarget)} 
+                                <span style="font-size: 0.9em; margin-left: 10px;">(${forecastTargetPercent}%)</span>
+                            </div>
+                        </div>
+                    `;
+                    forecastTargetElement.style.display = 'block';
+                } else {
+                    forecastTargetElement.style.display = 'none';
+                }
+            }
             
             // Calculate total adjustment
             let totalAdjustment = 0;
@@ -7454,10 +7688,33 @@
         let currentFilteredData = [];
 
         function updateDashboard() {
+            console.log('📊 updateDashboard() called');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:7452',message:'updateDashboard started',data:{allDataLength:allData.length,hasCurrentUser:!!currentUser},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            
             let data = filterData();
+            console.log(`📊 After filterData(): ${data.length} rows`);
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:7455',message:'After filterData',data:{filteredDataLength:data.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            
             // Apply permission-based filtering
             data = filterDataByPermissions(data);
+            console.log(`📊 After filterDataByPermissions(): ${data.length} rows`);
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:7460',message:'After filterDataByPermissions',data:{finalDataLength:data.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
+            
             currentFilteredData = data; // Store for drill-down functions
+            
+            if (data.length === 0) {
+                console.warn('⚠️ No data to display after filtering!');
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:7465',message:'No data after filtering',data:{allDataLength:allData.length,currentUser:currentUser?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+            }
+            
             updateKPIs(data);
             createForecastChart(data);
             createSalesTrendChart(data);
@@ -7468,6 +7725,11 @@
             createTopProductsChart(data);
             createStoreActivityChart(data);
             analyzeGrowthDrivers(data);
+            
+            console.log('✅ updateDashboard() completed');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:7480',message:'updateDashboard completed',data:{finalDataLength:data.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
         }
 
         // Export to PowerPoint
@@ -8781,7 +9043,42 @@
         }
 
         // Target Management
-        let targetData = {}; // Store targets: { '2026-01': { total: 5000000000, brands: {...}, systems: {...} } }
+        let targetData = {}; // Store targets: { '2026-01': { total: 5000000000, brands: {...}, systems: {...}, userTargets: { 'username': { total: ..., stores: {...} } } } }
+        
+        // Get user-specific target (for sales users, return their target; for admin/supervisor, return total)
+        function getUserTarget(monthKey) {
+            if (!currentUser || !targetData[monthKey]) {
+                return 0;
+            }
+            
+            const monthTarget = targetData[monthKey];
+            const perms = currentUser.permissions;
+            
+            // Admin and supervisor see total target
+            if (perms.viewAll) {
+                return monthTarget.total || 0;
+            }
+            
+            // Sales users see their specific target
+            if (monthTarget.userTargets && monthTarget.userTargets[currentUser.username]) {
+                return monthTarget.userTargets[currentUser.username].total || 0;
+            }
+            
+            // If no user-specific target, calculate from stores
+            if (perms.stores && perms.stores.length > 0 && monthTarget.stores) {
+                let userTotal = 0;
+                const normalizedStores = perms.stores.map(s => normalizeStoreNameForCompare(s));
+                Object.keys(monthTarget.stores || {}).forEach(store => {
+                    if (normalizedStores.includes(normalizeStoreNameForCompare(store))) {
+                        userTotal += monthTarget.stores[store] || 0;
+                    }
+                });
+                return userTotal;
+            }
+            
+            // Fallback: return 0 if no user-specific target
+            return 0;
+        }
         
         // Load targets from JSON file (GitHub) and merge with localStorage
         async function loadTargets() {
@@ -8789,40 +9086,78 @@
                 // First, try to load from targets.json file (for GitHub Pages)
                 try {
                     const response = await fetch('targets.json?v=' + Date.now());
+                    console.log('📥 Fetching targets.json, status:', response.status, response.ok);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:9018',message:'Fetching targets.json',data:{status:response.status,ok:response.ok,url:response.url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'T2'})}).catch(()=>{});
+                    // #endregion
                     if (response.ok) {
                         const fileData = await response.json();
+                        console.log('📥 targets.json content:', {
+                            version: fileData.version,
+                            lastUpdated: fileData.lastUpdated,
+                            targetMonths: Object.keys(fileData.targets || {}).length,
+                            sampleMonths: Object.keys(fileData.targets || {}).slice(0, 5)
+                        });
+                        // #region agent log
+                        fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:9025',message:'targets.json parsed',data:{targetMonths:Object.keys(fileData.targets||{}).length,sampleMonths:Object.keys(fileData.targets||{}).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'T2'})}).catch(()=>{});
+                        // #endregion
                         // Handle targets.json format: { version, lastUpdated, targets: {...} }
                         const fileTargets = fileData.targets || fileData.data || fileData;
                         if (fileTargets && typeof fileTargets === 'object' && !Array.isArray(fileTargets)) {
-                            // Merge file data with existing targetData
+                            const fileMonthCount = Object.keys(fileTargets).length;
+                            // Merge file data with existing targetData (keep local fields if present)
                             Object.keys(fileTargets).forEach(monthKey => {
-                                if (!targetData[monthKey] || targetData[monthKey].total === 0) {
-                                    targetData[monthKey] = fileTargets[monthKey];
-                                }
+                                targetData[monthKey] = targetData[monthKey]
+                                    ? { ...fileTargets[monthKey], ...targetData[monthKey] }
+                                    : fileTargets[monthKey];
                             });
-                            console.log('✅ Targets loaded from targets.json:', Object.keys(fileTargets).length, 'months');
+                            console.log('✅ Targets loaded from targets.json:', fileMonthCount, 'months');
+                            if (fileMonthCount === 0) {
+                                console.warn('⚠️ targets.json is empty - no targets found in file');
+                            }
                         }
+                    } else {
+                        console.warn('⚠️ targets.json fetch failed:', response.status, response.statusText);
                     }
                 } catch (fileError) {
                     console.log('⚠️ Could not load targets.json (normal if file does not exist yet):', fileError.message);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:9036',message:'targets.json fetch error',data:{error:fileError.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'T2'})}).catch(()=>{});
+                    // #endregion
                 }
                 
                 // Then, load from localStorage (user's local edits take priority)
                 const saved = localStorage.getItem('salesTargets');
                 if (saved) {
                     const parsed = JSON.parse(saved);
+                    const localMonthCount = Object.keys(parsed).length;
+                    console.log('📥 Loading from localStorage:', localMonthCount, 'months');
+                    // #region agent log
+                    fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:9040',message:'Loading from localStorage',data:{localMonthCount,localMonths:Object.keys(parsed).slice(0,5)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'T3'})}).catch(()=>{});
+                    // #endregion
                     // Merge localStorage data (overwrites file data if exists)
                     Object.keys(parsed).forEach(monthKey => {
                         targetData[monthKey] = parsed[monthKey];
                     });
-                    console.log('✅ Targets loaded from localStorage:', Object.keys(parsed).length, 'months');
+                    console.log('✅ Targets loaded from localStorage:', localMonthCount, 'months');
+                } else {
+                    console.log('ℹ️ No targets in localStorage');
                 }
                 
                 const monthCount = Object.keys(targetData).length;
                 const totalCount = Object.values(targetData).filter(t => t && t.total > 0).length;
+                const targetMonths = Object.keys(targetData).sort();
                 console.log('📊 Total targets loaded:', monthCount, 'months,', totalCount, 'with targets');
                 if (monthCount > 0) {
-                    console.log('Target months:', Object.keys(targetData).sort());
+                    console.log('Target months:', targetMonths);
+                    // Check for 2025 targets specifically
+                    const targets2025 = targetMonths.filter(m => m.startsWith('2025-'));
+                    console.log('🎯 2025 targets:', targets2025.length, targets2025);
+                    // #region agent log
+                    fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:9055',message:'Total targets summary',data:{monthCount,totalCount,targets2025Count:targets2025.length,targets2025},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'T3'})}).catch(()=>{});
+                    // #endregion
+                } else {
+                    console.warn('⚠️ No targets loaded at all!');
                 }
             } catch (e) {
                 console.error('❌ Error loading targets:', e);
@@ -8864,6 +9199,9 @@
                 
                 // Convert to JSON string with pretty formatting
                 const jsonString = JSON.stringify(exportData, null, 2);
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:exportTargetData',message:'export targets.json',data:{monthCount:Object.keys(targetData).length,totalCount:Object.values(targetData).filter(t=>t&&t.total>0).length,jsonBytes:jsonString.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'T1'})}).catch(()=>{});
+                // #endregion
                 
                 // Create blob and download
                 const blob = new Blob([jsonString], { type: 'application/json' });
@@ -8958,20 +9296,17 @@
                     Object.keys(importedData).forEach(monthKey => {
                         const monthData = importedData[monthKey];
                         if (monthData && typeof monthData === 'object') {
-                            // Merge: keep existing brands/systems if not in import
-                            if (targetData[monthKey]) {
-                                targetData[monthKey] = {
-                                    total: monthData.total || targetData[monthKey].total,
-                                    brands: monthData.brands || targetData[monthKey].brands || {},
-                                    systems: monthData.systems || targetData[monthKey].systems || {}
-                                };
-                            } else {
-                                targetData[monthKey] = {
-                                    total: monthData.total || 0,
-                                    brands: monthData.brands || {},
-                                    systems: monthData.systems || {}
-                                };
-                            }
+                            // Merge all known fields (preserve userTargets/stores/etc.)
+                            const existing = targetData[monthKey] || {};
+                            targetData[monthKey] = {
+                                ...existing,
+                                ...monthData,
+                                total: (monthData.total !== undefined ? monthData.total : existing.total) || 0,
+                                brands: monthData.brands || existing.brands || {},
+                                systems: monthData.systems || existing.systems || {},
+                                stores: monthData.stores || existing.stores || {},
+                                userTargets: monthData.userTargets || existing.userTargets || {}
+                            };
                         }
                     });
                     
@@ -9378,7 +9713,8 @@
         
         // Bulk set targets for multiple months
         function setBulkTargets() {
-            // Get target for December 2025 as reference
+            // Get target for December 2025 as reference (use total target, not user-specific)
+            // This function is for admin to set targets, so we use total target
             let dec2025Target = targetData['2025-12']?.total || 0;
             
             // If December target doesn't exist, try to get from other recent months or use a default
@@ -9386,8 +9722,9 @@
                 // Try to find target from other 2025 months
                 const months2025 = ['2025-11', '2025-10', '2025-09', '2025-08', '2025-07', '2025-06', '2025-05', '2025-04'];
                 for (const month of months2025) {
-                    if (targetData[month]?.total > 0) {
-                        dec2025Target = targetData[month].total;
+                    const monthTarget = targetData[month]?.total || 0;
+                    if (monthTarget > 0) {
+                        dec2025Target = monthTarget;
                         console.log(`Sử dụng target từ ${month} cho các tháng 4-11: ${formatCurrency(dec2025Target)}`);
                         break;
                     }
@@ -9513,8 +9850,11 @@
             
             const targetMonthData = targetData[monthKey];
             
-            if (!targetMonthData || !targetMonthData.total || targetMonthData.total <= 0) {
-                const availableMonths = Object.keys(targetData).filter(k => targetData[k]?.total > 0);
+            // Get user-specific target
+            const totalTarget = getUserTarget(monthKey);
+            
+            if (!totalTarget || totalTarget <= 0) {
+                const availableMonths = Object.keys(targetData).filter(k => getUserTarget(k) > 0);
                 if (availableMonths.length > 0) {
                     alert(`Chưa có target cho tháng ${monthKey}.\n\nCác tháng đã có target:\n${availableMonths.map(m => {
                         const [y, mo] = m.split('-');
@@ -9526,8 +9866,9 @@
                 return;
             }
             
-            // Get actual sales data for this month
-            const monthData = allData.filter(row => row.monthKey === monthKey);
+            // Get actual sales data for this month (filtered by permissions)
+            let monthData = allData.filter(row => row.monthKey === monthKey);
+            monthData = filterDataByPermissions(monthData);
             
             if (monthData.length === 0) {
                 alert('Không có dữ liệu thực tế cho tháng này');
@@ -9535,7 +9876,6 @@
             }
             
             // Calculate totals
-            const totalTarget = targetMonthData.total;
             const totalActual = monthData.reduce((sum, row) => sum + (row.vat || 0), 0);
             const achievementPercent = totalTarget > 0 ? (totalActual / totalTarget * 100).toFixed(1) : 0;
             
@@ -9636,9 +9976,9 @@
                 bodyHTML += '</tr>';
             });
             
-            // Add total row
+            // Add total row (use user-specific target)
             const totalActual = monthData.reduce((sum, row) => sum + (row.vat || 0), 0);
-            const totalTarget = targetMonthData.total;
+            const totalTarget = getUserTarget(monthKey);
             const totalPercent = (totalActual / totalTarget * 100).toFixed(1);
             
             bodyHTML += '<tr style="background: #f9fafb; border-top: 2px solid #1f2937; font-weight: 700;">';
@@ -9667,7 +10007,7 @@
             const container = document.getElementById('targetVsActualChartContainer');
             if (!container) return;
             
-            // Group by system
+            // Group by system (only systems user has access to)
             const systemData = {};
             monthData.forEach(row => {
                 const system = row['HỆ THỐNG'];
@@ -9679,15 +10019,37 @@
                 systemData[system].actual += row.vat || 0;
             });
             
-            // Get targets for each system
+            // Get targets for each system (user-specific)
             const brandsWithTargets = Object.keys(targetMonthData.brands || {});
             const systemTargets = targetMonthData.systems || {};
+            
+            // For sales users, only calculate targets for their stores
+            const perms = currentUser?.permissions || {};
+            const normalizedStores = perms.stores && perms.stores.length > 0 
+                ? perms.stores.map(s => normalizeStoreNameForCompare(s))
+                : [];
             
             Object.keys(systemData).forEach(system => {
                 let systemTarget = 0;
                 brandsWithTargets.forEach(brand => {
                     const brandSystems = systemTargets[brand] || {};
-                    systemTarget += brandSystems[system] || 0;
+                    // For sales users, only count stores they have access to
+                    if (normalizedStores.length > 0) {
+                        // Calculate target based on stores in this system that user can access
+                        const systemStores = monthData
+                            .filter(row => row['HỆ THỐNG'] === system)
+                            .map(row => normalizeStoreNameForCompare(row['CỬA HÀNG']));
+                        const userStoresInSystem = systemStores.filter(s => normalizedStores.includes(s));
+                        if (userStoresInSystem.length > 0) {
+                            // Estimate target proportionally based on stores
+                            const totalStoresInSystem = new Set(systemStores).size;
+                            const userStoreRatio = userStoresInSystem.length / totalStoresInSystem;
+                            systemTarget += (brandSystems[system] || 0) * userStoreRatio;
+                        }
+                    } else {
+                        // Admin/supervisor: use full target
+                        systemTarget += brandSystems[system] || 0;
+                    }
                 });
                 systemData[system].target = systemTarget;
             });
@@ -10046,9 +10408,20 @@
 
         // Initialize authentication first, then load data
         (async function() {
+            console.log('🚀 Initializing authentication...');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:10045',message:'Initializing auth',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
+            
             await initializeAuth();
             if (currentUser) {
+                console.log('✅ User authenticated:', currentUser.name, '- Loading data...');
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:10050',message:'User authenticated, calling loadAllData',data:{currentUserName:currentUser.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
                 loadAllData();
+            } else {
+                console.log('⚠️ No user authenticated, waiting for login...');
             }
         })();
     </script>
