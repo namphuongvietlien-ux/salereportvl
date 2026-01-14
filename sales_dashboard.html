@@ -156,6 +156,129 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             border: 1px solid #e5e7eb;
+            position: relative;
+        }
+        
+        .chart-fullscreen-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            z-index: 10;
+            font-weight: bold;
+        }
+        
+        .chart-fullscreen-btn:hover {
+            background: #3b82f6;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .chart-fullscreen-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 20000;
+            overflow: auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        
+        .chart-fullscreen-modal.active {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-fullscreen-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 1400px;
+            max-height: 95vh;
+            overflow: auto;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .chart-fullscreen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        
+        .chart-fullscreen-header h2 {
+            margin: 0;
+            color: #1f2937;
+            font-size: 1.8em;
+        }
+        
+        .chart-fullscreen-close {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        
+        .chart-fullscreen-close:hover {
+            background: #dc2626;
+        }
+        
+        .chart-fullscreen-canvas-container {
+            width: 100%;
+            height: calc(95vh - 150px);
+            min-height: 500px;
+            position: relative;
+        }
+        
+        @media (max-width: 768px) {
+            .chart-fullscreen-content {
+                padding: 20px;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+            
+            .chart-fullscreen-header h2 {
+                font-size: 1.3em;
+            }
+            
+            .chart-fullscreen-canvas-container {
+                height: calc(100vh - 120px);
+                min-height: 400px;
+            }
+            
+            .chart-fullscreen-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 16px;
+                top: 15px;
+                right: 15px;
+            }
         }
 
         .chart-card.full-width {
@@ -757,13 +880,14 @@
             <div class="chart-grid">
                 <!-- Forecast Section -->
                 <div class="chart-card full-width">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('forecastChart', '📊 Dự Đoán Doanh Số')" title="Xem toàn màn hình">⛶</button>
                     <h2>🔮 Dự Đoán Doanh Số & Số Lượng</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào từng dự đoán để xem chi tiết theo hệ thống và sản phẩm</p>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 20px;">
                         <div class="forecast-card" onclick="showForecastDetail('currentMonth')" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 20px; border-radius: 12px; color: white;">
-                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🔥 Dự Đoán Tháng Này</h3>
+                            <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">🔥 Dự Đoán Tháng Đầu Tiên</h3>
                             <p id="currentMonthForecast" style="font-size: 1.5em; font-weight: 700; margin: 0;">Đang tải...</p>
-                            <p id="currentMonthQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Số lượng: ...</p>
+                            <p id="currentMonthQtyForecast" style="font-size: 1.1em; margin-top: 8px; opacity: 0.9;">Đang tải...</p>
                         </div>
                         <div class="forecast-card" onclick="showForecastDetail('nextMonth')" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
                             <h3 style="font-size: 0.95em; opacity: 0.9; margin-bottom: 10px;">📅 Dự Đoán Tháng Tiếp Theo</h3>
@@ -792,6 +916,7 @@
                 </div>
 
                 <div class="chart-card full-width">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('salesTrendChart', '📈 Xu Hướng Doanh Số Theo Tháng')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="salesTrend">📈 Xu Hướng Doanh Số Theo Tháng</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào điểm dữ liệu để xem chi tiết tháng</p>
                     <div class="chart-container tall">
@@ -800,6 +925,7 @@
                 </div>
 
                 <div class="chart-card full-width">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('brandTrendChart', '🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="brandTrend">🏷️ Xu Hướng Doanh Số Theo Nhãn Hàng</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào đường line để xem chi tiết brand</p>
                     <div class="chart-container tall">
@@ -807,7 +933,121 @@
                     </div>
                 </div>
 
+                <!-- Target Management Section -->
+                <div class="chart-card full-width">
+                    <h2>🎯 Quản Lý Target Doanh Số</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">Nhập target tổng hoặc theo nhãn hàng, hệ thống sẽ tự động phân bổ theo tỷ lệ và khả năng tăng trưởng</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                        <!-- Total Target -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 1.1em; margin-bottom: 15px;">📊 Target Tổng</h3>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; opacity: 0.9;">Nhập Target Tổng (VND)</label>
+                                <input type="number" id="totalTargetInput" placeholder="Nhập số tiền..." 
+                                       style="width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1.1em; color: #1f2937;">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; opacity: 0.9;">Chọn Tháng</label>
+                                <input type="month" id="totalTargetMonth" 
+                                       style="width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1em; color: #1f2937;">
+                            </div>
+                            <button onclick="setTotalTarget()" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                ✅ Áp Dụng Target Tổng
+                            </button>
+                            <button onclick="setBulkTargets()" style="width: 100%; padding: 10px; margin-top: 10px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; font-weight: 500; cursor: pointer; font-size: 0.9em;">
+                                ⚡ Set Target Hàng Loạt (2025)
+                            </button>
+                        </div>
+                        <!-- Brand Target -->
+                        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 20px; border-radius: 12px; color: white;">
+                            <h3 style="font-size: 1.1em; margin-bottom: 15px;">🏷️ Target Theo Nhãn Hàng</h3>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; opacity: 0.9;">Chọn Nhãn Hàng</label>
+                                <select id="brandTargetSelect" style="width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1em; color: #1f2937;">
+                                    <option value="">-- Chọn nhãn hàng --</option>
+                                </select>
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; opacity: 0.9;">Nhập Target (VND)</label>
+                                <input type="number" id="brandTargetInput" placeholder="Nhập số tiền..." 
+                                       style="width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1.1em; color: #1f2937;">
+                            </div>
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; margin-bottom: 5px; opacity: 0.9;">Chọn Tháng</label>
+                                <input type="month" id="brandTargetMonth" 
+                                       style="width: 100%; padding: 10px; border: none; border-radius: 6px; font-size: 1em; color: #1f2937;">
+                            </div>
+                            <button onclick="setBrandTarget()" style="width: 100%; padding: 12px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                                ✅ Áp Dụng Target Nhãn Hàng
+                            </button>
+                        </div>
+                    </div>
+                    <div id="targetResults" style="margin-top: 20px; padding: 20px; background: #f9fafb; border-radius: 8px; display: none;">
+                        <h3 style="color: #1f2937; margin-bottom: 15px;">📋 Kết Quả Phân Bổ Target</h3>
+                        <div id="targetResultsContent"></div>
+                    </div>
+                </div>
+
+                <!-- Target vs Actual Performance Section -->
+                <div class="chart-card full-width">
+                    <h2>📊 Doanh Số Thực Tế vs Target</h2>
+                    <p style="color: #666; font-size: 0.9em; margin-top: 5px;">So sánh doanh số thực tế với target theo hệ thống và nhãn hàng</p>
+                    
+                    <div style="margin: 20px 0; display: flex; gap: 15px; align-items: center;">
+                        <label style="font-weight: 600; color: #374151;">Chọn Tháng:</label>
+                        <input type="month" id="targetVsActualMonth" 
+                               style="padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1em; min-width: 200px;">
+                        <button onclick="updateTargetVsActual()" 
+                                style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                            🔍 Xem Báo Cáo
+                        </button>
+                    </div>
+                    
+                    <div id="targetVsActualContent" style="display: none;">
+                        <!-- Summary Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; color: white;">
+                                <h3 style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">🎯 Target Tổng</h3>
+                                <p id="summaryTotalTarget" style="font-size: 1.5em; font-weight: 700; margin: 0;">0 ₫</p>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; border-radius: 12px; color: white;">
+                                <h3 style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">💰 Doanh Số Thực Tế</h3>
+                                <p id="summaryTotalActual" style="font-size: 1.5em; font-weight: 700; margin: 0;">0 ₫</p>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 20px; border-radius: 12px; color: white;">
+                                <h3 style="font-size: 0.9em; opacity: 0.9; margin-bottom: 10px;">📈 % Đạt Được</h3>
+                                <p id="summaryAchievement" style="font-size: 1.5em; font-weight: 700; margin: 0;">0%</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Chart - Using HTML Progress Bars for Better Readability -->
+                        <div style="margin-bottom: 30px; position: relative;">
+                            <button class="chart-fullscreen-btn" onclick="openChartFullscreen('targetVsActualChartContainer', '📊 Doanh Số Thực Tế vs Target', true)" title="Xem toàn màn hình" style="position: absolute; top: 0; right: 0;">⛶</button>
+                            <h3 style="color: #1f2937; margin-bottom: 15px;">📊 Biểu Đồ So Sánh</h3>
+                            <div id="targetVsActualChartContainer" style="background: white; padding: 25px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                                <!-- Will be populated by JavaScript with HTML progress bars -->
+                            </div>
+                        </div>
+                        
+                        <!-- Detailed Table -->
+                        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+                            <h3 style="color: #1f2937; margin-bottom: 15px;">📋 Bảng Chi Tiết Theo Hệ Thống & Nhãn Hàng</h3>
+                            <div class="table-container" style="max-height: 600px; overflow: auto;">
+                                <table id="targetVsActualTable" style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                                    <thead id="targetVsActualTableHead" style="position: sticky; top: 0; background: white; z-index: 10;">
+                                        <!-- Will be populated by JavaScript -->
+                                    </thead>
+                                    <tbody id="targetVsActualTableBody">
+                                        <!-- Will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="chart-card">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('systemChart', '🏢 Doanh Số Theo Hệ Thống')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="systemSales">🏢 Doanh Số Theo Hệ Thống</h2>
                     <p style="color: #666; font-size: 0.85em; margin-top: 5px;">👆 Click để xem chi tiết</p>
                     <div class="chart-container">
@@ -816,6 +1056,7 @@
                 </div>
 
                 <div class="chart-card">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('brandChart', '🏷️ Doanh Số Theo Nhãn Hàng')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="brandSales">🏷️ Doanh Số Theo Nhãn Hàng</h2>
                     <p style="color: #666; font-size: 0.85em; margin-top: 5px;">👆 Click để xem chi tiết</p>
                     <div class="chart-container">
@@ -824,6 +1065,7 @@
                 </div>
 
                 <div class="chart-card full-width">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('yearComparisonChart', '📊 So Sánh Doanh Số Theo Năm')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="yearComparison">📊 So Sánh Doanh Số Theo Năm</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào cột năm để xem chi tiết theo hệ thống và tháng</p>
                     <div class="chart-container">
@@ -923,6 +1165,7 @@
                 </div>
 
                 <div class="chart-card full-width">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('topProductsChart', '🔝 Top 20 Sản Phẩm Bán Chạy')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="topProducts">🔝 Top 20 Sản Phẩm Bán Chạy</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">👆 Click vào sản phẩm để xem doanh số theo tháng</p>
                     <div class="chart-container tall">
@@ -946,6 +1189,7 @@
                 </div>
 
                 <div class="chart-card full-width">
+                    <button class="chart-fullscreen-btn" onclick="openChartFullscreen('storeActivityChart', '🏪 Hiệu Suất Cửa Hàng - Số Cửa Hàng Đặt Hàng Theo Tháng')" title="Xem toàn màn hình">⛶</button>
                     <h2 data-i18n="storePerformance">🏪 Hiệu Suất Cửa Hàng - Số Cửa Hàng Đặt Hàng Theo Tháng</h2>
                     <div class="chart-container">
                         <canvas id="storeActivityChart"></canvas>
@@ -2159,6 +2403,10 @@
             
             initializeFilters();
             initLanguage();
+            loadTargets(); // Load saved targets
+            setTimeout(() => {
+                setDefaultTargetVsActualMonth();
+            }, 500);
             updateDashboard();
         }
 
@@ -2605,19 +2853,42 @@
                 forecastQty.push(trendQtyValue * seasonalFactor);
             }
 
-            // Current month forecast (month 0 in forecast)
+            // Current month forecast (first forecast month)
             const currentMonthForecastSales = forecastSales[0];
             const currentMonthForecastQty = forecastQty[0];
+            const currentMonthLabel = forecastLabels[0]; // Get the month label for first forecast
             
-            // Update forecast KPIs - Current Month (new)
+            // Update forecast KPIs - Current Month (first forecast month)
+            // Format month label: "2026-01" -> "Tháng 1/2026"
+            const [currentYear, currentMonth] = currentMonthLabel.split('-');
+            const currentMonthDisplay = `Tháng ${parseInt(currentMonth)}/${currentYear}`;
             document.getElementById('currentMonthForecast').textContent = formatCurrency(currentMonthForecastSales);
-            document.getElementById('currentMonthQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(currentMonthForecastQty))}`;
             
-            // Update forecast KPIs - Next Month (month 1 in forecast)
+            // Get target for current month if exists
+            const currentMonthTarget = targetData[currentMonthLabel]?.total || 0;
+            let currentMonthQtyText = `${currentMonthDisplay} - SL: ${formatNumber(Math.round(currentMonthForecastQty))}`;
+            if (currentMonthTarget > 0) {
+                const achievementPercent = (currentMonthForecastSales / currentMonthTarget * 100).toFixed(1);
+                currentMonthQtyText += ` | Target: ${formatCurrency(currentMonthTarget)} (${achievementPercent}%)`;
+            }
+            document.getElementById('currentMonthQtyForecast').textContent = currentMonthQtyText;
+            
+            // Update forecast KPIs - Next Month (second forecast month)
             const nextMonthForecastSales = forecastSales[1] || forecastSales[0];
             const nextMonthForecastQty = forecastQty[1] || forecastQty[0];
+            const nextMonthLabel = forecastLabels[1] || forecastLabels[0];
+            const [nextYear, nextMonth] = nextMonthLabel.split('-');
+            const nextMonthDisplay = `Tháng ${parseInt(nextMonth)}/${nextYear}`;
             document.getElementById('nextMonthForecast').textContent = formatCurrency(nextMonthForecastSales);
-            document.getElementById('nextMonthQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(nextMonthForecastQty))}`;
+            
+            // Get target for next month if exists
+            const nextMonthTarget = targetData[nextMonthLabel]?.total || 0;
+            let nextMonthQtyText = `${nextMonthDisplay} - SL: ${formatNumber(Math.round(nextMonthForecastQty))}`;
+            if (nextMonthTarget > 0) {
+                const achievementPercent = (nextMonthForecastSales / nextMonthTarget * 100).toFixed(1);
+                nextMonthQtyText += ` | Target: ${formatCurrency(nextMonthTarget)} (${achievementPercent}%)`;
+            }
+            document.getElementById('nextMonthQtyForecast').textContent = nextMonthQtyText;
 
             // Current quarter average
             const currentQuarterMonths = sortedMonths.slice(-3);
@@ -2628,13 +2899,22 @@
             
             document.getElementById('currentQuarterAvg').textContent = formatCurrency(currentQtrAvg);
             document.getElementById('currentQuarterQtyAvg').textContent = `Số lượng: ${formatNumber(Math.round(currentQtrQtyAvg))}`;
-
+            
             // Next quarter forecast (average of next 3 forecast months)
             const nextQtrForecast = forecastSales.reduce((a, b) => a + b, 0) / forecastSales.length;
             const nextQtrQtyForecast = forecastQty.reduce((a, b) => a + b, 0) / forecastQty.length;
             
             document.getElementById('nextQuarterForecast').textContent = formatCurrency(nextQtrForecast);
-            document.getElementById('nextQuarterQtyForecast').textContent = `Số lượng: ${formatNumber(Math.round(nextQtrQtyForecast))}`;
+            
+            // Calculate average target for next quarter if all forecast months have targets
+            const nextQtrTargets = forecastLabels.map(monthKey => targetData[monthKey]?.total || 0).filter(t => t > 0);
+            let nextQtrQtyText = `Số lượng: ${formatNumber(Math.round(nextQtrQtyForecast))}`;
+            if (nextQtrTargets.length > 0) {
+                const avgTarget = nextQtrTargets.reduce((a, b) => a + b, 0) / nextQtrTargets.length;
+                const achievementPercent = (nextQtrForecast / avgTarget * 100).toFixed(1);
+                nextQtrQtyText += ` | Target TB: ${formatCurrency(avgTarget)} (${achievementPercent}%)`;
+            }
+            document.getElementById('nextQuarterQtyForecast').textContent = nextQtrQtyText;
 
             // Seasonality trend analysis
             const lastMonthSales = historicalSales[historicalSales.length - 1];
@@ -2665,7 +2945,20 @@
 
             const allLabels = [...sortedMonths, ...forecastLabels];
             const allSalesData = [...historicalSales, ...Array(forecastMonths).fill(null)];
-            const forecastData = [...Array(sortedMonths.length).fill(null), historicalSales[historicalSales.length - 1], ...forecastSales];
+            // Fix: forecastData should align with forecastLabels - first forecast value should be at the first forecast label position
+            // Structure: [null for all historical, forecastSales[0] for first forecast label, forecastSales[1] for second, ...]
+            const forecastData = [...Array(sortedMonths.length).fill(null), ...forecastSales];
+            
+            // Create connection line from last historical month to first forecast month
+            const lastHistoricalValue = historicalSales[historicalSales.length - 1];
+            const firstForecastValue = forecastSales[0];
+            const connectionData = [...Array(sortedMonths.length - 1).fill(null), lastHistoricalValue, firstForecastValue, ...Array(forecastMonths - 1).fill(null)];
+            
+            // Create target line for forecast months
+            const targetDataLine = forecastLabels.map(monthKey => {
+                return targetData[monthKey]?.total || null;
+            });
+            const targetLineData = [...Array(sortedMonths.length).fill(null), ...targetDataLine];
 
             charts.forecastChart = new Chart(ctx, {
                 type: 'line',
@@ -2692,6 +2985,32 @@
                             tension: 0.4,
                             pointStyle: 'triangle',
                             pointRadius: 6
+                        },
+                        {
+                            label: 'Kết Nối',
+                            data: connectionData,
+                            borderColor: '#f97316',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            fill: false,
+                            tension: 0.3,
+                            pointRadius: 0,
+                            pointHoverRadius: 0
+                        },
+                        {
+                            label: 'Target',
+                            data: targetLineData,
+                            borderColor: '#10b981',
+                            backgroundColor: 'transparent',
+                            borderWidth: 2,
+                            borderDash: [3, 3],
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            pointBackgroundColor: '#10b981',
+                            pointBorderColor: '#10b981'
                         }
                     ]
                 },
@@ -2981,14 +3300,17 @@
                     // For STOCKOUT products: Calculate net adjustment (working days only)
                     console.log(`💔 Stockout product: ${prod.name}`);
                     console.log(`📊 Product avgMonthlySales (TOTAL): ${prod.avgMonthlySales.toLocaleString()} VND`);
-                    console.log(`🗓️ restockDay: ${prod.restockDay}, currentDay: ${currentDay}`);
                     
-                    // 1. Lost sales during stockout (từ hôm nay → ngày về hàng, chỉ tính ngày làm việc)
-                    const workingDaysLost = countWorkingDays(currentDay, prod.restockDay - 1, today.getFullYear(), today.getMonth());
+                    // Use outOfStockDay if available, otherwise use currentDay
+                    const stockoutStartDay = prod.outOfStockDay || currentDay;
+                    console.log(`🗓️ outOfStockDay: ${stockoutStartDay}, restockDay: ${prod.restockDay}, currentDay: ${currentDay}`);
+                    
+                    // 1. Lost sales during stockout (từ ngày hết hàng → ngày về hàng, chỉ tính ngày làm việc)
+                    const workingDaysLost = countWorkingDays(stockoutStartDay, prod.restockDay - 1, today.getFullYear(), today.getMonth());
                     const lostSales = -(prod.avgMonthlySales / totalWorkingDaysInMonth) * workingDaysLost;
                     const lostQty = -(prod.avgMonthlyQty / totalWorkingDaysInMonth) * workingDaysLost;
                     
-                    console.log(`📉 Lost: ${workingDaysLost} working days = ${lostSales.toLocaleString()} VND`);
+                    console.log(`📉 Lost: ${workingDaysLost} working days (from day ${stockoutStartDay} to ${prod.restockDay - 1}) = ${lostSales.toLocaleString()} VND`);
                     
                     // 2. Surge sales after restock (từ ngày về hàng → cuối tháng, chỉ tính ngày làm việc)
                     const workingDaysAfterRestock = countWorkingDays(prod.restockDay, daysInMonth, today.getFullYear(), today.getMonth());
@@ -3445,7 +3767,7 @@
                 </div>
                 
                 <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e5e7eb;">
-                    <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; align-items: end;">
                         <div>
                             <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Chọn Sản Phẩm</label>
                             <select id="stockoutProductSelect" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
@@ -3456,6 +3778,14 @@
                                     </option>`
                                 ).join('')}
                             </select>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Ngày Hết Hàng</label>
+                            <input type="date" id="stockoutOutOfStockDate" 
+                                   min="${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01" 
+                                   max="${maxDate}" 
+                                   value="${minDate}"
+                                   style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95em;">
                         </div>
                         <div>
                             <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #374151;">Ngày Về Hàng</label>
@@ -3711,14 +4041,20 @@
         // Add product to stockout list
         function addStockoutProduct() {
             const select = document.getElementById('stockoutProductSelect');
-            const dateInput = document.getElementById('stockoutRestockDate');
+            const outOfStockDateInput = document.getElementById('stockoutOutOfStockDate');
+            const restockDateInput = document.getElementById('stockoutRestockDate');
             
             if (!select.value) {
                 alert('Vui lòng chọn sản phẩm');
                 return;
             }
             
-            if (!dateInput.value) {
+            if (!outOfStockDateInput.value) {
+                alert('Vui lòng chọn ngày hết hàng');
+                return;
+            }
+            
+            if (!restockDateInput.value) {
                 alert('Vui lòng chọn ngày về hàng');
                 return;
             }
@@ -3728,7 +4064,14 @@
             const brand = option.getAttribute('data-brand');
             const avgSales = parseFloat(option.getAttribute('data-sales'));
             const avgQty = parseFloat(option.getAttribute('data-qty'));
-            const restockDate = new Date(dateInput.value);
+            const outOfStockDate = new Date(outOfStockDateInput.value);
+            const restockDate = new Date(restockDateInput.value);
+            
+            // Validate dates
+            if (restockDate <= outOfStockDate) {
+                alert('Ngày về hàng phải sau ngày hết hàng');
+                return;
+            }
             
             // Check if already added
             if (manualStockoutProducts.find(p => p.name === productName)) {
@@ -3742,6 +4085,8 @@
                 brand: brand,
                 avgMonthlySales: avgSales,
                 avgMonthlyQty: avgQty,
+                outOfStockDate: outOfStockDate,
+                outOfStockDay: outOfStockDate.getDate(),
                 restockDate: restockDate,
                 restockDay: restockDate.getDate()
             });
@@ -4245,11 +4590,23 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     onClick: (event, activeElements) => {
+                        // #region agent log (DISABLED to reduce traffic)
+                        // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4247',message:'onClick triggered',data:{activeElementsLength:activeElements.length,hasSortedMonths:typeof sortedMonths !== 'undefined',sortedMonthsLength:sortedMonths?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                        // #endregion
                         if (activeElements.length > 0) {
                             const datasetIndex = activeElements[0].datasetIndex;
+                            const pointIndex = activeElements[0].index;
+                            // #region agent log (DISABLED to reduce traffic)
+                            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4250',message:'Click indices extracted',data:{datasetIndex,pointIndex,brandTotalsLength:brandTotals.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                            // #endregion
                             if (datasetIndex < brandTotals.length) {
                                 const brandName = brandTotals[datasetIndex].brand;
-                                showBrandDrillDown(brandName);
+                                // Get the monthKey from the clicked point
+                                const monthKey = sortedMonths[pointIndex];
+                                // #region agent log (DISABLED to reduce traffic)
+                                // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4254',message:'Extracted brand and month',data:{brandName,monthKey,pointIndex,sortedMonthsLength:sortedMonths.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B,C'})}).catch(()=>{});
+                                // #endregion
+                                showBrandDrillDown(brandName, monthKey);
                             }
                         }
                     },
@@ -4485,10 +4842,21 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     onClick: (event, activeElements) => {
+                        // #region agent log (DISABLED to reduce traffic)
+                        // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4499',message:'Year comparison chart onClick',data:{activeElementsLength:activeElements.length,hasBrandArray:typeof brandArray !== 'undefined',brandArrayLength:brandArray?.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,D'})}).catch(()=>{});
+                        // #endregion
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
+                            const datasetIndex = activeElements[0].datasetIndex;
                             const selectedYear = parseInt(years[index]);
-                            showYearDrillDown(selectedYear);
+                            // #region agent log (DISABLED to reduce traffic)
+                            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4502',message:'Click indices extracted',data:{index,datasetIndex,selectedYear,hasBrandArray:typeof brandArray !== 'undefined',brandArrayLength:brandArray?.length,selectedBrand:brandArray?.[datasetIndex]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                            // #endregion
+                            // Get brand name if datasetIndex is valid (when clicking on a specific bar segment)
+                            const selectedBrand = (datasetIndex !== undefined && datasetIndex !== null && brandArray && brandArray[datasetIndex]) ? brandArray[datasetIndex] : null;
+                            // If clicking on a specific bar segment (has datasetIndex), filter by both year and brand
+                            // If clicking on the bar area but not a specific segment, just filter by year
+                            showYearDrillDown(selectedYear, selectedBrand);
                         }
                     },
                     plugins: {
@@ -4500,6 +4868,19 @@
                                 padding: 10,
                                 boxWidth: 12,
                                 usePointStyle: true
+                            },
+                            onClick: (e, legendItem, legend) => {
+                                // #region agent log (DISABLED to reduce traffic)
+                                // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4510',message:'Legend clicked',data:{legendItemIndex:legendItem.datasetIndex,legendItemText:legendItem.text,hasBrandArray:typeof brandArray !== 'undefined',selectedBrand:brandArray?.[legendItem.datasetIndex]},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                                // #endregion
+                                // Prevent default toggle behavior
+                                e.stopPropagation();
+                                // Get the brand name from the clicked legend item
+                                const clickedBrand = brandArray && brandArray[legendItem.datasetIndex] ? brandArray[legendItem.datasetIndex] : null;
+                                if (clickedBrand) {
+                                    // Filter by this brand - show all years for this brand
+                                    showYearDrillDown(null, clickedBrand);
+                                }
                             }
                         },
                         tooltip: {
@@ -4540,10 +4921,31 @@
 
         // Show Year Drill-Down Modal
         let drillDownCharts = {};
-        function showYearDrillDown(year) {
+        let yearDrillDownResizeHandler = null;
+        
+        function showYearDrillDown(year, brandName = null) {
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4555',message:'showYearDrillDown called',data:{year,brandName,hasCurrentFilteredData:currentFilteredData.length > 0,currentFilteredDataLength:currentFilteredData.length,allDataLength:allData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
             // Filter data for selected year - use current filtered data if available
             const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
-            const yearData = baseData.filter(d => d.year === year);
+            let yearData = baseData;
+            
+            // Filter by year if provided
+            if (year !== null) {
+                yearData = yearData.filter(d => d.year === year);
+            }
+            
+            // Filter by brand if provided
+            if (brandName) {
+                yearData = yearData.filter(d => {
+                    const rowBrand = (d['NHÃN HÀNG'] || '').trim();
+                    return rowBrand === brandName;
+                });
+            }
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4568',message:'After filtering',data:{year,brandName,yearDataLength:yearData.length,uniqueBrands:Array.from(new Set(yearData.map(d => d['NHÃN HÀNG']))).slice(0, 5),uniqueYears:Array.from(new Set(yearData.map(d => d.year)))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
 
             // #region agent log
             console.log('[DEBUG YearDrillDown] year', year, 'baseData years:', [...new Set(baseData.map(d => d.year))], 'yearData rows:', yearData.length);
@@ -4553,27 +4955,74 @@
             currentDrillDownContext = {
                 type: 'year',
                 year,
+                brandName: brandName,
                 baseData: yearData
             };
             
             // Update title
-            document.getElementById('drillDownTitle').textContent = `📊 Chi Tiết Năm ${year}`;
+            let title = '📊 Chi Tiết';
+            if (year !== null && brandName) {
+                title = `📊 Chi Tiết Năm ${year} - ${brandName}`;
+            } else if (year !== null) {
+                title = `📊 Chi Tiết Năm ${year}`;
+            } else if (brandName) {
+                title = `📊 Chi Tiết Nhãn Hàng: ${brandName}`;
+            }
+            document.getElementById('drillDownTitle').textContent = title;
             
             // 1. Create Monthly Chart
-            const monthlyData = {};
+            // If year is null but we have data, determine the year(s) from data
+            // For brand-only filter, we might have multiple years, so group by year-month
+            const monthlyDataByYear = {};
             yearData.forEach(row => {
+                const rowYear = row.year;
                 const month = row.monthKey.substring(5, 7); // Get MM from YYYY-MM
-                if (!monthlyData[month]) monthlyData[month] = 0;
-                monthlyData[month] += row.vat;
+                const yearMonthKey = `${rowYear}-${month}`;
+                if (!monthlyDataByYear[yearMonthKey]) monthlyDataByYear[yearMonthKey] = 0;
+                monthlyDataByYear[yearMonthKey] += row.vat;
             });
+            
+            // If year is specified, show only that year's monthly data
+            // If year is null, aggregate all months across all years
+            const monthlyData = {};
+            if (year !== null) {
+                // Filter by specific year
+                yearData.forEach(row => {
+                    if (row.year === year) {
+                        const month = row.monthKey.substring(5, 7);
+                        if (!monthlyData[month]) monthlyData[month] = 0;
+                        monthlyData[month] += row.vat;
+                    }
+                });
+            } else {
+                // Aggregate across all years - sum all months regardless of year
+                yearData.forEach(row => {
+                    const month = row.monthKey.substring(5, 7);
+                    if (!monthlyData[month]) monthlyData[month] = 0;
+                    monthlyData[month] += row.vat;
+                });
+            }
             
             const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
             const monthlyValues = months.map(m => monthlyData[m] || 0);
             const monthLabels = months.map(m => `Tháng ${parseInt(m)}`);
             
-            const monthCtx = document.getElementById('drillDownMonthlyChart').getContext('2d');
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4634',message:'Creating monthly chart',data:{year,brandName,yearDataLength:yearData.length,monthlyValues,hasCanvas:!!document.getElementById('drillDownMonthlyChart')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
+            
+            const monthCtx = document.getElementById('drillDownMonthlyChart');
+            if (!monthCtx) {
+                // #region agent log (DISABLED to reduce traffic)
+                // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4638',message:'Canvas element not found',data:{year,brandName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                console.error('drillDownMonthlyChart canvas not found');
+                return;
+            }
+            
             if (drillDownCharts.monthly) drillDownCharts.monthly.destroy();
-            drillDownCharts.monthly = new Chart(monthCtx, {
+            try {
+                drillDownCharts.monthly = new Chart(monthCtx.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: monthLabels,
@@ -4593,11 +5042,18 @@
                         if (activeElements.length > 0) {
                             const index = activeElements[0].index;
                             const monthKey = months[index];
-                            const year = selectedYear;
-                            console.log('Month chart clicked:', `${year}-${monthKey.padStart(2, '0')}`);
-                            // Use current filtered data for drill-down
-                            const currentData = currentFilteredData.length > 0 ? currentFilteredData : allData;
-                            showMonthDrillDown(`${year}-${monthKey.padStart(2, '0')}`, currentData);
+                            // Use the year from function parameter, or get from yearData if year is null
+                            let selectedYearForClick = year;
+                            if (selectedYearForClick === null && yearData.length > 0) {
+                                // Get year from first data row
+                                selectedYearForClick = yearData[0].year;
+                            }
+                            if (selectedYearForClick) {
+                                console.log('Month chart clicked:', `${selectedYearForClick}-${monthKey.padStart(2, '0')}`);
+                                // Use current filtered data for drill-down
+                                const currentData = currentFilteredData.length > 0 ? currentFilteredData : allData;
+                                showMonthDrillDown(`${selectedYearForClick}-${monthKey.padStart(2, '0')}`, currentData);
+                            }
                         }
                     },
                     plugins: {
@@ -4616,6 +5072,12 @@
                     }
                 }
             });
+            } catch (error) {
+                // #region agent log (DISABLED to reduce traffic)
+                // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4682',message:'Error creating monthly chart',data:{year,brandName,error:error.message,errorStack:error.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                console.error('Error creating monthly chart:', error);
+            }
             
             // 2. Create System Chart (Top 10)
             const systemData = {};
@@ -4724,12 +5186,44 @@
             
             // Show modal
             document.getElementById('yearDrillDownModal').style.display = 'block';
+            
+            // Remove existing resize handler if any
+            if (yearDrillDownResizeHandler) {
+                window.removeEventListener('resize', yearDrillDownResizeHandler);
+            }
+            
+            // Create resize handler for charts
+            yearDrillDownResizeHandler = () => {
+                if (drillDownCharts.monthly) {
+                    drillDownCharts.monthly.resize();
+                }
+                if (drillDownCharts.system) {
+                    drillDownCharts.system.resize();
+                }
+            };
+            
+            // Add resize listener
+            window.addEventListener('resize', yearDrillDownResizeHandler);
+            
+            // Resize charts after modal is displayed to ensure proper rendering
+            // Use setTimeout to ensure DOM has updated
+            setTimeout(() => {
+                // #region agent log (DISABLED to reduce traffic)
+                // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4841',message:'Resizing charts after modal display',data:{hasMonthlyChart:!!drillDownCharts.monthly,hasSystemChart:!!drillDownCharts.system},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                yearDrillDownResizeHandler();
+            }, 100);
         }
         
         function closeYearDrillDown() {
             document.getElementById('yearDrillDownModal').style.display = 'none';
             if (drillDownCharts.monthly) drillDownCharts.monthly.destroy();
             if (drillDownCharts.system) drillDownCharts.system.destroy();
+            // Remove resize listener
+            if (yearDrillDownResizeHandler) {
+                window.removeEventListener('resize', yearDrillDownResizeHandler);
+                yearDrillDownResizeHandler = null;
+            }
         }
 
         // Universal Drill-Down Modal Functions
@@ -5052,20 +5546,49 @@
         }
         
         // Brand Drill-Down
-        function showBrandDrillDown(brandName) {
+        function showBrandDrillDown(brandName, monthKey = null) {
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:5058',message:'showBrandDrillDown called',data:{brandName,monthKey,hasCurrentFilteredData:currentFilteredData.length > 0,currentFilteredDataLength:currentFilteredData.length,allDataLength:allData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
             // Use current filtered data if available, otherwise use allData
             const baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
-            const brandData = baseData.filter(d => d['NHÃN HÀNG'] === brandName);
+            // Filter by brand (normalize both sides for consistent matching)
+            let brandData = baseData.filter(d => {
+                const rowBrand = (d['NHÃN HÀNG'] || '').trim();
+                return rowBrand === brandName;
+            });
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:5065',message:'After brand filter',data:{brandDataLength:brandData.length,monthKey},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            // If monthKey is provided, filter by that specific month
+            if (monthKey) {
+                const beforeMonthFilter = brandData.length;
+                brandData = brandData.filter(d => d.monthKey === monthKey);
+                // #region agent log (DISABLED to reduce traffic)
+                // const sampleMonthKeys = brandData.slice(0, 5).map(d => d.monthKey);
+                // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:5068',message:'After month filter',data:{beforeMonthFilter,afterMonthFilter:brandData.length,monthKey,uniqueMonthKeys:Array.from(new Set(brandData.map(d => d.monthKey))),sampleMonthKeys},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                // #endregion
+            }
             currentDrillDownContext = {
                 type: 'brand',
                 name: brandName,
                 baseData: brandData
             };
-            renderBrandDrillDown(brandName, brandData);
+            renderBrandDrillDown(brandName, brandData, monthKey);
         }
         
-        function renderBrandDrillDown(brandName, brandData) {
-            document.getElementById('modalTitle').textContent = `🏷️ Chi Tiết: ${brandName}`;
+        function renderBrandDrillDown(brandName, brandData, monthKey = null) {
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:5078',message:'renderBrandDrillDown called',data:{brandName,monthKey,brandDataLength:brandData.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
+            // Update modal title to include month if filtering by specific month
+            let title = `🏷️ Chi Tiết: ${brandName}`;
+            if (monthKey) {
+                const [year, month] = monthKey.split('-');
+                const monthName = `Tháng ${parseInt(month)}/${year}`;
+                title = `🏷️ Chi Tiết: ${brandName} - ${monthName}`;
+            }
+            document.getElementById('modalTitle').textContent = title;
             
             // Monthly trend
             const monthlyData = {};
@@ -5074,6 +5597,9 @@
                 monthlyData[row.monthKey] += row.vat;
             });
             const months = Object.keys(monthlyData).sort();
+            // #region agent log (DISABLED to reduce traffic)
+            // fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:5094',message:'Monthly data aggregated',data:{monthKey,months,monthlyDataKeys:Object.keys(monthlyData),monthlyDataValues:Object.values(monthlyData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
             
             // Top Systems
             const systemData = {};
@@ -7408,6 +7934,19 @@
                 baseData = currentFilteredData.length > 0 ? currentFilteredData : allData;
             }
 
+            // Áp thêm các ràng buộc theo context (năm / nhãn hàng / sản phẩm) nếu có
+            if (currentDrillDownContext) {
+                if (currentDrillDownContext.type === 'year' && currentDrillDownContext.year) {
+                    baseData = baseData.filter(row => row.year === currentDrillDownContext.year);
+                }
+                if (currentDrillDownContext.type === 'brand' && currentDrillDownContext.name) {
+                    baseData = baseData.filter(row => row['NHÃN HÀNG'] === currentDrillDownContext.name);
+                }
+                if (currentDrillDownContext.type === 'product' && currentDrillDownContext.name) {
+                    baseData = baseData.filter(row => shortenProductName(row['TÊN SP']) === currentDrillDownContext.name);
+                }
+            }
+
             // #region agent log
             console.log('[DEBUG showSystemDrillDown] baseData stats', {
                 systemName,
@@ -7853,8 +8392,1212 @@
             });
         }
 
+        // Target Management
+        let targetData = {}; // Store targets: { '2026-01': { total: 5000000000, brands: {...}, systems: {...} } }
+        
+        // Load targets from localStorage
+        function loadTargets() {
+            try {
+                const saved = localStorage.getItem('salesTargets');
+                if (saved) {
+                    targetData = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error('Error loading targets:', e);
+            }
+        }
+        
+        // Save targets to localStorage
+        function saveTargets() {
+            try {
+                localStorage.setItem('salesTargets', JSON.stringify(targetData));
+            } catch (e) {
+                console.error('Error saving targets:', e);
+            }
+        }
+        
+        // Set total target and auto-distribute
+        function setTotalTarget() {
+            const targetInput = document.getElementById('totalTargetInput');
+            const monthInput = document.getElementById('totalTargetMonth');
+            
+            if (!targetInput.value || !monthInput.value) {
+                alert('Vui lòng nhập đầy đủ target và chọn tháng');
+                return;
+            }
+            
+            const target = parseFloat(targetInput.value);
+            const monthKey = monthInput.value; // Format: YYYY-MM
+            
+            if (target <= 0) {
+                alert('Target phải lớn hơn 0');
+                return;
+            }
+            
+            // Initialize month data if not exists
+            if (!targetData[monthKey]) {
+                targetData[monthKey] = { total: 0, brands: {}, systems: {} };
+            }
+            
+            targetData[monthKey].total = target;
+            
+            // If brand targets exist, validate they don't exceed total
+            const existingBrandTargets = targetData[monthKey].brands || {};
+            const sumBrandTargets = Object.values(existingBrandTargets).reduce((sum, t) => sum + t, 0);
+            
+            if (sumBrandTargets > target) {
+                // Adjust brand targets proportionally if they exceed new total
+                Object.keys(existingBrandTargets).forEach(brand => {
+                    existingBrandTargets[brand] = (existingBrandTargets[brand] / sumBrandTargets) * target;
+                    // Re-distribute to systems
+                    distributeBrandTarget(monthKey, brand, existingBrandTargets[brand]);
+                });
+                targetData[monthKey].brands = existingBrandTargets;
+                alert(`Target Tổng mới nhỏ hơn tổng target nhãn hàng hiện tại. Đã điều chỉnh tỷ lệ các target nhãn hàng.`);
+            } else {
+                // Auto-distribute by historical proportions and growth potential
+                distributeTotalTarget(monthKey, target);
+            }
+            
+            // Save to localStorage
+            saveTargets();
+            
+            // Show results
+            displayTargetResults(monthKey);
+            
+            // Update forecast display with targets
+            updateForecastDisplayWithTargets();
+        }
+        
+        // Set brand target and auto-distribute to systems
+        function setBrandTarget() {
+            const brandSelect = document.getElementById('brandTargetSelect');
+            const targetInput = document.getElementById('brandTargetInput');
+            const monthInput = document.getElementById('brandTargetMonth');
+            
+            if (!brandSelect.value || !targetInput.value || !monthInput.value) {
+                alert('Vui lòng nhập đầy đủ thông tin');
+                return;
+            }
+            
+            const brand = brandSelect.value;
+            const target = parseFloat(targetInput.value);
+            const monthKey = monthInput.value;
+            
+            if (target <= 0) {
+                alert('Target phải lớn hơn 0');
+                return;
+            }
+            
+            // Initialize month data if not exists
+            if (!targetData[monthKey]) {
+                targetData[monthKey] = { total: 0, brands: {}, systems: {} };
+            }
+            
+            // Check if total target exists
+            const totalTarget = targetData[monthKey].total;
+            if (totalTarget <= 0) {
+                alert('Vui lòng đặt Target Tổng trước khi đặt target cho nhãn hàng');
+                return;
+            }
+            
+            // Calculate current sum of brand targets (excluding the brand being updated)
+            const currentBrandTargets = { ...targetData[monthKey].brands };
+            const oldBrandTarget = currentBrandTargets[brand] || 0;
+            delete currentBrandTargets[brand];
+            const sumOtherBrands = Object.values(currentBrandTargets).reduce((sum, t) => sum + t, 0);
+            
+            // Validate: new brand target + other brands <= total target
+            if (sumOtherBrands + target > totalTarget) {
+                const available = totalTarget - sumOtherBrands;
+                alert(`Target nhãn hàng không được vượt quá Target Tổng!\nTarget Tổng: ${formatCurrency(totalTarget)}\nĐã phân bổ: ${formatCurrency(sumOtherBrands)}\nCòn lại: ${formatCurrency(available)}\n\nBạn có thể đặt tối đa: ${formatCurrency(available)}`);
+                return;
+            }
+            
+            targetData[monthKey].brands[brand] = target;
+            
+            // Auto-distribute brand target to systems by growth potential
+            distributeBrandTarget(monthKey, brand, target);
+            
+            // Save to localStorage
+            saveTargets();
+            
+            // Show results
+            displayTargetResults(monthKey);
+            
+            // Update forecast display with targets
+            updateForecastDisplayWithTargets();
+        }
+        
+        // Distribute total target to brands and systems
+        function distributeTotalTarget(monthKey, totalTarget) {
+            // Get recent months data (last 3 months) for proportion calculation
+            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            const recentMonths = sortedMonths.slice(-3);
+            const recentData = allData.filter(row => recentMonths.includes(row.monthKey));
+            
+            // Calculate brand proportions and growth rates
+            const brandStats = {};
+            recentData.forEach(row => {
+                const brand = row['NHÃN HÀNG'];
+                if (!brand) return;
+                
+                if (!brandStats[brand]) {
+                    brandStats[brand] = { sales: 0, months: new Set() };
+                }
+                brandStats[brand].sales += row.vat;
+                brandStats[brand].months.add(row.monthKey);
+            });
+            
+            // Calculate growth rates (comparing last 2 months vs previous)
+            const brandGrowth = {};
+            Object.keys(brandStats).forEach(brand => {
+                const brandData = allData.filter(r => r['NHÃN HÀNG'] === brand && recentMonths.includes(r.monthKey));
+                const monthlySales = {};
+                brandData.forEach(r => {
+                    if (!monthlySales[r.monthKey]) monthlySales[r.monthKey] = 0;
+                    monthlySales[r.monthKey] += r.vat;
+                });
+                
+                const months = Object.keys(monthlySales).sort();
+                if (months.length >= 2) {
+                    const recent = monthlySales[months[months.length - 1]];
+                    const previous = monthlySales[months[months.length - 2]];
+                    brandGrowth[brand] = previous > 0 ? (recent - previous) / previous : 0;
+                } else {
+                    brandGrowth[brand] = 0;
+                }
+            });
+            
+            // Distribute to brands: base proportion + growth adjustment
+            const totalRecentSales = Object.values(brandStats).reduce((sum, s) => sum + s.sales, 0);
+            const brandTargets = {};
+            
+            Object.keys(brandStats).forEach(brand => {
+                const baseProportion = brandStats[brand].sales / totalRecentSales;
+                const growthFactor = 1 + (brandGrowth[brand] || 0) * 0.5; // Adjust by 50% of growth rate
+                const adjustedProportion = baseProportion * growthFactor;
+                brandTargets[brand] = totalTarget * adjustedProportion;
+            });
+            
+            // Normalize to ensure total matches
+            const currentTotal = Object.values(brandTargets).reduce((sum, t) => sum + t, 0);
+            Object.keys(brandTargets).forEach(brand => {
+                brandTargets[brand] = (brandTargets[brand] / currentTotal) * totalTarget;
+            });
+            
+            // Store brand targets
+            targetData[monthKey].brands = brandTargets;
+            
+            // Distribute each brand target to systems
+            Object.keys(brandTargets).forEach(brand => {
+                distributeBrandTarget(monthKey, brand, brandTargets[brand]);
+            });
+        }
+        
+        // Distribute brand target to systems by growth potential
+        function distributeBrandTarget(monthKey, brand, brandTarget) {
+            // Get recent months data for this brand
+            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            const recentMonths = sortedMonths.slice(-3);
+            const brandData = allData.filter(row => 
+                row['NHÃN HÀNG'] === brand && recentMonths.includes(row.monthKey)
+            );
+            
+            // Calculate system proportions and growth rates
+            const systemStats = {};
+            brandData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!system) return;
+                
+                if (!systemStats[system]) {
+                    systemStats[system] = { sales: 0, months: new Set() };
+                }
+                systemStats[system].sales += row.vat;
+                systemStats[system].months.add(row.monthKey);
+            });
+            
+            // Calculate growth rates per system
+            const systemGrowth = {};
+            Object.keys(systemStats).forEach(system => {
+                const systemData = brandData.filter(r => r['HỆ THỐNG'] === system && recentMonths.includes(r.monthKey));
+                const monthlySales = {};
+                systemData.forEach(r => {
+                    if (!monthlySales[r.monthKey]) monthlySales[r.monthKey] = 0;
+                    monthlySales[r.monthKey] += r.vat;
+                });
+                
+                const months = Object.keys(monthlySales).sort();
+                if (months.length >= 2) {
+                    const recent = monthlySales[months[months.length - 1]];
+                    const previous = monthlySales[months[months.length - 2]];
+                    systemGrowth[system] = previous > 0 ? (recent - previous) / previous : 0;
+                } else {
+                    systemGrowth[system] = 0;
+                }
+            });
+            
+            // Distribute: base proportion + growth adjustment
+            const totalSystemSales = Object.values(systemStats).reduce((sum, s) => sum + s.sales, 0);
+            const systemTargets = {};
+            
+            Object.keys(systemStats).forEach(system => {
+                const baseProportion = systemStats[system].sales / totalSystemSales;
+                const growthFactor = 1 + (systemGrowth[system] || 0) * 0.5;
+                const adjustedProportion = baseProportion * growthFactor;
+                systemTargets[system] = brandTarget * adjustedProportion;
+            });
+            
+            // Normalize
+            const currentTotal = Object.values(systemTargets).reduce((sum, t) => sum + t, 0);
+            if (currentTotal > 0) {
+                Object.keys(systemTargets).forEach(system => {
+                    systemTargets[system] = (systemTargets[system] / currentTotal) * brandTarget;
+                });
+            }
+            
+            // Store system targets (by brand)
+            if (!targetData[monthKey].systems[brand]) {
+                targetData[monthKey].systems[brand] = {};
+            }
+            targetData[monthKey].systems[brand] = systemTargets;
+        }
+        
+        // Display target distribution results
+        function displayTargetResults(monthKey) {
+            const resultsDiv = document.getElementById('targetResults');
+            const contentDiv = document.getElementById('targetResultsContent');
+            
+            if (!targetData[monthKey]) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+            
+            const data = targetData[monthKey];
+            let html = '';
+            
+            if (data.total > 0) {
+                html += `<div style="margin-bottom: 20px;">
+                    <h4 style="color: #1f2937; margin-bottom: 10px;">📊 Target Tổng: ${formatCurrency(data.total)}</h4>
+                    <div style="background: white; padding: 15px; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f3f4f6;">
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Nhãn Hàng</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">Target</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">Tỷ Lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                
+                const brands = Object.keys(data.brands).sort((a, b) => data.brands[b] - data.brands[a]);
+                brands.forEach(brand => {
+                    const target = data.brands[brand];
+                    const percentage = (target / data.total * 100).toFixed(1);
+                    html += `<tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${brand}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600;">${formatCurrency(target)}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">${percentage}%</td>
+                    </tr>`;
+                });
+                
+                html += `</tbody></table></div></div>`;
+            }
+            
+            // Show system distribution for each brand
+            Object.keys(data.systems).forEach(brand => {
+                const systems = data.systems[brand];
+                const brandTarget = data.brands[brand] || Object.values(systems).reduce((sum, t) => sum + t, 0);
+                
+                html += `<div style="margin-bottom: 20px;">
+                    <h4 style="color: #1f2937; margin-bottom: 10px;">🏷️ ${brand} - Target: ${formatCurrency(brandTarget)}</h4>
+                    <div style="background: white; padding: 15px; border-radius: 8px;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f3f4f6;">
+                                    <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Hệ Thống</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">Target</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">Tỷ Lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+                
+                const sortedSystems = Object.keys(systems).sort((a, b) => systems[b] - systems[a]);
+                sortedSystems.forEach(system => {
+                    const target = systems[system];
+                    const percentage = (target / brandTarget * 100).toFixed(1);
+                    html += `<tr>
+                        <td style="padding: 8px; border-bottom: 1px solid #e5e7eb;">${system}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e5e7eb; font-weight: 600;">${formatCurrency(target)}</td>
+                        <td style="padding: 8px; text-align: right; border-bottom: 1px solid #e5e7eb;">${percentage}%</td>
+                    </tr>`;
+                });
+                
+                html += `</tbody></table></div></div>`;
+            });
+            
+            contentDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+        
+        // Initialize target brands when filters are initialized
+        function initializeTargetBrands() {
+            const select = document.getElementById('brandTargetSelect');
+            if (!select || !allData || allData.length === 0) return;
+            
+            const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
+            select.innerHTML = '<option value="">-- Chọn nhãn hàng --</option>' + 
+                brands.map(b => `<option value="${b}">${b}</option>`).join('');
+        }
+        
+        // Update forecast display with targets
+        function updateForecastDisplayWithTargets() {
+            // This will be called after forecast chart is created
+            // The display is already updated in createForecastChart function
+            // But we can refresh the chart if it exists
+            if (charts.forecastChart && allData && allData.length > 0) {
+                createForecastChart(allData);
+            }
+        }
+        
+        // Hook into initializeFilters to also initialize target brands
+        const originalInitFilters = initializeFilters;
+        initializeFilters = function() {
+            originalInitFilters();
+            setTimeout(() => initializeTargetBrands(), 100);
+        };
+        
+        // Load targets on page load
+        loadTargets();
+        
+        // Bulk set targets for multiple months
+        function setBulkTargets() {
+            // Get target for December 2025 as reference
+            let dec2025Target = targetData['2025-12']?.total || 0;
+            
+            // If December target doesn't exist, try to get from other recent months or use a default
+            if (dec2025Target === 0) {
+                // Try to find target from other 2025 months
+                const months2025 = ['2025-11', '2025-10', '2025-09', '2025-08', '2025-07', '2025-06', '2025-05', '2025-04'];
+                for (const month of months2025) {
+                    if (targetData[month]?.total > 0) {
+                        dec2025Target = targetData[month].total;
+                        console.log(`Sử dụng target từ ${month} cho các tháng 4-11: ${formatCurrency(dec2025Target)}`);
+                        break;
+                    }
+                }
+                
+                // If still no target found, ask user or use a reasonable default
+                if (dec2025Target === 0) {
+                    const userInput = prompt('Chưa có target cho tháng 12/2025. Nhập target cho tháng 4-11 (VND) hoặc để trống để dùng 5 tỷ:', '5000000000');
+                    if (userInput === null) {
+                        return; // User cancelled
+                    }
+                    dec2025Target = parseFloat(userInput) || 5000000000;
+                }
+            }
+            
+            const targets = {
+                '2025-01': 6000000000,  // 6 tỷ
+                '2025-02': 4200000000,  // 4.2 tỷ
+                '2025-03': 5000000000,  // 5 tỷ
+                '2025-04': 5000000000,  // 5 tỷ
+                '2025-05': dec2025Target, // Giống tháng 12
+                '2025-06': dec2025Target,
+                '2025-07': dec2025Target,
+                '2025-08': dec2025Target,
+                '2025-09': dec2025Target,
+                '2025-10': dec2025Target,
+                '2025-11': dec2025Target
+            };
+            
+            let successCount = 0;
+            let errorMessages = [];
+            
+            Object.keys(targets).forEach(monthKey => {
+                const target = targets[monthKey];
+                
+                // Initialize month data if not exists
+                if (!targetData[monthKey]) {
+                    targetData[monthKey] = { total: 0, brands: {}, systems: {} };
+                }
+                
+                // Set total target
+                targetData[monthKey].total = target;
+                
+                // Auto-distribute by historical proportions and growth potential
+                try {
+                    // Only distribute if we have data
+                    if (allData && allData.length > 0) {
+                        distributeTotalTarget(monthKey, target);
+                    }
+                    successCount++;
+                } catch (error) {
+                    console.error(`Error setting target for ${monthKey}:`, error);
+                    errorMessages.push(`${monthKey}: ${error.message}`);
+                }
+            });
+            
+            // Save to localStorage
+            saveTargets();
+            
+            // Show results
+            let message = `✅ Đã set target cho ${successCount}/${Object.keys(targets).length} tháng:\n\n`;
+            Object.keys(targets).forEach(monthKey => {
+                const [year, month] = monthKey.split('-');
+                message += `📅 Tháng ${parseInt(month)}/${year}: ${formatCurrency(targets[monthKey])}\n`;
+            });
+            
+            if (errorMessages.length > 0) {
+                message += `\n⚠️ Lỗi:\n${errorMessages.join('\n')}`;
+            }
+            
+            message += `\n\n💾 Đã lưu vào localStorage.`;
+            
+            alert(message);
+            
+            // Update forecast display if needed
+            updateForecastDisplayWithTargets();
+            
+            // Refresh target results if displayed
+            const monthInput = document.getElementById('targetVsActualMonth');
+            if (monthInput && monthInput.value) {
+                updateTargetVsActual();
+            }
+        }
+        
+        // Set default month for target vs actual report
+        function setDefaultTargetVsActualMonth() {
+            const monthInput = document.getElementById('targetVsActualMonth');
+            if (!monthInput) return;
+            
+            // Try to find the most recent month with target data
+            const monthsWithTargets = Object.keys(targetData).sort().reverse();
+            if (monthsWithTargets.length > 0) {
+                monthInput.value = monthsWithTargets[0];
+            } else {
+                // Default to current month
+                const today = new Date();
+                const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                monthInput.value = currentMonth;
+            }
+        }
+        
+        // Initialize default month after data loads
+        // Note: loadAllData is already async, so we'll hook into the completion
+        // We'll call setDefaultTargetVsActualMonth after loadAllData completes
+        
+        // Target vs Actual Performance Report
+        function updateTargetVsActual() {
+            const monthInput = document.getElementById('targetVsActualMonth');
+            if (!monthInput.value) {
+                alert('Vui lòng chọn tháng');
+                return;
+            }
+            
+            const monthKey = monthInput.value; // Format: YYYY-MM
+            const targetMonthData = targetData[monthKey];
+            
+            if (!targetMonthData || !targetMonthData.total) {
+                alert('Chưa có target cho tháng này. Vui lòng đặt target trước.');
+                return;
+            }
+            
+            // Get actual sales data for this month
+            const monthData = allData.filter(row => row.monthKey === monthKey);
+            
+            if (monthData.length === 0) {
+                alert('Không có dữ liệu thực tế cho tháng này');
+                return;
+            }
+            
+            // Calculate totals
+            const totalTarget = targetMonthData.total;
+            const totalActual = monthData.reduce((sum, row) => sum + (row.vat || 0), 0);
+            const achievementPercent = totalTarget > 0 ? (totalActual / totalTarget * 100).toFixed(1) : 0;
+            
+            // Update summary cards
+            document.getElementById('summaryTotalTarget').textContent = formatCurrency(totalTarget);
+            document.getElementById('summaryTotalActual').textContent = formatCurrency(totalActual);
+            document.getElementById('summaryAchievement').textContent = `${achievementPercent}%`;
+            
+            // Build detailed table
+            buildTargetVsActualTable(monthKey, monthData, targetMonthData);
+            
+            // Create visual chart using HTML progress bars (easier to read)
+            createTargetVsActualVisualization(monthKey, monthData, targetMonthData);
+            
+            // Show content
+            document.getElementById('targetVsActualContent').style.display = 'block';
+        }
+        
+        // Build detailed table
+        function buildTargetVsActualTable(monthKey, monthData, targetMonthData) {
+            const thead = document.getElementById('targetVsActualTableHead');
+            const tbody = document.getElementById('targetVsActualTableBody');
+            
+            // Get all brands that have targets
+            const brandsWithTargets = Object.keys(targetMonthData.brands || {}).sort();
+            
+            // Build header
+            let headerHTML = '<tr style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">';
+            headerHTML += '<th style="padding: 12px; text-align: left; border-right: 1px solid #e5e7eb; position: sticky; left: 0; background: #f3f4f6; z-index: 11;">HỆ THỐNG</th>';
+            headerHTML += '<th style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb;">TỔNG TARGET</th>';
+            headerHTML += '<th style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb;">THỰC ĐẠT</th>';
+            headerHTML += '<th style="padding: 12px; text-align: center; border-right: 1px solid #e5e7eb;">%</th>';
+            
+            brandsWithTargets.forEach(brand => {
+                headerHTML += `<th style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb; background: #fef3c7;">${brand}<br>TARGET</th>`;
+                headerHTML += `<th style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb; background: #fef3c7;">${brand}<br>THỰC ĐẠT</th>`;
+            });
+            headerHTML += '</tr>';
+            thead.innerHTML = headerHTML;
+            
+            // Group data by system
+            const systemData = {};
+            monthData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!system) return;
+                
+                if (!systemData[system]) {
+                    systemData[system] = {
+                        totalActual: 0,
+                        brands: {}
+                    };
+                }
+                
+                systemData[system].totalActual += row.vat || 0;
+                
+                const brand = row['NHÃN HÀNG'];
+                if (brand && brandsWithTargets.includes(brand)) {
+                    if (!systemData[system].brands[brand]) {
+                        systemData[system].brands[brand] = 0;
+                    }
+                    systemData[system].brands[brand] += row.vat || 0;
+                }
+            });
+            
+            // Build rows
+            let bodyHTML = '';
+            const sortedSystems = Object.keys(systemData).sort();
+            
+            sortedSystems.forEach(system => {
+                const sysData = systemData[system];
+                const systemTargets = targetMonthData.systems || {};
+                
+                // Calculate total target for this system (sum of all brand targets)
+                let systemTotalTarget = 0;
+                brandsWithTargets.forEach(brand => {
+                    const brandSystems = systemTargets[brand] || {};
+                    systemTotalTarget += brandSystems[system] || 0;
+                });
+                
+                const systemPercent = systemTotalTarget > 0 ? (sysData.totalActual / systemTotalTarget * 100).toFixed(1) : '-';
+                
+                bodyHTML += '<tr style="border-bottom: 1px solid #e5e7eb;">';
+                bodyHTML += `<td style="padding: 10px; border-right: 1px solid #e5e7eb; position: sticky; left: 0; background: white; z-index: 10; font-weight: 600;">${system}</td>`;
+                bodyHTML += `<td style="padding: 10px; text-align: right; border-right: 1px solid #e5e7eb;">${systemTotalTarget > 0 ? formatCurrency(systemTotalTarget) : '-'}</td>`;
+                bodyHTML += `<td style="padding: 10px; text-align: right; border-right: 1px solid #e5e7eb; font-weight: 600;">${formatCurrency(sysData.totalActual)}</td>`;
+                bodyHTML += `<td style="padding: 10px; text-align: center; border-right: 1px solid #e5e7eb; font-weight: 600; color: ${systemPercent !== '-' && parseFloat(systemPercent) >= 100 ? '#10b981' : parseFloat(systemPercent) >= 80 ? '#f59e0b' : '#ef4444'};">${systemPercent}${systemPercent !== '-' ? '%' : ''}</td>`;
+                
+                brandsWithTargets.forEach(brand => {
+                    const brandSystems = systemTargets[brand] || {};
+                    const brandTarget = brandSystems[system] || 0;
+                    const brandActual = sysData.brands[brand] || 0;
+                    const brandPercent = brandTarget > 0 ? (brandActual / brandTarget * 100).toFixed(1) : '-';
+                    
+                    bodyHTML += `<td style="padding: 10px; text-align: right; border-right: 1px solid #e5e7eb;">${brandTarget > 0 ? formatCurrency(brandTarget) : '-'}</td>`;
+                    bodyHTML += `<td style="padding: 10px; text-align: right; border-right: 1px solid #e5e7eb; color: ${brandPercent !== '-' && parseFloat(brandPercent) >= 100 ? '#10b981' : parseFloat(brandPercent) >= 80 ? '#f59e0b' : '#ef4444'};">${brandActual > 0 ? formatCurrency(brandActual) : '-'}</td>`;
+                });
+                
+                bodyHTML += '</tr>';
+            });
+            
+            // Add total row
+            const totalActual = monthData.reduce((sum, row) => sum + (row.vat || 0), 0);
+            const totalTarget = targetMonthData.total;
+            const totalPercent = (totalActual / totalTarget * 100).toFixed(1);
+            
+            bodyHTML += '<tr style="background: #f9fafb; border-top: 2px solid #1f2937; font-weight: 700;">';
+            bodyHTML += '<td style="padding: 12px; border-right: 1px solid #e5e7eb; position: sticky; left: 0; background: #f9fafb; z-index: 10;">TỔNG</td>';
+            bodyHTML += `<td style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb;">${formatCurrency(totalTarget)}</td>`;
+            bodyHTML += `<td style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb;">${formatCurrency(totalActual)}</td>`;
+            bodyHTML += `<td style="padding: 12px; text-align: center; border-right: 1px solid #e5e7eb; color: ${parseFloat(totalPercent) >= 100 ? '#10b981' : parseFloat(totalPercent) >= 80 ? '#f59e0b' : '#ef4444'};">${totalPercent}%</td>`;
+            
+            brandsWithTargets.forEach(brand => {
+                const brandTarget = targetMonthData.brands[brand] || 0;
+                const brandActual = monthData
+                    .filter(row => row['NHÃN HÀNG'] === brand)
+                    .reduce((sum, row) => sum + (row.vat || 0), 0);
+                const brandPercent = brandTarget > 0 ? (brandActual / brandTarget * 100).toFixed(1) : '-';
+                
+                bodyHTML += `<td style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb;">${formatCurrency(brandTarget)}</td>`;
+                bodyHTML += `<td style="padding: 12px; text-align: right; border-right: 1px solid #e5e7eb; color: ${brandPercent !== '-' && parseFloat(brandPercent) >= 100 ? '#10b981' : parseFloat(brandPercent) >= 80 ? '#f59e0b' : '#ef4444'};">${formatCurrency(brandActual)}</td>`;
+            });
+            
+            bodyHTML += '</tr>';
+            tbody.innerHTML = bodyHTML;
+        }
+        
+        // Create HTML-based visualization for target vs actual (easier to read)
+        function createTargetVsActualVisualization(monthKey, monthData, targetMonthData) {
+            const container = document.getElementById('targetVsActualChartContainer');
+            if (!container) return;
+            
+            // Group by system
+            const systemData = {};
+            monthData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!system) return;
+                
+                if (!systemData[system]) {
+                    systemData[system] = { actual: 0, target: 0 };
+                }
+                systemData[system].actual += row.vat || 0;
+            });
+            
+            // Get targets for each system
+            const brandsWithTargets = Object.keys(targetMonthData.brands || {});
+            const systemTargets = targetMonthData.systems || {};
+            
+            Object.keys(systemData).forEach(system => {
+                let systemTarget = 0;
+                brandsWithTargets.forEach(brand => {
+                    const brandSystems = systemTargets[brand] || {};
+                    systemTarget += brandSystems[system] || 0;
+                });
+                systemData[system].target = systemTarget;
+            });
+            
+            // Sort by target descending, take top 20
+            const sortedSystems = Object.keys(systemData)
+                .filter(s => systemData[s].target > 0) // Only show systems with targets
+                .sort((a, b) => systemData[b].target - systemData[a].target)
+                .slice(0, 20);
+            
+            if (sortedSystems.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 40px;">Chưa có target cho các hệ thống trong tháng này.</p>';
+                return;
+            }
+            
+            // Create HTML visualization
+            let html = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+            
+            sortedSystems.forEach(system => {
+                const actual = systemData[system].actual;
+                const target = systemData[system].target;
+                const percent = target > 0 ? ((actual / target) * 100) : 0;
+                const percentText = percent.toFixed(1);
+                
+                // Determine color based on achievement
+                let barColor = '#ef4444'; // Red
+                let statusIcon = '⚠️';
+                if (percent >= 100) {
+                    barColor = percent > 100 ? '#f59e0b' : '#10b981'; // Orange if exceeded, green if exactly 100%
+                    statusIcon = percent > 100 ? '🎉' : '✅';
+                } else if (percent >= 80) {
+                    barColor = '#fbbf24'; // Yellow
+                    statusIcon = '📊';
+                }
+                
+                const gap = Math.abs(actual - target);
+                const gapText = actual > target 
+                    ? `Vượt: +${formatCurrency(gap)}`
+                    : `Thiếu: -${formatCurrency(gap)}`;
+                
+                html += `
+                    <div style="background: #f9fafb; padding: 18px; border-radius: 10px; border: 1px solid #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0 0 5px 0; color: #1f2937; font-size: 15px; font-weight: 700;">${system}</h4>
+                                <div style="display: flex; gap: 20px; font-size: 13px; color: #6b7280;">
+                                    <span>🎯 Target: <strong style="color: #3b82f6;">${formatCurrency(target)}</strong></span>
+                                    <span>💰 Thực Tế: <strong style="color: #1f2937;">${formatCurrency(actual)}</strong></span>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 24px; font-weight: 700; color: ${barColor}; margin-bottom: 5px;">
+                                    ${statusIcon} ${percentText}%
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280;">${gapText}</div>
+                            </div>
+                        </div>
+                        <div style="position: relative; height: 40px; background: #e5e7eb; border-radius: 8px; overflow: hidden; border: 2px solid #d1d5db;">
+                            <!-- Target background -->
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(59, 130, 246, 0.15); border-radius: 6px;"></div>
+                            <!-- Actual progress bar -->
+                            <div style="position: absolute; top: 0; left: 0; height: 100%; width: ${Math.min(percent, 100)}%; background: ${barColor}; border-radius: 6px; transition: width 0.5s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;">
+                                ${percent > 5 ? `<span style="color: white; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${percentText}%</span>` : ''}
+                            </div>
+                            ${percent > 100 ? `
+                                <div style="position: absolute; top: 0; left: 100%; height: 100%; width: ${percent - 100}%; background: #f59e0b; border-radius: 0 6px 6px 0; display: flex; align-items: center; padding-left: 10px;">
+                                    <span style="color: white; font-weight: 700; font-size: 13px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">+${(percent - 100).toFixed(1)}%</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // Legacy chart function (kept for compatibility but not used)
+        function createTargetVsActualChart(monthKey, monthData, targetMonthData) {
+            const ctx = document.getElementById('targetVsActualChart');
+            if (!ctx) return;
+            
+            // Group by system
+            const systemData = {};
+            monthData.forEach(row => {
+                const system = row['HỆ THỐNG'];
+                if (!system) return;
+                
+                if (!systemData[system]) {
+                    systemData[system] = { actual: 0, target: 0 };
+                }
+                systemData[system].actual += row.vat || 0;
+            });
+            
+            // Get targets for each system
+            const brandsWithTargets = Object.keys(targetMonthData.brands || {});
+            const systemTargets = targetMonthData.systems || {};
+            
+            Object.keys(systemData).forEach(system => {
+                let systemTarget = 0;
+                brandsWithTargets.forEach(brand => {
+                    const brandSystems = systemTargets[brand] || {};
+                    systemTarget += brandSystems[system] || 0;
+                });
+                systemData[system].target = systemTarget;
+            });
+            
+            // Sort by target descending, take top 15
+            const sortedSystems = Object.keys(systemData)
+                .sort((a, b) => systemData[b].target - systemData[a].target)
+                .slice(0, 15);
+            
+            const labels = sortedSystems;
+            const targetValues = sortedSystems.map(s => systemData[s].target);
+            const actualValues = sortedSystems.map(s => systemData[s].actual);
+            
+            // Destroy existing chart if exists
+            if (charts.targetVsActual) {
+                charts.targetVsActual.destroy();
+            }
+            
+            // Create a cleaner visualization: Target as background, Actual as foreground with % labels
+            charts.targetVsActual = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Target',
+                            data: targetValues,
+                            backgroundColor: 'rgba(229, 231, 235, 0.6)',
+                            borderColor: 'rgba(156, 163, 175, 0.8)',
+                            borderWidth: 1,
+                            barThickness: 50,
+                            order: 2,
+                            categoryPercentage: 0.5,
+                            barPercentage: 1.0
+                        },
+                        {
+                            label: 'Thực Tế',
+                            data: actualValues,
+                            backgroundColor: function(context) {
+                                const index = context.dataIndex;
+                                const actual = actualValues[index];
+                                const target = targetValues[index];
+                                if (target > 0) {
+                                    const percent = (actual / target) * 100;
+                                    if (percent >= 100) {
+                                        return percent > 100 ? 'rgba(245, 158, 11, 0.95)' : 'rgba(16, 185, 129, 0.95)';
+                                    } else if (percent >= 80) {
+                                        return 'rgba(251, 191, 36, 0.95)';
+                                    } else {
+                                        return 'rgba(239, 68, 68, 0.95)';
+                                    }
+                                }
+                                return 'rgba(16, 185, 129, 0.95)';
+                            },
+                            borderColor: function(context) {
+                                const index = context.dataIndex;
+                                const actual = actualValues[index];
+                                const target = targetValues[index];
+                                if (target > 0) {
+                                    const percent = (actual / target) * 100;
+                                    if (percent >= 100) {
+                                        return percent > 100 ? '#f59e0b' : '#10b981';
+                                    } else if (percent >= 80) {
+                                        return '#fbbf24';
+                                    } else {
+                                        return '#ef4444';
+                                    }
+                                }
+                                return '#10b981';
+                            },
+                            borderWidth: 2,
+                            barThickness: 35,
+                            order: 1,
+                            categoryPercentage: 0.5,
+                            barPercentage: 0.7
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    layout: {
+                        padding: {
+                            left: 0,
+                            right: 50,
+                            top: 15,
+                            bottom: 10
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 25,
+                                padding: 15,
+                                font: {
+                                    size: 14,
+                                    weight: '600'
+                                },
+                                usePointStyle: true,
+                                pointStyle: 'rectRounded'
+                            }
+                        },
+                        tooltip: {
+                            enabled: true,
+                            callbacks: {
+                                title: function(tooltipItems) {
+                                    return `📊 ${tooltipItems[0].label}`;
+                                },
+                                label: function(context) {
+                                    const value = context.parsed.x;
+                                    const datasetLabel = context.dataset.label;
+                                    const index = context.dataIndex;
+                                    
+                                    if (datasetLabel === 'Target') {
+                                        return `🎯 Target: ${formatCurrency(value)}`;
+                                    } else {
+                                        const target = targetValues[index];
+                                        const percent = target > 0 ? ((value / target) * 100).toFixed(1) : '-';
+                                        return `💰 Thực Tế: ${formatCurrency(value)}`;
+                                    }
+                                },
+                                footer: function(tooltipItems) {
+                                    if (tooltipItems.length > 0) {
+                                        const index = tooltipItems[0].dataIndex;
+                                        const actual = actualValues[index];
+                                        const target = targetValues[index];
+                                        const percent = target > 0 ? ((actual / target) * 100).toFixed(1) : '0';
+                                        const gap = target > 0 ? Math.abs(actual - target) : 0;
+                                        let status = '';
+                                        if (target > 0) {
+                                            if (actual >= target) {
+                                                status = actual > target ? '🎉 Vượt Target' : '✅ Đạt Target';
+                                            } else {
+                                                status = '⚠️ Chưa Đạt';
+                                            }
+                                        }
+                                        const gapText = actual > target 
+                                            ? `Vượt: +${formatCurrency(gap)}`
+                                            : `Thiếu: -${formatCurrency(gap)}`;
+                                        return `━━━━━━━━━━━━━━━━━━━━\n${status}\n📈 ${percent}% | ${gapText}`;
+                                    }
+                                    return '';
+                                }
+                            },
+                            padding: 16,
+                            titleFont: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            bodyFont: {
+                                size: 14
+                            },
+                            backgroundColor: 'rgba(31, 41, 55, 0.95)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: 'rgba(255, 255, 255, 0.3)',
+                            borderWidth: 1,
+                            cornerRadius: 8
+                        },
+                        datalabels: {
+                            anchor: 'end',
+                            align: 'right',
+                            color: function(context) {
+                                const index = context.dataIndex;
+                                const actual = actualValues[index];
+                                const target = targetValues[index];
+                                if (target > 0) {
+                                    const percent = (actual / target) * 100;
+                                    if (percent >= 100) {
+                                        return percent > 100 ? '#f59e0b' : '#10b981';
+                                    } else if (percent >= 80) {
+                                        return '#fbbf24';
+                                    } else {
+                                        return '#ef4444';
+                                    }
+                                }
+                                return '#10b981';
+                            },
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            formatter: function(value, context) {
+                                const index = context.dataIndex;
+                                const actual = actualValues[index];
+                                const target = targetValues[index];
+                                if (target > 0) {
+                                    const percent = ((actual / target) * 100).toFixed(1);
+                                    return percent + '%';
+                                }
+                                return '';
+                            },
+                            display: function(context) {
+                                return context.datasetIndex === 1; // Only show on Actual dataset
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000000) {
+                                        return (value / 1000000000).toFixed(1) + 'B';
+                                    } else if (value >= 1000000) {
+                                        return (value / 1000000).toFixed(0) + 'M';
+                                    } else if (value >= 1000) {
+                                        return (value / 1000).toFixed(0) + 'K';
+                                    }
+                                    return value;
+                                },
+                                maxRotation: 0,
+                                minRotation: 0,
+                                font: {
+                                    size: 11,
+                                    weight: '500'
+                                },
+                                padding: 12,
+                                color: '#6b7280'
+                            },
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.06)',
+                                drawBorder: false,
+                                lineWidth: 1
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                font: {
+                                    size: 13,
+                                    weight: '600'
+                                },
+                                padding: 15,
+                                color: '#1f2937',
+                                maxRotation: 0
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 600,
+                        easing: 'easeOutCubic'
+                    }
+                }
+            });
+        }
+
         // Initialize
         loadAllData();
     </script>
-</body>
+    <!-- Chart Fullscreen Modal -->
+    <div id="chartFullscreenModal" class="chart-fullscreen-modal">
+        <div class="chart-fullscreen-content">
+            <div class="chart-fullscreen-header">
+                <h2 id="chartFullscreenTitle"></h2>
+                <button class="chart-fullscreen-close" onclick="closeChartFullscreen()">✕ Đóng</button>
+            </div>
+            <div class="chart-fullscreen-canvas-container">
+                <canvas id="chartFullscreenCanvas"></canvas>
+                <div id="chartFullscreenHTML" style="width: 100%; height: 100%; overflow: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Chart Fullscreen Functions
+        let fullscreenChart = null;
+        let originalChartId = null;
+        let landscapeMeta = null;
+        
+        function openChartFullscreen(chartId, title, isHTML = false) {
+            const modal = document.getElementById('chartFullscreenModal');
+            const titleEl = document.getElementById('chartFullscreenTitle');
+            const canvasContainer = document.querySelector('.chart-fullscreen-canvas-container');
+            const canvas = document.getElementById('chartFullscreenCanvas');
+            const htmlContainer = document.getElementById('chartFullscreenHTML');
+            
+            originalChartId = chartId;
+            titleEl.textContent = title;
+            modal.classList.add('active');
+            
+            // Lock orientation to landscape on mobile
+            if (window.innerWidth <= 768) {
+                lockLandscapeOrientation();
+            }
+            
+            if (isHTML) {
+                // For HTML-based visualizations (like targetVsActual)
+                canvas.style.display = 'none';
+                htmlContainer.style.display = 'block';
+                const originalContent = document.getElementById(chartId);
+                if (originalContent) {
+                    htmlContainer.innerHTML = originalContent.innerHTML;
+                }
+            } else {
+                // For Chart.js charts
+                canvas.style.display = 'block';
+                htmlContainer.style.display = 'none';
+                
+                // Find the original chart
+                const originalCanvas = document.getElementById(chartId);
+                if (!originalCanvas) return;
+                
+                // Get chart instance from charts object
+                let chartInstance = null;
+                const chartKeys = Object.keys(charts);
+                for (let key of chartKeys) {
+                    if (charts[key] && charts[key].canvas && charts[key].canvas.id === chartId) {
+                        chartInstance = charts[key];
+                        break;
+                    }
+                }
+                
+                if (chartInstance) {
+                    // Clone chart configuration
+                    const config = JSON.parse(JSON.stringify(chartInstance.config));
+                    
+                    // Update canvas reference
+                    config.options.responsive = true;
+                    config.options.maintainAspectRatio = false;
+                    
+                    // Destroy existing fullscreen chart if any
+                    if (fullscreenChart) {
+                        fullscreenChart.destroy();
+                    }
+                    
+                    // Create new chart in fullscreen modal
+                    fullscreenChart = new Chart(canvas, config);
+                    
+                    // Resize chart to fit container
+                    setTimeout(() => {
+                        if (fullscreenChart) {
+                            fullscreenChart.resize();
+                        }
+                    }, 100);
+                }
+            }
+            
+            // Prevent body scroll
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeChartFullscreen() {
+            const modal = document.getElementById('chartFullscreenModal');
+            modal.classList.remove('active');
+            
+            // Unlock orientation
+            unlockLandscapeOrientation();
+            
+            // Destroy fullscreen chart
+            if (fullscreenChart) {
+                fullscreenChart.destroy();
+                fullscreenChart = null;
+            }
+            
+            // Restore body scroll
+            document.body.style.overflow = '';
+            
+            originalChartId = null;
+        }
+        
+        function lockLandscapeOrientation() {
+            // Remove existing orientation meta if any
+            unlockLandscapeOrientation();
+            
+            // Create new meta tag for landscape
+            landscapeMeta = document.createElement('meta');
+            landscapeMeta.name = 'viewport';
+            landscapeMeta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape';
+            document.getElementsByTagName('head')[0].appendChild(landscapeMeta);
+            
+            // Try to lock screen orientation (if supported)
+            if (screen.orientation && screen.orientation.lock) {
+                screen.orientation.lock('landscape').catch(() => {
+                    // Lock failed, but meta tag will help
+                });
+            }
+        }
+        
+        function unlockLandscapeOrientation() {
+            // Remove landscape meta tag
+            if (landscapeMeta && landscapeMeta.parentNode) {
+                landscapeMeta.parentNode.removeChild(landscapeMeta);
+                landscapeMeta = null;
+            }
+            
+            // Restore original viewport
+            const viewport = document.querySelector('meta[name="viewport"]');
+            if (viewport) {
+                viewport.content = 'width=device-width, initial-scale=1.0';
+            }
+            
+            // Unlock screen orientation (if supported)
+            if (screen.orientation && screen.orientation.unlock) {
+                screen.orientation.unlock();
+            }
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('chartFullscreenModal');
+                if (modal.classList.contains('active')) {
+                    closeChartFullscreen();
+                }
+            }
+        });
+        
+        // Close modal on background click
+        document.getElementById('chartFullscreenModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeChartFullscreen();
+            }
+        });
+        
+        // Handle window resize for fullscreen chart
+        window.addEventListener('resize', function() {
+            if (fullscreenChart) {
+                setTimeout(() => {
+                    fullscreenChart.resize();
+                }, 100);
+            }
+        });
+    </script>
+
+    </body>
 </html>
