@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Báo Cáo Doanh Số 2023-2025</title>
+    <title>Báo Cáo Doanh Số 2022-2025</title>
     <!-- Inline favicon to avoid 404s -->
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQI12NgYGD4DwABBAEAffA6NQAAAABJRU5ErkJggg==" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -864,7 +864,7 @@
     <div class="dashboard-container">
         <div class="header">
             <h1 data-i18n="title">📊 Báo Cáo Phân Tích Doanh Số</h1>
-            <p data-i18n="subtitle">Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2023 - 2025)</p>
+            <p data-i18n="subtitle">Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2022 - 2025)</p>
         </div>
 
         <div class="loading" id="loading">Đang tải dữ liệu...</div>
@@ -2671,7 +2671,7 @@
         const translations = {
             vi: {
                 title: '📊 Báo Cáo Doanh Số  Việt Liên',
-                subtitle: 'Phân tích chi tiết doanh số bán hàng từ 2023-2025',
+                subtitle: 'Phân tích chi tiết doanh số bán hàng từ 2022-2025',
                 totalRevenue: 'Tổng Doanh Thu',
                 totalOrders: 'Số Đơn Hàng',
                 avgOrderValue: 'Giá Trị TB/Đơn',
@@ -2711,7 +2711,7 @@
             },
             en: {
                 title: '📊 Sales Report - Viet Lien',
-                subtitle: 'Detailed sales analysis from 2023-2025',
+                subtitle: 'Detailed sales analysis from 2022-2025',
                 totalRevenue: 'Total Revenue',
                 totalOrders: 'Total Orders',
                 avgOrderValue: 'Avg Order Value',
@@ -2830,6 +2830,9 @@
             await loadProductNameLookup();
             // CHỈ LẤY FILE CUỐI THÁNG (loại bỏ file trung gian để tránh trùng lặp)
             const files = [
+                // 2022 (needed for Baking Soda in MEGA stores)
+                '2022-09-30_DS_30.09.2022.csv',
+                '2022-12-31_DS_31.12.22.csv',
                 '2023-01-31_DS_31.01.2023.csv', '2023-02-28_DS_28.02.23.csv', '2023-03-31_DS_31.03.2023.csv',
                 '2023-04-30_DS_30.04.2023.csv', '2023-05-27_DS_27.05.2023.csv', '2023-06-30_DS_30.06.2023.csv',
                 '2023-07-31_DS_31.07.2023.csv', '2023-08-31_DS_31.08.2023.csv', '2023-09-30_DS_30.09.2023.csv',
@@ -7790,7 +7793,7 @@
             // Set presentation properties
             pptx.author = 'Sales Dashboard';
             pptx.company = 'Việt Liên';
-            pptx.title = 'Báo Cáo Phân Tích Doanh Số 2023-2025';
+            pptx.title = 'Báo Cáo Phân Tích Doanh Số 2022-2025';
             
             // Slide 1: Title
             const slide1 = pptx.addSlide();
@@ -7799,7 +7802,7 @@
                 x: 0.5, y: 2.0, w: 9, h: 1,
                 fontSize: 44, bold: true, color: 'FFFFFF', align: 'center'
             });
-            slide1.addText('Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2023 - 2025)', {
+            slide1.addText('Phân tích chi tiết doanh số theo Hệ thống, Nhãn hàng và Mã hàng (2022 - 2025)', {
                 x: 0.5, y: 3.2, w: 9, h: 0.5,
                 fontSize: 18, color: 'FFFFFF', align: 'center'
             });
