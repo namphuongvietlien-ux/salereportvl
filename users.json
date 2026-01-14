@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "users": [
+    {
+      "username": "admin",
+      "password": "admin123",
+      "role": "admin",
+      "name": "Administrator",
+      "permissions": {
+        "viewAll": true,
+        "editTarget": true,
+        "importExport": true,
+        "systems": [],
+        "stores": []
+      }
+    },
+    {
+      "username": "sup1",
+      "password": "sup123",
+      "role": "supervisor",
+      "name": "Supervisor 1",
+      "permissions": {
+        "viewAll": true,
+        "editTarget": false,
+        "importExport": false,
+        "systems": [],
+        "stores": []
+      }
+    },
+    {
+      "username": "sale1",
+      "password": "sale123",
+      "role": "sales",
+      "name": "Sales Person 1",
+      "permissions": {
+        "viewAll": false,
+        "editTarget": false,
+        "importExport": false,
+        "systems": ["VINMART", "BIG C"],
+        "stores": []
+      }
+    }
+  ]
+}

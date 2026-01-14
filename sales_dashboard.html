@@ -691,9 +691,176 @@
                 }
             }
         }
+        
+        /* Login Modal Styles */
+        .login-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 30000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-modal.hidden {
+            display: none;
+        }
+        
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .login-container h2 {
+            margin: 0 0 10px 0;
+            color: #1f2937;
+            font-size: 1.8em;
+        }
+        
+        .login-container p {
+            color: #6b7280;
+            margin-bottom: 25px;
+            font-size: 0.9em;
+        }
+        
+        .login-form-group {
+            margin-bottom: 20px;
+        }
+        
+        .login-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        
+        .login-form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .login-form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .login-button:hover {
+            background: #2563eb;
+        }
+        
+        .login-error {
+            color: #ef4444;
+            font-size: 0.9em;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .login-error.show {
+            display: block;
+        }
+        
+        .user-info {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-info span {
+            color: #1f2937;
+            font-weight: 600;
+        }
+        
+        .user-info .user-role {
+            background: #3b82f6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.85em;
+        }
+        
+        .user-info .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        
+        .user-info .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        .permission-restricted {
+            opacity: 0.5;
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Login Modal -->
+    <div id="loginModal" class="login-modal">
+        <div class="login-container">
+            <h2>🔐 Đăng Nhập</h2>
+            <p>Vui lòng đăng nhập để truy cập báo cáo doanh số</p>
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="login-form-group">
+                    <label for="username">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" required autocomplete="username">
+                </div>
+                <div class="login-form-group">
+                    <label for="password">Mật khẩu</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password">
+                </div>
+                <div class="login-error" id="loginError">Tên đăng nhập hoặc mật khẩu không đúng</div>
+                <button type="submit" class="login-button">Đăng Nhập</button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- User Info Bar -->
+    <div id="userInfo" class="user-info" style="display: none;">
+        <span id="userName">-</span>
+        <span class="user-role" id="userRole">-</span>
+        <button class="logout-btn" onclick="handleLogout()">Đăng Xuất</button>
+    </div>
+    
     <div class="dashboard-container">
         <div class="header">
             <h1 data-i18n="title">📊 Báo Cáo Phân Tích Doanh Số</h1>
@@ -1974,6 +2141,193 @@
             });
         }
         let allData = [];
+        
+        // Authentication & Permission System
+        let currentUser = null;
+        let usersData = null;
+        
+        // Load users from users.json
+        async function loadUsers() {
+            try {
+                const response = await fetch('users.json?v=' + Date.now());
+                if (response.ok) {
+                    usersData = await response.json();
+                    console.log('✅ Users loaded:', usersData.users.length);
+                } else {
+                    console.error('⚠️ Could not load users.json');
+                    // Fallback: allow access without login (for development)
+                    usersData = { users: [] };
+                }
+            } catch (e) {
+                console.error('❌ Error loading users:', e);
+                usersData = { users: [] };
+            }
+        }
+        
+        // Check if user is logged in
+        function checkAuth() {
+            const savedUser = localStorage.getItem('currentUser');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    // Verify user still exists in users.json
+                    if (usersData && usersData.users) {
+                        const userExists = usersData.users.find(u => u.username === currentUser.username);
+                        if (userExists) {
+                            currentUser = { ...userExists, ...currentUser }; // Merge with latest user data
+                            showDashboard();
+                            return true;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing saved user:', e);
+                }
+            }
+            showLogin();
+            return false;
+        }
+        
+        // Handle login
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            if (!usersData || !usersData.users) {
+                errorDiv.textContent = 'Hệ thống chưa sẵn sàng. Vui lòng thử lại sau.';
+                errorDiv.classList.add('show');
+                return;
+            }
+            
+            const user = usersData.users.find(u => u.username === username && u.password === password);
+            if (user) {
+                currentUser = { ...user };
+                delete currentUser.password; // Don't store password
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                showDashboard();
+            } else {
+                errorDiv.classList.add('show');
+                setTimeout(() => errorDiv.classList.remove('show'), 3000);
+            }
+        }
+        
+        // Handle logout
+        function handleLogout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            showLogin();
+        }
+        
+        // Show login modal
+        function showLogin() {
+            document.getElementById('loginModal').classList.remove('hidden');
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'none';
+        }
+        
+        // Show dashboard
+        function showDashboard() {
+            document.getElementById('loginModal').classList.add('hidden');
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('userName').textContent = currentUser.name || currentUser.username;
+            document.getElementById('userRole').textContent = getRoleLabel(currentUser.role);
+            // Apply permissions after a short delay to ensure DOM is ready
+            setTimeout(() => {
+                applyPermissions();
+            }, 200);
+        }
+        
+        // Get role label
+        function getRoleLabel(role) {
+            const labels = {
+                'admin': '👑 Admin',
+                'supervisor': '👔 Supervisor',
+                'sales': '💼 Sales'
+            };
+            return labels[role] || role;
+        }
+        
+        // Apply permissions - hide/show UI elements
+        function applyPermissions() {
+            if (!currentUser || !currentUser.permissions) return;
+            
+            const perms = currentUser.permissions;
+            
+            // Hide import/export section if not allowed
+            if (!perms.importExport) {
+                setTimeout(() => {
+                    const exportBtn = document.querySelector('button[onclick="exportTargetData()"]');
+                    if (exportBtn) {
+                        const exportImportDiv = exportBtn.closest('div[style*="linear-gradient(135deg, #10b981"]');
+                        if (exportImportDiv) {
+                            exportImportDiv.style.display = 'none';
+                        }
+                    }
+                }, 100);
+            }
+            
+            // Hide target management inputs if not allowed to edit
+            if (!perms.editTarget) {
+                setTimeout(() => {
+                    const targetCard = document.querySelector('h2:contains("🎯 Quản Lý Target Doanh Số")')?.closest('.chart-card') ||
+                                     Array.from(document.querySelectorAll('h2')).find(h => h.textContent.includes('🎯 Quản Lý Target'))?.closest('.chart-card');
+                    if (targetCard) {
+                        // Hide all input fields and buttons
+                        const inputs = targetCard.querySelectorAll('input[type="number"], input[type="month"], button[onclick*="Target"], button[onclick*="setBulkTargets"]');
+                        inputs.forEach(input => {
+                            input.style.display = 'none';
+                        });
+                        // Show read-only message
+                        const readOnlyMsg = document.createElement('div');
+                        readOnlyMsg.style.cssText = 'padding: 15px; background: #fef3c7; border-radius: 8px; color: #92400e; margin-top: 15px;';
+                        readOnlyMsg.textContent = '⚠️ Bạn không có quyền chỉnh sửa target. Vui lòng liên hệ Admin.';
+                        if (!targetCard.querySelector('.read-only-msg')) {
+                            readOnlyMsg.className = 'read-only-msg';
+                            targetCard.appendChild(readOnlyMsg);
+                        }
+                    }
+                }, 100);
+            }
+        }
+        
+        // Filter data based on user permissions
+        function filterDataByPermissions(data) {
+            if (!currentUser || !currentUser.permissions) return data;
+            
+            const perms = currentUser.permissions;
+            
+            // Admin and supervisor can see all
+            if (perms.viewAll) {
+                return data;
+            }
+            
+            // Sales can only see their assigned systems/stores
+            const filtered = data.filter(row => {
+                const system = row['HỆ THỐNG'];
+                const store = row['CỬA HÀNG'];
+                
+                // Check if system is allowed
+                if (perms.systems && perms.systems.length > 0) {
+                    if (!system || !perms.systems.includes(system)) {
+                        return false;
+                    }
+                }
+                
+                // Check if store is allowed (if specified)
+                if (perms.stores && perms.stores.length > 0) {
+                    if (!store || !perms.stores.includes(store)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            console.log(`🔒 Data filtered: ${data.length} → ${filtered.length} rows (${currentUser.name})`);
+            return filtered;
+        }
         let charts = {};
         let forecastDetailsData = {}; // Store forecast details
 
@@ -2434,6 +2788,12 @@
                 // If loadTargets fails, still update dashboard
                 updateDashboard();
             });
+        }
+        
+        // Initialize authentication
+        async function initializeAuth() {
+            await loadUsers();
+            checkAuth();
         }
 
         // Initialize filters
@@ -7094,7 +7454,9 @@
         let currentFilteredData = [];
 
         function updateDashboard() {
-            const data = filterData();
+            let data = filterData();
+            // Apply permission-based filtering
+            data = filterDataByPermissions(data);
             currentFilteredData = data; // Store for drill-down functions
             updateKPIs(data);
             createForecastChart(data);
@@ -8429,14 +8791,16 @@
                     const response = await fetch('targets.json?v=' + Date.now());
                     if (response.ok) {
                         const fileData = await response.json();
-                        if (fileData.targets && typeof fileData.targets === 'object') {
+                        // Handle targets.json format: { version, lastUpdated, targets: {...} }
+                        const fileTargets = fileData.targets || fileData.data || fileData;
+                        if (fileTargets && typeof fileTargets === 'object' && !Array.isArray(fileTargets)) {
                             // Merge file data with existing targetData
-                            Object.keys(fileData.targets).forEach(monthKey => {
+                            Object.keys(fileTargets).forEach(monthKey => {
                                 if (!targetData[monthKey] || targetData[monthKey].total === 0) {
-                                    targetData[monthKey] = fileData.targets[monthKey];
+                                    targetData[monthKey] = fileTargets[monthKey];
                                 }
                             });
-                            console.log('✅ Targets loaded from targets.json:', Object.keys(fileData.targets).length, 'months');
+                            console.log('✅ Targets loaded from targets.json:', Object.keys(fileTargets).length, 'months');
                         }
                     }
                 } catch (fileError) {
@@ -8480,7 +8844,7 @@
             }
         }
         
-        // Export target data to JSON file
+        // Export target data to JSON file (for targets.json)
         async function exportTargetData() {
             try {
                 // Ensure we have the latest data (from file and localStorage)
@@ -8491,12 +8855,11 @@
                     return;
                 }
                 
-                // Create export data with metadata
+                // Create export data in targets.json format
                 const exportData = {
                     version: '1.0',
-                    exportDate: new Date().toISOString(),
-                    targetCount: Object.keys(targetData).length,
-                    data: targetData
+                    lastUpdated: new Date().toISOString(),
+                    targets: targetData
                 };
                 
                 // Convert to JSON string with pretty formatting
@@ -8508,7 +8871,7 @@
                 const a = document.createElement('a');
                 const dateStr = new Date().toISOString().split('T')[0];
                 a.href = url;
-                a.download = `sales_targets_${dateStr}.json`;
+                a.download = `targets.json`; // Use targets.json as filename
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -8516,7 +8879,7 @@
                 
                 const monthCount = Object.keys(targetData).length;
                 const totalCount = Object.values(targetData).filter(t => t && t.total > 0).length;
-                alert(`✅ Export thành công!\n\n📊 ${monthCount} tháng\n🎯 ${totalCount} tháng có target\n\nFile: sales_targets_${dateStr}.json`);
+                alert(`✅ Export thành công!\n\n📊 ${monthCount} tháng\n🎯 ${totalCount} tháng có target\n\nFile: targets.json\n\n💡 Hướng dẫn:\n1. Commit file targets.json lên GitHub\n2. Mọi người sẽ thấy target sau khi refresh trang`);
                 
                 console.log('✅ Target data exported:', monthCount, 'months');
             } catch (e) {
@@ -8538,10 +8901,14 @@
                     const content = e.target.result;
                     const imported = JSON.parse(content);
                     
-                    // Handle both old format (direct targetData) and new format (with metadata)
+                    // Handle multiple formats: targets.json format, export format, or direct targetData
                     let importedData;
-                    if (imported.data) {
-                        // New format with metadata
+                    if (imported.targets) {
+                        // targets.json format: { version, lastUpdated, targets: {...} }
+                        importedData = imported.targets;
+                        console.log('📥 Importing from targets.json format');
+                    } else if (imported.data) {
+                        // Export format with metadata: { version, exportDate, data: {...} }
                         importedData = imported.data;
                         console.log('📥 Importing target data version:', imported.version || 'unknown');
                         console.log('📅 Export date:', imported.exportDate || 'unknown');
@@ -9677,8 +10044,13 @@
             });
         }
 
-        // Initialize
-        loadAllData();
+        // Initialize authentication first, then load data
+        (async function() {
+            await initializeAuth();
+            if (currentUser) {
+                loadAllData();
+            }
+        })();
     </script>
     <!-- Chart Fullscreen Modal -->
     <div id="chartFullscreenModal" class="chart-fullscreen-modal">
