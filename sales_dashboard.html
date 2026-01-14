@@ -986,6 +986,25 @@
                         <h3 style="color: #1f2937; margin-bottom: 15px;">📋 Kết Quả Phân Bổ Target</h3>
                         <div id="targetResultsContent"></div>
                     </div>
+                    
+                    <!-- Export/Import Target Data -->
+                    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border-radius: 12px; color: white;">
+                        <h3 style="font-size: 1.1em; margin-bottom: 15px;">💾 Quản Lý Dữ Liệu Target</h3>
+                        <p style="font-size: 0.9em; opacity: 0.9; margin-bottom: 15px;">Export/Import target để backup hoặc chia sẻ giữa các máy</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <button onclick="exportTargetData()" style="padding: 12px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>📥</span> Export Target (JSON)
+                            </button>
+                            <label style="padding: 12px; background: rgba(255,255,255,0.2); color: white; border: 2px solid white; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <span>📤</span> Import Target (JSON)
+                                <input type="file" id="targetFileInput" accept=".json" style="display: none;" onchange="importTargetData(event)">
+                            </label>
+                        </div>
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; font-size: 0.85em; opacity: 0.9;">
+                            <strong>💡 Lưu ý:</strong> Target được lưu trong localStorage (chỉ trên trình duyệt này). 
+                            Sử dụng Export/Import để backup và restore dữ liệu target.
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Target vs Actual Performance Section -->
@@ -8430,6 +8449,181 @@
                     alert('Lưu trữ đầy. Vui lòng xóa một số target cũ hoặc dữ liệu khác.');
                 }
             }
+        }
+        
+        // Export target data to JSON file
+        function exportTargetData() {
+            try {
+                // Ensure we have the latest data
+                loadTargets();
+                
+                if (!targetData || Object.keys(targetData).length === 0) {
+                    alert('Không có dữ liệu target để export. Vui lòng đặt target trước.');
+                    return;
+                }
+                
+                // Create export data with metadata
+                const exportData = {
+                    version: '1.0',
+                    exportDate: new Date().toISOString(),
+                    targetCount: Object.keys(targetData).length,
+                    data: targetData
+                };
+                
+                // Convert to JSON string with pretty formatting
+                const jsonString = JSON.stringify(exportData, null, 2);
+                
+                // Create blob and download
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const dateStr = new Date().toISOString().split('T')[0];
+                a.href = url;
+                a.download = `sales_targets_${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                const monthCount = Object.keys(targetData).length;
+                const totalCount = Object.values(targetData).filter(t => t && t.total > 0).length;
+                alert(`✅ Export thành công!\n\n📊 ${monthCount} tháng\n🎯 ${totalCount} tháng có target\n\nFile: sales_targets_${dateStr}.json`);
+                
+                console.log('✅ Target data exported:', monthCount, 'months');
+            } catch (e) {
+                console.error('❌ Error exporting targets:', e);
+                alert('Lỗi khi export target. Vui lòng thử lại.');
+            }
+        }
+        
+        // Import target data from JSON file
+        function importTargetData(event) {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const imported = JSON.parse(content);
+                    
+                    // Handle both old format (direct targetData) and new format (with metadata)
+                    let importedData;
+                    if (imported.data) {
+                        // New format with metadata
+                        importedData = imported.data;
+                        console.log('📥 Importing target data version:', imported.version || 'unknown');
+                        console.log('📅 Export date:', imported.exportDate || 'unknown');
+                    } else {
+                        // Old format (direct targetData object)
+                        importedData = imported;
+                    }
+                    
+                    // Validate data structure
+                    if (typeof importedData !== 'object' || Array.isArray(importedData)) {
+                        throw new Error('Invalid data format');
+                    }
+                    
+                    // Validate each month's data structure
+                    let validCount = 0;
+                    let invalidCount = 0;
+                    const invalidMonths = [];
+                    
+                    Object.keys(importedData).forEach(monthKey => {
+                        const monthData = importedData[monthKey];
+                        if (monthData && typeof monthData === 'object' && 
+                            (monthData.total !== undefined || monthData.brands || monthData.systems)) {
+                            validCount++;
+                        } else {
+                            invalidCount++;
+                            invalidMonths.push(monthKey);
+                        }
+                    });
+                    
+                    if (validCount === 0) {
+                        alert('File không chứa dữ liệu target hợp lệ. Vui lòng kiểm tra lại file.');
+                        return;
+                    }
+                    
+                    // Ask user for confirmation
+                    const confirmMessage = `Bạn có muốn import target data?\n\n` +
+                        `✅ ${validCount} tháng hợp lệ\n` +
+                        (invalidCount > 0 ? `⚠️ ${invalidCount} tháng không hợp lệ\n` : '') +
+                        `\nLưu ý: Dữ liệu hiện tại sẽ được thay thế hoặc merge với dữ liệu import.`;
+                    
+                    if (!confirm(confirmMessage)) {
+                        return;
+                    }
+                    
+                    // Merge with existing data (keep existing if not in import, or replace if in import)
+                    const beforeCount = Object.keys(targetData).length;
+                    Object.keys(importedData).forEach(monthKey => {
+                        const monthData = importedData[monthKey];
+                        if (monthData && typeof monthData === 'object') {
+                            // Merge: keep existing brands/systems if not in import
+                            if (targetData[monthKey]) {
+                                targetData[monthKey] = {
+                                    total: monthData.total || targetData[monthKey].total,
+                                    brands: monthData.brands || targetData[monthKey].brands || {},
+                                    systems: monthData.systems || targetData[monthKey].systems || {}
+                                };
+                            } else {
+                                targetData[monthKey] = {
+                                    total: monthData.total || 0,
+                                    brands: monthData.brands || {},
+                                    systems: monthData.systems || {}
+                                };
+                            }
+                        }
+                    });
+                    
+                    // Save to localStorage
+                    saveTargets();
+                    
+                    const afterCount = Object.keys(targetData).length;
+                    const newCount = afterCount - beforeCount;
+                    
+                    // Show success message
+                    let message = `✅ Import thành công!\n\n`;
+                    message += `📊 Tổng số tháng: ${afterCount}\n`;
+                    if (newCount > 0) {
+                        message += `🆕 Tháng mới: ${newCount}\n`;
+                    }
+                    message += `🔄 Tháng được cập nhật: ${validCount - newCount}\n`;
+                    if (invalidCount > 0) {
+                        message += `\n⚠️ ${invalidCount} tháng không hợp lệ đã bỏ qua:\n${invalidMonths.slice(0, 5).join(', ')}${invalidMonths.length > 5 ? '...' : ''}`;
+                    }
+                    
+                    alert(message);
+                    
+                    // Refresh UI
+                    updateForecastDisplayWithTargets();
+                    
+                    // Refresh target results if displayed
+                    const monthInput = document.getElementById('targetVsActualMonth');
+                    if (monthInput && monthInput.value) {
+                        updateTargetVsActual();
+                    }
+                    
+                    // Reset file input
+                    event.target.value = '';
+                    
+                    console.log('✅ Target data imported:', afterCount, 'months');
+                } catch (e) {
+                    console.error('❌ Error importing targets:', e);
+                    alert('Lỗi khi import target. File có thể không đúng định dạng.\n\nChi tiết: ' + e.message);
+                    event.target.value = '';
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Lỗi khi đọc file. Vui lòng thử lại.');
+                event.target.value = '';
+            };
+            
+            reader.readAsText(file);
         }
         
         // Set total target and auto-distribute
