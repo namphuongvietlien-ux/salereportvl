@@ -1001,8 +1001,8 @@
                             </label>
                         </div>
                         <div style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px; font-size: 0.85em; opacity: 0.9;">
-                            <strong>💡 Lưu ý:</strong> Target được lưu trong localStorage (chỉ trên trình duyệt này). 
-                            Sử dụng Export/Import để backup và restore dữ liệu target.
+                            <strong>💡 Lưu ý:</strong> Target được load từ file <code>targets.json</code> (trên GitHub) và localStorage (chỉnh sửa local). 
+                            Sử dụng Export để tải file JSON, sau đó commit file <code>targets.json</code> lên GitHub để chia sẻ với mọi người.
                         </div>
                     </div>
                 </div>
@@ -2422,13 +2422,18 @@
             
             initializeFilters();
             initLanguage();
-            loadTargets(); // Load saved targets first
-            updateDashboard();
-            // Update forecast display after targets are loaded
-            setTimeout(() => {
-                updateForecastDisplayWithTargets();
-                setDefaultTargetVsActualMonth();
-            }, 500);
+            // Load targets (async) and then update dashboard
+            loadTargets().then(() => {
+                updateDashboard();
+                // Update forecast display after targets are loaded
+                setTimeout(() => {
+                    updateForecastDisplayWithTargets();
+                    setDefaultTargetVsActualMonth();
+                }, 500);
+            }).catch(() => {
+                // If loadTargets fails, still update dashboard
+                updateDashboard();
+            });
         }
 
         // Initialize filters
@@ -8416,20 +8421,44 @@
         // Target Management
         let targetData = {}; // Store targets: { '2026-01': { total: 5000000000, brands: {...}, systems: {...} } }
         
-        // Load targets from localStorage
-        function loadTargets() {
+        // Load targets from JSON file (GitHub) and merge with localStorage
+        async function loadTargets() {
             try {
+                // First, try to load from targets.json file (for GitHub Pages)
+                try {
+                    const response = await fetch('targets.json?v=' + Date.now());
+                    if (response.ok) {
+                        const fileData = await response.json();
+                        if (fileData.targets && typeof fileData.targets === 'object') {
+                            // Merge file data with existing targetData
+                            Object.keys(fileData.targets).forEach(monthKey => {
+                                if (!targetData[monthKey] || targetData[monthKey].total === 0) {
+                                    targetData[monthKey] = fileData.targets[monthKey];
+                                }
+                            });
+                            console.log('✅ Targets loaded from targets.json:', Object.keys(fileData.targets).length, 'months');
+                        }
+                    }
+                } catch (fileError) {
+                    console.log('⚠️ Could not load targets.json (normal if file does not exist yet):', fileError.message);
+                }
+                
+                // Then, load from localStorage (user's local edits take priority)
                 const saved = localStorage.getItem('salesTargets');
                 if (saved) {
                     const parsed = JSON.parse(saved);
-                    targetData = parsed;
-                    const monthCount = Object.keys(targetData).length;
-                    const totalCount = Object.values(targetData).filter(t => t && t.total > 0).length;
-                    console.log('✅ Targets loaded:', monthCount, 'months,', totalCount, 'with targets');
+                    // Merge localStorage data (overwrites file data if exists)
+                    Object.keys(parsed).forEach(monthKey => {
+                        targetData[monthKey] = parsed[monthKey];
+                    });
+                    console.log('✅ Targets loaded from localStorage:', Object.keys(parsed).length, 'months');
+                }
+                
+                const monthCount = Object.keys(targetData).length;
+                const totalCount = Object.values(targetData).filter(t => t && t.total > 0).length;
+                console.log('📊 Total targets loaded:', monthCount, 'months,', totalCount, 'with targets');
+                if (monthCount > 0) {
                     console.log('Target months:', Object.keys(targetData).sort());
-                } else {
-                    console.log('⚠️ No saved targets found in localStorage');
-                    targetData = {}; // Ensure it's initialized
                 }
             } catch (e) {
                 console.error('❌ Error loading targets:', e);
@@ -8452,10 +8481,10 @@
         }
         
         // Export target data to JSON file
-        function exportTargetData() {
+        async function exportTargetData() {
             try {
-                // Ensure we have the latest data
-                loadTargets();
+                // Ensure we have the latest data (from file and localStorage)
+                await loadTargets();
                 
                 if (!targetData || Object.keys(targetData).length === 0) {
                     alert('Không có dữ liệu target để export. Vui lòng đặt target trước.');
@@ -9098,9 +9127,9 @@
         // We'll call setDefaultTargetVsActualMonth after loadAllData completes
         
         // Target vs Actual Performance Report
-        function updateTargetVsActual() {
-            // Ensure targets are loaded from localStorage
-            loadTargets();
+        async function updateTargetVsActual() {
+            // Ensure targets are loaded (from file and localStorage)
+            await loadTargets();
             
             const monthInput = document.getElementById('targetVsActualMonth');
             if (!monthInput.value) {
