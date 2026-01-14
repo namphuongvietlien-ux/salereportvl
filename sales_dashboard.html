@@ -2052,6 +2052,36 @@
     </div>
 
     <script>
+        // ==========================================================
+        // DEBUG LOGGING SAFETY (avoid CORS on deployed sites)
+        // - Many debug snippets post to http://127.0.0.1:7243/ingest/...
+        // - On Vercel/GitHub Pages this is blocked by browser PNA/CORS.
+        // - We keep instrumentation for local dev, but no-op it on remote.
+        // ==========================================================
+        (function () {
+            try {
+                const host = (location && location.hostname) ? location.hostname : '';
+                const isLocalHost =
+                    host === 'localhost' ||
+                    host === '127.0.0.1' ||
+                    host === '::1' ||
+                    host.endsWith('.local');
+
+                if (!isLocalHost && typeof window !== 'undefined' && typeof window.fetch === 'function') {
+                    const originalFetch = window.fetch.bind(window);
+                    window.fetch = function (...args) {
+                        try {
+                            const url = args && args[0] ? String(args[0]) : '';
+                            if (url.startsWith('http://127.0.0.1:7243/ingest/')) {
+                                return Promise.resolve(new Response(null, { status: 204 }));
+                            }
+                        } catch (_) { /* ignore */ }
+                        return originalFetch(...args);
+                    };
+                    console.log('ℹ️ Debug ingest logging disabled on non-local host:', host);
+                }
+            } catch (_) { /* ignore */ }
+        })();
         // Phân tích và hiển thị dữ liệu chi tiết theo cửa hàng cho bảng Store Analysis
         function populateStoreAnalysisTable(systemName, skuName) {
             const storeAnalysis = [];
@@ -3322,6 +3352,13 @@
 
         // Create Forecast Chart with predictions
         function createForecastChart(data) {
+            // For sales users, data should already be filtered by permissions in updateDashboard()
+            // But ensure we only use data from stores they have access to
+            console.log('📊 createForecastChart() called with', data.length, 'rows');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:3324',message:'createForecastChart started',data:{dataLength:data.length,hasCurrentUser:!!currentUser,userName:currentUser?.name,viewAll:currentUser?.permissions?.viewAll},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F1'})}).catch(()=>{});
+            // #endregion
+            
             // Group data by month
             const monthlyData = {};
             data.forEach(row => {
@@ -3628,11 +3665,17 @@
 
         // Calculate detailed forecasts by system, brand, and product
         function calculateDetailedForecasts(data, sortedMonths, currentMonthForecastSales, currentMonthForecastQty, nextMonthForecastSales, nextMonthForecastQty, currentQtrAvg, currentQtrQtyAvg, nextQtrForecast, nextQtrQtyForecast) {
+            // Data should already be filtered by permissions, but log for debugging
+            console.log('📊 calculateDetailedForecasts() called with', data.length, 'rows');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:3630',message:'calculateDetailedForecasts started',data:{dataLength:data.length,hasCurrentUser:!!currentUser,userName:currentUser?.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F2'})}).catch(()=>{});
+            // #endregion
+            
             // Get recent months data for proportion calculation
             const recentMonthsCount = Math.min(3, sortedMonths.length);
             const recentMonths = sortedMonths.slice(-recentMonthsCount);
             
-            // Filter data for recent months
+            // Filter data for recent months (data is already filtered by permissions)
             const recentData = data.filter(row => recentMonths.includes(row.monthKey));
             
             // Calculate proportions by system
@@ -3925,11 +3968,12 @@
                         const productSystemDistribution = {};
                         let productTotalInSystems = 0;
                         
-                        // Get recent months for distribution
-                        const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+                        // Get recent months for distribution (use filtered data for sales users)
+                        const dataForDistribution = currentFilteredData.length > 0 ? currentFilteredData : allData;
+                        const sortedMonths = [...new Set(dataForDistribution.map(d => d.monthKey))].sort();
                         const recentMonths = sortedMonths.slice(-3);
                         
-                        allData.forEach(row => {
+                        dataForDistribution.forEach(row => {
                             if (recentMonths.includes(row.monthKey) && 
                                 shortenProductName(row['TÊN SP']) === prod.name) {
                                 const system = row['HỆ THỐNG'];
@@ -4305,7 +4349,14 @@
 
         // Analyze stockouts (product gaps) - MANUAL SELECTION
         function analyzeStockouts() {
-            if (!allData || allData.length === 0) {
+            // Use filtered data for sales users (only their stores)
+            const dataToUse = currentFilteredData.length > 0 ? currentFilteredData : allData;
+            console.log('🔍 analyzeStockouts() using', dataToUse.length, 'rows (filtered for sales users)');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:4321',message:'analyzeStockouts started',data:{dataLength:dataToUse.length,usingFilteredData:currentFilteredData.length>0,hasCurrentUser:!!currentUser},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F4'})}).catch(()=>{});
+            // #endregion
+            
+            if (!dataToUse || dataToUse.length === 0) {
                 alert('Không có dữ liệu để phân tích');
                 return;
             }
@@ -4316,13 +4367,13 @@
             const currentDay = today.getDate();
             const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
             
-            const sortedMonths = [...new Set(allData.map(d => d.monthKey))].sort();
+            const sortedMonths = [...new Set(dataToUse.map(d => d.monthKey))].sort();
             const recentMonths = sortedMonths.slice(-6, -1); // Last 5 months
             
-            // Get all available products with their average sales
+            // Get all available products with their average sales (from filtered data)
             const productData = {};
             
-            allData.forEach(row => {
+            dataToUse.forEach(row => {
                 const product = row['TÊN SP'];
                 const month = row.monthKey;
                 
@@ -9696,8 +9747,14 @@
             // This will be called after forecast chart is created
             // The display is already updated in createForecastChart function
             // But we can refresh the chart if it exists
-            if (charts.forecastChart && allData && allData.length > 0) {
-                createForecastChart(allData);
+            // Use currentFilteredData (already filtered by permissions) instead of allData
+            const dataToUse = currentFilteredData.length > 0 ? currentFilteredData : allData;
+            console.log('🔄 updateForecastDisplayWithTargets() - refreshing forecast with', dataToUse.length, 'rows');
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales_dashboard.html:9705',message:'updateForecastDisplayWithTargets',data:{dataLength:dataToUse.length,usingFilteredData:currentFilteredData.length>0,hasCurrentUser:!!currentUser},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F3'})}).catch(()=>{});
+            // #endregion
+            if (charts.forecastChart && dataToUse && dataToUse.length > 0) {
+                createForecastChart(dataToUse);
             }
         }
         
