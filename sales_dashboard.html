@@ -8402,13 +8402,19 @@
             try {
                 const saved = localStorage.getItem('salesTargets');
                 if (saved) {
-                    targetData = JSON.parse(saved);
-                    console.log('Targets loaded:', Object.keys(targetData).length, 'months');
+                    const parsed = JSON.parse(saved);
+                    targetData = parsed;
+                    const monthCount = Object.keys(targetData).length;
+                    const totalCount = Object.values(targetData).filter(t => t && t.total > 0).length;
+                    console.log('✅ Targets loaded:', monthCount, 'months,', totalCount, 'with targets');
+                    console.log('Target months:', Object.keys(targetData).sort());
                 } else {
-                    console.log('No saved targets found');
+                    console.log('⚠️ No saved targets found in localStorage');
+                    targetData = {}; // Ensure it's initialized
                 }
             } catch (e) {
-                console.error('Error loading targets:', e);
+                console.error('❌ Error loading targets:', e);
+                targetData = {}; // Reset on error
             }
         }
         
@@ -8416,8 +8422,13 @@
         function saveTargets() {
             try {
                 localStorage.setItem('salesTargets', JSON.stringify(targetData));
+                console.log('💾 Targets saved to localStorage:', Object.keys(targetData).length, 'months');
             } catch (e) {
-                console.error('Error saving targets:', e);
+                console.error('❌ Error saving targets:', e);
+                // If storage is full, try to clear old data
+                if (e.name === 'QuotaExceededError') {
+                    alert('Lưu trữ đầy. Vui lòng xóa một số target cũ hoặc dữ liệu khác.');
+                }
             }
         }
         
@@ -8894,6 +8905,9 @@
         
         // Target vs Actual Performance Report
         function updateTargetVsActual() {
+            // Ensure targets are loaded from localStorage
+            loadTargets();
+            
             const monthInput = document.getElementById('targetVsActualMonth');
             if (!monthInput.value) {
                 alert('Vui lòng chọn tháng');
@@ -8901,10 +8915,24 @@
             }
             
             const monthKey = monthInput.value; // Format: YYYY-MM
+            
+            // Debug: Log targetData to see what's available
+            console.log('Checking target for month:', monthKey);
+            console.log('Available target months:', Object.keys(targetData));
+            console.log('Target data for this month:', targetData[monthKey]);
+            
             const targetMonthData = targetData[monthKey];
             
-            if (!targetMonthData || !targetMonthData.total) {
-                alert('Chưa có target cho tháng này. Vui lòng đặt target trước.');
+            if (!targetMonthData || !targetMonthData.total || targetMonthData.total <= 0) {
+                const availableMonths = Object.keys(targetData).filter(k => targetData[k]?.total > 0);
+                if (availableMonths.length > 0) {
+                    alert(`Chưa có target cho tháng ${monthKey}.\n\nCác tháng đã có target:\n${availableMonths.map(m => {
+                        const [y, mo] = m.split('-');
+                        return `- Tháng ${parseInt(mo)}/${y}`;
+                    }).join('\n')}\n\nVui lòng đặt target cho tháng này trước.`);
+                } else {
+                    alert('Chưa có target cho tháng này. Vui lòng đặt target trước.');
+                }
                 return;
             }
             
