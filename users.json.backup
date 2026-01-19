@@ -3,7 +3,7 @@
   "users": [
     {
       "username": "admin",
-      "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+      "password": "admin123",
       "role": "admin",
       "name": "Administrator",
       "permissions": {
@@ -16,7 +16,7 @@
     },
     {
       "username": "vavancyvuminhtuan",
-      "password": "3354b7d616dd71fb7e748628f8456e47871a7517500b34b684c4879b500465d8",
+      "password": "vavancyvuminhtuan123",
       "role": "supervisor",
       "name": "VAVANCY-VU MINH TUAN",
       "permissions": {
@@ -367,7 +367,7 @@
     },
     {
       "username": "tranthithaonguyen",
-      "password": "e930b53eb3fec083ac4992dcb9484b7219e3e1d1d03c2ea5d68dfa846a8316c2",
+      "password": "tranthithaonguyen123",
       "role": "supervisor",
       "name": "TRAN THI THAO NGUYEN",
       "permissions": {
@@ -577,7 +577,7 @@
     },
     {
       "username": "lenamphuong",
-      "password": "b3b8daf7665e292a6986491cf620c1cda9050b0e2157483219d5d8521f793756",
+      "password": "lenamphuong123",
       "role": "supervisor",
       "name": "LE NAM PHUONG",
       "permissions": {
@@ -726,7 +726,7 @@
     },
     {
       "username": "kahcm1",
-      "password": "42ae18acdbe824a9694a6aa7401e1b735da59b5add6935ed80fd0e08635ea279",
+      "password": "kahcm1123",
       "role": "supervisor",
       "name": "KAM KA HCM1",
       "permissions": {
@@ -1716,7 +1716,7 @@
     },
     {
       "username": "nosale",
-      "password": "4220fcfcd9e4a606527ca0462123ad6078bb382e8de7376b4a9686d6cbd1a410",
+      "password": "nosale123",
       "role": "sales",
       "name": "\"NO SALE\"",
       "permissions": {
@@ -1806,7 +1806,7 @@
     },
     {
       "username": "vuthuyminhthao",
-      "password": "851aaba29d75e96692fc6429ba6bded57231e00bfa40ac582546fea0795b8891",
+      "password": "vuthuyminhthao123",
       "role": "sales",
       "name": "VU THUY MINH THAO",
       "permissions": {
@@ -1834,7 +1834,7 @@
     },
     {
       "username": "tranthithanhtruc",
-      "password": "beed94907f66e048ade5d392fa34daad641a34404709e189ce835e18321e54d6",
+      "password": "tranthithanhtruc123",
       "role": "sales",
       "name": "TRAN THI THANH TRUC",
       "permissions": {
@@ -2006,7 +2006,7 @@
     },
     {
       "username": "lethihongdiep",
-      "password": "a77046a9aa086ce31f5903085b476bbe6b512072308252c9352719d6d35c7913",
+      "password": "lethihongdiep123",
       "role": "sales",
       "name": "LE THI HONG DIEP",
       "permissions": {
@@ -2044,7 +2044,7 @@
     },
     {
       "username": "nopg",
-      "password": "c10411654b0e7bc6a362b78f7bdb1d028f0e835e73e426b96e50faddc7a79a8f",
+      "password": "nopg123",
       "role": "sales",
       "name": "\"NO PG\"",
       "permissions": {
@@ -2059,7 +2059,7 @@
     },
     {
       "username": "phamthibinh",
-      "password": "10ab32a21215776f78ec6385c7fbdda5b0ffd30d051405aafe40d207e68bd01d",
+      "password": "phamthibinh123",
       "role": "sales",
       "name": "PHAM THI BINH",
       "permissions": {
@@ -2077,7 +2077,7 @@
     },
     {
       "username": "nguyenthimuon",
-      "password": "2d76a33aab6c5c4c58339cc9aaec554fb28ab0f11e81f3fc10df4cc587632dd8",
+      "password": "nguyenthimuon123",
       "role": "sales",
       "name": "NGUYEN THI MUON",
       "permissions": {
@@ -2137,7 +2137,7 @@
     },
     {
       "username": "tranthinhan",
-      "password": "dadb7c4ca9b0b216096a2b142793986ba598db39796801cc137badde14e8c781",
+      "password": "tranthinhan123",
       "role": "sales",
       "name": "TRAN THI NHAN",
       "permissions": {
@@ -2156,7 +2156,7 @@
     },
     {
       "username": "tranthanhtuan",
-      "password": "55aaaf581f0f7eaeb9e24688fab1972e4609a180fb54ad90c6af655fb4696463",
+      "password": "tranthanhtuan123",
       "role": "sales",
       "name": "TRAN THANH TUAN",
       "permissions": {
@@ -2175,7 +2175,7 @@
     },
     {
       "username": "huynhngochieu",
-      "password": "c3d2cdcddeeb9f925640ef499e87975992cbed79a1c584bddec6bb9813448691",
+      "password": "huynhngochieu123",
       "role": "sales",
       "name": "HUYNH NGOC HIEU",
       "permissions": {
@@ -2195,7 +2195,7 @@
     },
     {
       "username": "nguyenthioanh",
-      "password": "f0f0eff9200a241cf1244a40c49a8cb0ba92753c3307fd1b41c87d62b3e211f3",
+      "password": "nguyenthioanh123",
       "role": "sales",
       "name": "NGUYEN THI OANH",
       "permissions": {
