@@ -3417,8 +3417,9 @@
                                 .map(row => {
                                     const sl = parseFloat(row.SL) || 0;
                                     const donGia = parseFloat(row['ĐƠN GIÁ']) || 0;
-                                    // Công thức Power Query: VAT = SL * ĐƠN GIÁ * 1.1
-                                    const calculatedVAT = sl * donGia * 1.1;
+                                    // Ưu tiên VAT từ file; fallback tính thủ công
+                                    const vatFromFile = parseFloat(row['VAT']) || 0;
+                                    const calculatedVAT = vatFromFile > 0 ? vatFromFile : (sl * donGia * 1.1);
 
                                     const tenSP = (row['TÊN SP'] || '').trim();
                                     const maKH = (row['MA KH'] || '').toString().trim();
