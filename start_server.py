@@ -18,7 +18,7 @@ class MyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
         # Cache control cho CSV files
         if self.path.endswith('.csv'):
-            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            self.send_header('Cache-Control', 'public, max-age=3600')
         super().end_headers()
 
 def start_server():

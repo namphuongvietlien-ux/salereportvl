@@ -553,7 +553,7 @@ function processSKUData(rawData, brand, year, month) {
     renderSKUCharts(topSystems, topProducts);
 
     // Render detail table
-    renderSKUDetailTable(data);
+    renderSKUDetailTable(data, year, month);
 }
 
 let skuSystemChart = null;
@@ -627,46 +627,94 @@ function renderSKUCharts(topSystems, topProducts) {
     });
 }
 
-function renderSKUDetailTable(data) {
-    // Sort by revenue desc
-    data.sort((a, b) => (parseFloat(b['THÀNH TIỀN']) || 0) - (parseFloat(a['THÀNH TIỀN']) || 0));
+function renderSKUDetailTable(data, year, month) {
+    const aggregated = new Map();
+
+    data.forEach(row => {
+        const system = row['HỆ THỐNG'] || 'Khác';
+        const product = row['TÊN SP'] || 'N/A';
+        const qty = parseInt(row['SL']) || 0;
+        const key = `${system}||${product}`;
+        aggregated.set(key, {
+            system,
+            product,
+            qty: (aggregated.get(key)?.qty || 0) + qty
+        });
+    });
+
+    const prevMonthKey = getPrevMonthKey(year, month);
+    const prevMonthMap = buildSkuSystemQtyMap(prevMonthKey);
+
+    const rows = Array.from(aggregated.values())
+        .map(item => {
+            const prevQty = prevMonthMap.get(`${item.system}||${item.product}`) || 0;
+            const changePct = prevQty > 0 ? ((item.qty - prevQty) / prevQty * 100) : null;
+            return { ...item, prevQty, changePct };
+        })
+        .sort((a, b) => b.qty - a.qty);
 
     let html = `
         <table style="width:100%;border-collapse:collapse;font-size:0.85em;">
             <thead>
                 <tr style="background:#f3f4f6;position:sticky;top:0;">
+                    <th style="padding:8px;border:1px solid #ddd;text-align:left;">SKU</th>
                     <th style="padding:8px;border:1px solid #ddd;text-align:left;">Hệ Thống</th>
-                    <th style="padding:8px;border:1px solid #ddd;text-align:left;">Tên SP</th>
-                    <th style="padding:8px;border:1px solid #ddd;text-align:right;">SL</th>
-                    <th style="padding:8px;border:1px solid #ddd;text-align:right;">Đơn Giá</th>
-                    <th style="padding:8px;border:1px solid #ddd;text-align:right;">Thành Tiền</th>
-                    <th style="padding:8px;border:1px solid #ddd;text-align:left;">Nhãn Hàng</th>
+                    <th style="padding:8px;border:1px solid #ddd;text-align:right;">Số Lượng</th>
+                    <th style="padding:8px;border:1px solid #ddd;text-align:right;">% Tăng/Giảm</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
-    // Show top 50 transactions
-    const displayData = data.slice(0, 50);
-    displayData.forEach(row => {
+    const displayRows = rows.slice(0, 50);
+    displayRows.forEach(row => {
+        const change = row.changePct;
+        const isUp = change !== null && change >= 0;
+        const changeColor = change === null ? '#64748b' : (isUp ? '#10b981' : '#ef4444');
+        const changeText = change === null ? '-' : `${isUp ? '↑' : '↓'}${Math.abs(change).toFixed(1)}%`;
         html += `
             <tr>
-                <td style="padding:6px;border:1px solid #ddd;">${row['HỆ THỐNG'] || ''}</td>
-                <td style="padding:6px;border:1px solid #ddd;">${(row['TÊN SP'] || '').substring(0, 40)}</td>
-                <td style="padding:6px;border:1px solid #ddd;text-align:right;">${parseInt(row['SL']) || 0}</td>
-                <td style="padding:6px;border:1px solid #ddd;text-align:right;">${formatFullNumber(parseFloat(row['ĐƠN GIÁ']) || 0)}</td>
-                <td style="padding:6px;border:1px solid #ddd;text-align:right;font-weight:600;color:#3b82f6;">${formatFullNumber(parseFloat(row['THÀNH TIỀN']) || 0)}</td>
-                <td style="padding:6px;border:1px solid #ddd;">${row['NHÃN HÀNG'] || ''}</td>
+                <td style="padding:6px;border:1px solid #ddd;">${getShortProductName(row.product, 40)}</td>
+                <td style="padding:6px;border:1px solid #ddd;">${row.system}</td>
+                <td style="padding:6px;border:1px solid #ddd;text-align:right;">${formatFullNumber(row.qty)}</td>
+                <td style="padding:6px;border:1px solid #ddd;text-align:right;color:${changeColor};font-weight:600;">${changeText}</td>
             </tr>
         `;
     });
 
     html += `</tbody></table>`;
-    if (data.length > 50) {
-        html += `<p style="text-align:center;color:#666;margin-top:10px;">Hiển thị 50/${data.length} giao dịch (sắp xếp theo doanh số giảm dần)</p>`;
+    if (rows.length > 50) {
+        html += `<p style="text-align:center;color:#666;margin-top:10px;">Hiển thị 50/${rows.length} SKU (sắp xếp theo số lượng giảm dần)</p>`;
     }
 
     document.getElementById('sku_detail_table').innerHTML = html;
+}
+
+function getPrevMonthKey(year, month) {
+    const yearNum = parseInt(year, 10);
+    const monthNum = parseInt(month, 10);
+    if (!yearNum || !monthNum) return null;
+    let prevYear = yearNum;
+    let prevMonth = monthNum - 1;
+    if (prevMonth === 0) {
+        prevMonth = 12;
+        prevYear -= 1;
+    }
+    return `${prevYear}-${String(prevMonth).padStart(2, '0')}`;
+}
+
+function buildSkuSystemQtyMap(monthKey) {
+    const map = new Map();
+    if (!monthKey || !Array.isArray(window.allData)) return map;
+    window.allData.forEach(row => {
+        if (row.monthKey !== monthKey) return;
+        const system = row['HỆ THỐNG'] || 'Khác';
+        const product = row['TÊN SP'] || 'N/A';
+        const qty = parseInt(row['SL']) || 0;
+        const key = `${system}||${product}`;
+        map.set(key, (map.get(key) || 0) + qty);
+    });
+    return map;
 }
 
 function closeSKUModal() {

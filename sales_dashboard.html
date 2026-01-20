@@ -1036,7 +1036,7 @@
         <div id="dashboard" style="display: none;">
 
             <!-- DS_TH Dashboard Section - Version 3.0 with YoY comparison -->
-            <div class="chart-card full-width" style="margin-bottom: 30px;">
+            <div class="chart-card full-width" id="dsThDashboardSection" style="margin-bottom: 30px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
                     <h2 style="margin:0;">📊 Báo Cáo Tổng Hợp DS_TH (2023-2025)</h2>
                     <div id="ds_th_year_filter" style="display:flex;align-items:center;gap:10px;"></div>
@@ -1088,6 +1088,7 @@
                         <tbody id="ds_th_table_body"></tbody>
                     </table>
                 </div>
+                <div id="ds_th_target_vs_actual_mount"></div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                     <div class="chart-container" style="height:350px;">
                         <canvas id="ds_th_chart"></canvas>
@@ -1459,7 +1460,7 @@
                 </div>
 
                 <!-- Target vs Actual Performance Section -->
-                <div class="chart-card full-width">
+                <div class="chart-card full-width" id="targetVsActualSection">
                     <h2>📊 Doanh Số Thực Tế vs Target</h2>
                     <p style="color: #666; font-size: 0.9em; margin-top: 5px;">So sánh doanh số thực tế với target theo
                         hệ thống và nhãn hàng</p>
@@ -2659,6 +2660,259 @@
             });
         }
         var allData = allData || [];
+        var __dedupKeySet = __dedupKeySet || new Set();
+        var __duplicateCount = __duplicateCount || 0;
+        var __dataVersion = __dataVersion || 0;
+        let __backgroundRefreshTimer = null;
+        let __dashboardUpdateTimer = null;
+        let __lastFilterKey = null;
+        let __lastFilteredData = null;
+
+        const CSV_LOAD_CONFIG = {
+            initialMonths: 6,
+            concurrency: 4
+        };
+
+        function resetDataCaches() {
+            allData = [];
+            __dedupKeySet = new Set();
+            __duplicateCount = 0;
+            __dataVersion = 0;
+            __lastFilterKey = null;
+            __lastFilteredData = null;
+        }
+
+        function ingestRows(rows) {
+            let added = 0;
+            rows.forEach(row => {
+                const key = row.duplicateKey;
+                if (__dedupKeySet.has(key)) {
+                    __duplicateCount++;
+                    return;
+                }
+                __dedupKeySet.add(key);
+                if (row['HỆ THỐNG'] !== null && row['NHÃN HÀNG'] !== 'N/A' && row['NHÃN HÀNG'] !== '') {
+                    allData.push(row);
+                    added++;
+                }
+            });
+            if (added > 0) {
+                __dataVersion += 1;
+            }
+            return added;
+        }
+
+        function getPermissionKey() {
+            if (!currentUser) return 'no-user';
+            const perms = currentUser.permissions || {};
+            const stores = Array.isArray(perms.stores) ? perms.stores.join('|') : '';
+            const systems = Array.isArray(perms.systems) ? perms.systems.join('|') : '';
+            return `${currentUser.username || currentUser.name || 'user'}:${!!perms.viewAll}:${stores}:${systems}`;
+        }
+
+        function getFilterKey() {
+            const startMonth = document.getElementById('startMonth')?.value || '';
+            const endMonth = document.getElementById('endMonth')?.value || '';
+            const system = document.getElementById('systemFilter')?.value || '';
+            const brand = document.getElementById('brandFilter')?.value || '';
+            const product = document.getElementById('productFilter')?.value || '';
+            return `${__dataVersion}|${startMonth}|${endMonth}|${system}|${brand}|${product}|${getPermissionKey()}`;
+        }
+
+        function scheduleDashboardUpdate() {
+            if (__dashboardUpdateTimer) return;
+            __dashboardUpdateTimer = setTimeout(() => {
+                __dashboardUpdateTimer = null;
+                updateDashboard();
+            }, 150);
+        }
+
+        function getCsvFileMetaList() {
+            const files = [
+                // 2022 (needed for Baking Soda in MEGA stores)
+                '2022-09-30_DS_30.09.2022.csv',
+                '2022-12-31_DS_31.12.22.csv',
+                '2023-01-31_DS_31.01.2023.csv', '2023-02-28_DS_28.02.23.csv', '2023-03-31_DS_31.03.2023.csv',
+                '2023-04-30_DS_30.04.2023.csv', '2023-05-27_DS_27.05.2023.csv', '2023-06-30_DS_30.06.2023.csv',
+                '2023-07-31_DS_31.07.2023.csv', '2023-08-31_DS_31.08.2023.csv', '2023-09-30_DS_30.09.2023.csv',
+                '2023-10-31_DS_31.10.2023.csv', '2023-11-30_DS_30.11.2023.csv', '2023-12-31_DS_31.12.2023.csv',
+                '2024-01-31_DS_31.01.2024.csv', '2024-02-29_DS_29.02.24.csv', '2024-03-30_DS_30.03.2024.csv',
+                '2024-04-30_DS_30.04.2024.csv', '2024-05-31_DS_31.05.2024.csv', '2024-06-30_DS_30.06.2024.csv',
+                '2024-07-31_DS_31.07.2024.csv', '2024-08-31_DS_31.08.2024.csv', '2024-09-30_DS_30.09.2024.csv',
+                '2024-10-31_DS_31.10.2024.csv', '2024-11-30_DS_30.11.2024.csv', '2024-12-31_DS_31.12.2024.csv',
+                '2025-01-24_DS_24.01.25.csv', '2025-02-28_DS_28.02.25.csv', '2025-03-31_DS_31.03.25.csv',
+                '2025-04-30_DS_30.4.25.csv', '2025-05-31_DS_31.05.25.csv', '2025-06-30_DS_30.06.25.csv',
+                '2025-07-28_DS_28.07.25.csv', '2025-08-31_DS_31.08.25.csv', '2025-09-30_DS_30.09.25 .csv',
+                '2025-10-31_DS_31.10.25 .csv',
+                // Tháng 11: Chỉ lấy file 30/11 (bỏ file 22/11)
+                '2025-11-30_DS_30.11.25.csv',
+                // Tháng 12: Chỉ lấy file 31/12 (bỏ file 15/12 và 22/12)
+                '2025-12-31_DS_31.12.25.csv',
+                '2026-01-19_DS_19.1.26.csv'
+            ];
+
+            const metas = files.map(filename => {
+                const safeFilename = String(filename || '').trim();
+                const date = parseFilename(safeFilename);
+                if (!date) return null;
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                return { filename: safeFilename, date, monthKey };
+            }).filter(Boolean);
+
+            metas.sort((a, b) => a.date - b.date);
+            return metas;
+        }
+
+        function parseCsvFile(meta) {
+            return new Promise((resolve) => {
+                if (!meta || !meta.date) {
+                    resolve([]);
+                    return;
+                }
+
+                const basePath = 'CSV_Output_Latest_Only/' + meta.filename;
+                const filePath = buildCsvUrl(basePath);
+
+                Papa.parse(filePath, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    worker: true,
+                    encoding: 'UTF-8',
+                    complete: function (results) {
+                        if (!results || !results.data) {
+                            resolve([]);
+                            return;
+                        }
+
+                        const data = results.data
+                            // Bước 1: Lọc bỏ header rows (NGAY = "NGAY")
+                            .filter(row => row.NGAY && row.NGAY !== 'NGAY')
+                            // Bước 2: Map và merge với lookups (giống Excel Power Query)
+                            .map(row => {
+                                const sl = parseFloat(row.SL) || 0;
+                                const donGia = parseFloat(row['ĐƠN GIÁ']) || 0;
+                                // Ưu tiên VAT từ file; fallback tính thủ công
+                                const vatFromFile = parseFloat(row['VAT']) || 0;
+                                const calculatedVAT = vatFromFile > 0 ? vatFromFile : (sl * donGia * 1.1);
+
+                                const tenSP = (row['TÊN SP'] || '').trim();
+                                const maKH = (row['MA KH'] || '').toString().trim();
+
+                                // QUAN TRỌNG: 2025 dùng NHAN từ ten_sp_nhan; các năm trước ưu tiên NHÃN HÀNG từ CSV
+                                const nhanHangFromCsv = normalizeBrandName(row['NHÃN HÀNG'] || row['NHAN HANG'] || row['NHÃN HÀNG'] || '');
+                                const lookupBrand = productBrandLookup[tenSP] || '';
+                                const nhanHang = meta.date.getFullYear() >= 2025
+                                    ? (lookupBrand || nhanHangFromCsv || 'N/A')
+                                    : (nhanHangFromCsv || lookupBrand || 'N/A');
+
+                                // Merge với CUSTOMERS: NAM + MA KH -> HE THONG
+                                const customerKey = `${meta.date.getFullYear()}_${maKH}`;
+                                const heThongFromCustomers = customersLookup[customerKey] || null;
+                                const heThongFromCsv = (row['HỆ THỐNG'] || row['HE THONG'] || row['HỆ THỐNG'] || '').toString().trim();
+
+                                // Lấy MÃ HH từ cột thứ 8 (index 7)
+                                const maHH = (row['MÃ HH'] || row['MA HH'] || '').toString().trim();
+
+                                return {
+                                    'SO HD': row['SO HD'],
+                                    'NGAY': row.NGAY,
+                                    'MA KH': maKH,
+                                    'MÃ HH': maHH,
+                                    'TÊN SP': tenSP,
+                                    'NHÃN HÀNG': normalizeBrandName(nhanHang), // Normalized brand
+                                    'HỆ THỐNG': heThongFromCustomers || heThongFromCsv || null, // Prefer CUSTOMERS, fallback CSV
+                                    'CỬA HÀNG': row['CỬA HÀNG'],
+                                    month: meta.date,
+                                    monthKey: `${meta.date.getFullYear()}-${String(meta.date.getMonth() + 1).padStart(2, '0')}`,
+                                    year: meta.date.getFullYear(),
+                                    vat: calculatedVAT,
+                                    thanhTien: parseFloat(row['THÀNH TIỀN']) || 0,
+                                    soLuong: sl,
+                                    donGia: donGia,
+                                    // Key để dedup: SO HD + NGAY + MÃ HH + TÊN SP + SL
+                                    duplicateKey: `${row['SO HD']}_${row.NGAY}_${maHH}_${tenSP}_${sl}`
+                                };
+                            });
+                        resolve(data);
+                    },
+                    error: function (error) {
+                        if (error && error.message === 'File not found') {
+                            resolve([]);
+                            return;
+                        }
+                        console.error(`Error loading ${meta.filename}:`, error);
+                        resolve([]);
+                    }
+                });
+            });
+        }
+
+        async function loadCsvFilesWithConcurrency(metas, concurrency, onFileLoaded) {
+            const queue = metas.slice();
+            const workers = new Array(Math.max(1, concurrency)).fill(null).map(async () => {
+                while (queue.length) {
+                    const meta = queue.shift();
+                    const rows = await parseCsvFile(meta);
+                    if (onFileLoaded) onFileLoaded(rows, meta);
+                }
+            });
+            await Promise.all(workers);
+        }
+
+        function appendMissingFilterOptions() {
+            const systems = [...new Set(allData.map(d => d['HỆ THỐNG']))].filter(Boolean).sort();
+            const brands = [...new Set(allData.map(d => d['NHÃN HÀNG']))].filter(Boolean).sort();
+            const products = [...new Set(allData.map(d => normalizeProductName(shortenProductName(d['TÊN SP']))))].filter(Boolean).sort();
+
+            const systemSelect = document.getElementById('systemFilter');
+            if (systemSelect) {
+                const existing = new Set(Array.from(systemSelect.options).map(opt => opt.value));
+                systems.forEach(system => {
+                    if (!existing.has(system)) {
+                        const option = document.createElement('option');
+                        option.value = system;
+                        option.textContent = system;
+                        systemSelect.appendChild(option);
+                    }
+                });
+            }
+
+            const brandSelect = document.getElementById('brandFilter');
+            if (brandSelect) {
+                const existing = new Set(Array.from(brandSelect.options).map(opt => opt.value));
+                brands.forEach(brand => {
+                    if (!existing.has(brand)) {
+                        const option = document.createElement('option');
+                        option.value = brand;
+                        option.textContent = brand;
+                        brandSelect.appendChild(option);
+                    }
+                });
+            }
+
+            const productSelect = document.getElementById('productFilter');
+            if (productSelect) {
+                const existing = new Set(Array.from(productSelect.options).map(opt => opt.value));
+                products.forEach(product => {
+                    if (!existing.has(product)) {
+                        const option = document.createElement('option');
+                        option.value = product;
+                        option.textContent = product;
+                        productSelect.appendChild(option);
+                    }
+                });
+            }
+        }
+
+        function scheduleBackgroundRefresh() {
+            if (__backgroundRefreshTimer) return;
+            __backgroundRefreshTimer = setTimeout(() => {
+                __backgroundRefreshTimer = null;
+                appendMissingFilterOptions();
+                updateDashboard();
+            }, 500);
+        }
 
         // Authentication & Permission System
         var currentUser = currentUser || null;
@@ -2856,6 +3110,23 @@
             }
 
             const perms = currentUser.permissions;
+            const isSalesRole = currentUser?.role === 'sales';
+
+            // Role-based visibility: hide DS_TH and target management for sales
+            const dsThSection = document.getElementById('dsThDashboardSection');
+            const targetManagementSection = document.getElementById('targetManagementSection');
+            const exportImportSection = document.getElementById('exportImportTargetSection');
+
+            if (isSalesRole) {
+                if (dsThSection) dsThSection.style.display = 'none';
+                if (targetManagementSection) targetManagementSection.style.display = 'none';
+                if (exportImportSection) exportImportSection.style.display = 'none';
+                return;
+            } else {
+                if (dsThSection) dsThSection.style.display = '';
+                if (targetManagementSection) targetManagementSection.style.display = '';
+                if (exportImportSection) exportImportSection.style.display = '';
+            }
 
             // Hide import/export section if not allowed
             if (!perms.importExport) {
@@ -3358,166 +3629,20 @@
             // #region agent log
             fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:2631', message: 'loadAllData started', data: { hasCurrentUser: !!currentUser, currentUserName: currentUser?.name }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
             // #endregion
+            resetDataCaches();
             // Load lookup tables first
             await loadProductNameLookup();
             await loadCustomers();
-            // CHỈ LẤY FILE CUỐI THÁNG (loại bỏ file trung gian để tránh trùng lặp)
-            const files = [
-                // 2022 (needed for Baking Soda in MEGA stores)
-                '2022-09-30_DS_30.09.2022.csv',
-                '2022-12-31_DS_31.12.22.csv',
-                '2023-01-31_DS_31.01.2023.csv', '2023-02-28_DS_28.02.23.csv', '2023-03-31_DS_31.03.2023.csv',
-                '2023-04-30_DS_30.04.2023.csv', '2023-05-27_DS_27.05.2023.csv', '2023-06-30_DS_30.06.2023.csv',
-                '2023-07-31_DS_31.07.2023.csv', '2023-08-31_DS_31.08.2023.csv', '2023-09-30_DS_30.09.2023.csv',
-                '2023-10-31_DS_31.10.2023.csv', '2023-11-30_DS_30.11.2023.csv', '2023-12-31_DS_31.12.2023.csv',
-                '2024-01-31_DS_31.01.2024.csv', '2024-02-29_DS_29.02.24.csv', '2024-03-30_DS_30.03.2024.csv',
-                '2024-04-30_DS_30.04.2024.csv', '2024-05-31_DS_31.05.2024.csv', '2024-06-30_DS_30.06.2024.csv',
-                '2024-07-31_DS_31.07.2024.csv', '2024-08-31_DS_31.08.2024.csv', '2024-09-30_DS_30.09.2024.csv',
-                '2024-10-31_DS_31.10.2024.csv', '2024-11-30_DS_30.11.2024.csv', '2024-12-31_DS_31.12.2024.csv',
-                '2025-01-24_DS_24.01.25.csv', '2025-02-28_DS_28.02.25.csv', '2025-03-31_DS_31.03.25.csv',
-                '2025-04-30_DS_30.4.25.csv', '2025-05-31_DS_31.05.25.csv', '2025-06-30_DS_30.06.25.csv',
-                '2025-07-28_DS_28.07.25.csv', '2025-08-31_DS_31.08.25.csv', '2025-09-30_DS_30.09.25 .csv',
-                '2025-10-31_DS_31.10.25 .csv',
-                // Tháng 11: Chỉ lấy file 30/11 (bỏ file 22/11)
-                '2025-11-30_DS_30.11.25.csv',
-                // Tháng 12: Chỉ lấy file 31/12 (bỏ file 15/12 và 22/12)
-                '2025-12-31_DS_31.12.25.csv',
-                '2026-01-19_DS_19.1.26.csv'
-            ];
+            const fileMeta = getCsvFileMetaList();
+            const initialCount = Math.min(CSV_LOAD_CONFIG.initialMonths, fileMeta.length);
+            const initialFiles = fileMeta.slice(-initialCount);
+            const remainingFiles = fileMeta.slice(0, Math.max(0, fileMeta.length - initialCount));
 
-            const promises = files.map(filename => {
-                return new Promise((resolve, reject) => {
-                    const safeFilename = String(filename || '').trim();
-                    const date = parseFilename(safeFilename);
-                    // Sử dụng đường dẫn tương đối + cache buster
-                    const basePath = 'CSV_Output_Latest_Only/' + safeFilename;
-                    const filePath = buildCsvUrl(basePath);
-                    const filePathWithCache = filePath + (filePath.includes('?') ? '&' : '?') + 'v=' + Date.now();
-
-                    Papa.parse(filePathWithCache, {
-                        download: true,
-                        header: true,
-                        skipEmptyLines: true,
-                        worker: true,
-                        encoding: 'UTF-8',
-                        complete: function (results) {
-                            if (!results || !results.data) {
-                                resolve([]);
-                                return;
-                            }
-                            // Debug: log tên cột để kiểm tra
-                            if (results.data.length > 0 && filename.includes('2025-11-30')) {
-                                console.log('Column names in CSV:', Object.keys(results.data[0]));
-                            }
-
-                            const data = results.data
-                                // Bước 1: Lọc bỏ header rows (NGAY = "NGAY")
-                                .filter(row => row.NGAY && row.NGAY !== 'NGAY')
-                                // Bước 2: Map và merge với lookups (giống Excel Power Query)
-                                .map(row => {
-                                    const sl = parseFloat(row.SL) || 0;
-                                    const donGia = parseFloat(row['ĐƠN GIÁ']) || 0;
-                                    // Ưu tiên VAT từ file; fallback tính thủ công
-                                    const vatFromFile = parseFloat(row['VAT']) || 0;
-                                    const calculatedVAT = vatFromFile > 0 ? vatFromFile : (sl * donGia * 1.1);
-
-                                    const tenSP = (row['TÊN SP'] || '').trim();
-                                    const maKH = (row['MA KH'] || '').toString().trim();
-
-                                    // QUAN TRỌNG: 2025 dùng NHAN từ ten_sp_nhan; các năm trước ưu tiên NHÃN HÀNG từ CSV
-                                    const nhanHangFromCsv = normalizeBrandName(row['NHÃN HÀNG'] || row['NHAN HANG'] || row['NHÃN HÀNG'] || '');
-                                    const lookupBrand = productBrandLookup[tenSP] || '';
-                                    const nhanHang = date.getFullYear() >= 2025
-                                        ? (lookupBrand || nhanHangFromCsv || 'N/A')
-                                        : (nhanHangFromCsv || lookupBrand || 'N/A');
-
-                                    // Merge với CUSTOMERS: NAM + MA KH -> HE THONG
-                                    const customerKey = `${date.getFullYear()}_${maKH}`;
-                                    const heThongFromCustomers = customersLookup[customerKey] || null;
-                                    const heThongFromCsv = (row['HỆ THỐNG'] || row['HE THONG'] || row['HỆ THỐNG'] || '').toString().trim();
-
-                                    // Lấy MÃ HH từ cột thứ 8 (index 7)
-                                    const maHH = (row['MÃ HH'] || row['MA HH'] || '').toString().trim();
-
-                                    return {
-                                        'SO HD': row['SO HD'],
-                                        'NGAY': row.NGAY,
-                                        'MA KH': maKH,
-                                        'MÃ HH': maHH,
-                                        'TÊN SP': tenSP,
-                                        'NHÃN HÀNG': normalizeBrandName(nhanHang), // Normalized brand
-                                        'HỆ THỐNG': heThongFromCustomers || heThongFromCsv || null, // Prefer CUSTOMERS, fallback CSV
-                                        'CỬA HÀNG': row['CỬA HÀNG'],
-                                        month: date,
-                                        monthKey: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-                                        year: date.getFullYear(),
-                                        vat: calculatedVAT,
-                                        thanhTien: parseFloat(row['THÀNH TIỀN']) || 0,
-                                        soLuong: sl,
-                                        donGia: donGia,
-                                        // Key để dedup: SO HD + NGAY + MÃ HH + TÊN SP + SL
-                                        duplicateKey: `${row['SO HD']}_${row.NGAY}_${maHH}_${tenSP}_${sl}`
-                                    };
-                                });
-                            resolve(data);
-                        },
-                        error: function (error) {
-                            if (error && error.message === 'File not found') {
-                                resolve([]);
-                                return;
-                            }
-                            console.error(`Error loading ${safeFilename}:`, error);
-                            resolve([]);
-                        }
-                    });
-                });
+            await loadCsvFilesWithConcurrency(initialFiles, CSV_LOAD_CONFIG.concurrency, (rows) => {
+                ingestRows(rows);
             });
 
-            const results = await Promise.all(promises);
-            const rawData = results.flat();
-
-            console.log('Raw data loaded:', rawData.length, 'rows');
-
-            // DEDUP theo Excel Power Query: Group by SO HD + NGAY + MÃ HH + TÊN SP + SL
-            // Giữ dòng ĐẦU TIÊN (Table.FirstN(_,1))
-            const uniqueMap = new Map();
-            let duplicateCount = 0;
-            rawData.forEach(row => {
-                const key = row.duplicateKey;
-                if (!uniqueMap.has(key)) {
-                    uniqueMap.set(key, row);
-                } else {
-                    duplicateCount++;
-                }
-            });
-
-            const afterDedup = Array.from(uniqueMap.values());
-            console.log('After dedup:', afterDedup.length, 'rows (removed', duplicateCount, 'duplicates)');
-
-            // LỌC HỆ THỐNG != null (từ CUSTOMERS)
-            const afterSystemFilter = afterDedup.filter(row => row['HỆ THỐNG'] !== null);
-            console.log('Filter HỆ THỐNG not null:', afterSystemFilter.length, 'rows');
-
-            // LỌC BỎ NHÃN HÀNG = "N/A"
-            allData = afterSystemFilter.filter(row => row['NHÃN HÀNG'] !== 'N/A' && row['NHÃN HÀNG'] !== '');
-            console.log('After filter NHÃN HÀNG:', allData.length, 'rows');
-
-            // Tính tổng VAT để debug
-            const totalVAT = allData.reduce((sum, row) => sum + row.vat, 0);
-            console.log('💰 Total VAT (all data):', totalVAT.toLocaleString('vi-VN'), 'VND');
-
-            // Debug tháng 11/2025 cụ thể
-            const nov2025 = allData.filter(row => row.monthKey === '2025-11');
-            const nov2025VAT = nov2025.reduce((sum, row) => sum + row.vat, 0);
-            console.log('📅 Nov 2025:', nov2025.length, 'rows, VAT:', nov2025VAT.toLocaleString('vi-VN'), 'VND');
-
-            // Debug tháng 4/2025 cụ thể
-            const apr2025Raw = rawData.filter(row => row.monthKey === '2025-04');
-            const apr2025Final = allData.filter(row => row.monthKey === '2025-04');
-            const apr2025VAT = apr2025Final.reduce((sum, row) => sum + row.vat, 0);
-            console.log('📅 Apr 2025: Raw:', apr2025Raw.length, '→ Final:', apr2025Final.length, 'rows, VAT:', apr2025VAT.toLocaleString('vi-VN'), 'VND');
-
-            console.log('✅ Data loaded, updating UI...');
+            console.log('✅ Initial data loaded:', allData.length, 'rows');
             // #region agent log
             fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:2800', message: 'Data loaded, updating UI', data: { allDataLength: allData.length, hasCurrentUser: !!currentUser }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'A' }) }).catch(() => { });
             // #endregion
@@ -3544,6 +3669,21 @@
                 // If loadTargets fails, still update dashboard
                 updateDashboard();
             });
+
+            if (remainingFiles.length > 0) {
+                setTimeout(() => {
+                    console.log('⏳ Background loading remaining CSV files:', remainingFiles.length);
+                    loadCsvFilesWithConcurrency(remainingFiles, CSV_LOAD_CONFIG.concurrency, (rows) => {
+                        const added = ingestRows(rows);
+                        if (added > 0) {
+                            scheduleBackgroundRefresh();
+                        }
+                    }).then(() => {
+                        console.log('✅ Background load complete. Total rows:', allData.length, 'duplicates:', __duplicateCount);
+                        scheduleBackgroundRefresh();
+                    });
+                }, 200);
+            }
         }
 
         // Initialize authentication
@@ -3585,17 +3725,17 @@
             });
 
             // Add event listeners with cascading update
-            document.getElementById('startMonth').addEventListener('change', updateDashboard);
-            document.getElementById('endMonth').addEventListener('change', updateDashboard);
+            document.getElementById('startMonth').addEventListener('change', scheduleDashboardUpdate);
+            document.getElementById('endMonth').addEventListener('change', scheduleDashboardUpdate);
             document.getElementById('systemFilter').addEventListener('change', () => {
                 updateCascadingFilters();
-                updateDashboard();
+                scheduleDashboardUpdate();
             });
             document.getElementById('brandFilter').addEventListener('change', () => {
                 updateCascadingFilters();
-                updateDashboard();
+                scheduleDashboardUpdate();
             });
-            document.getElementById('productFilter').addEventListener('change', updateDashboard);
+            document.getElementById('productFilter').addEventListener('change', scheduleDashboardUpdate);
         }
 
         // Update cascading filters based on current selection
@@ -3683,7 +3823,7 @@
             document.querySelectorAll('.timeline-btn').forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
 
-            updateDashboard();
+            scheduleDashboardUpdate();
         }
 
         // Filter data
@@ -8338,18 +8478,27 @@
             fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:7452', message: 'updateDashboard started', data: { allDataLength: allData.length, hasCurrentUser: !!currentUser }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
             // #endregion
 
-            let data = filterData();
-            console.log(`📊 After filterData(): ${data.length} rows`);
-            // #region agent log
-            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:7455', message: 'After filterData', data: { filteredDataLength: data.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
-            // #endregion
+            const filterKey = getFilterKey();
+            let data;
+            if (__lastFilterKey === filterKey && Array.isArray(__lastFilteredData)) {
+                data = __lastFilteredData;
+            } else {
+                data = filterData();
+                console.log(`📊 After filterData(): ${data.length} rows`);
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:7455', message: 'After filterData', data: { filteredDataLength: data.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
+                // #endregion
 
-            // Apply permission-based filtering
-            data = filterDataByPermissions(data);
-            console.log(`📊 After filterDataByPermissions(): ${data.length} rows`);
-            // #region agent log
-            fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:7460', message: 'After filterDataByPermissions', data: { finalDataLength: data.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
-            // #endregion
+                // Apply permission-based filtering
+                data = filterDataByPermissions(data);
+                console.log(`📊 After filterDataByPermissions(): ${data.length} rows`);
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:7460', message: 'After filterDataByPermissions', data: { finalDataLength: data.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
+                // #endregion
+
+                __lastFilterKey = filterKey;
+                __lastFilteredData = data;
+            }
 
             currentFilteredData = data; // Store for drill-down functions
 
@@ -8371,10 +8520,21 @@
             createStoreActivityChart(data);
             analyzeGrowthDrivers(data);
 
+            moveTargetVsActualSection();
+
             console.log('✅ updateDashboard() completed');
             // #region agent log
             fetch('http://127.0.0.1:7243/ingest/1f1282d2-a842-4ba8-9d4b-8fe5505363b4', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'sales_dashboard.html:7480', message: 'updateDashboard completed', data: { finalDataLength: data.length }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run1', hypothesisId: 'B' }) }).catch(() => { });
             // #endregion
+        }
+
+        function moveTargetVsActualSection() {
+            const mount = document.getElementById('ds_th_target_vs_actual_mount');
+            const section = document.getElementById('targetVsActualSection');
+            if (!mount || !section) return;
+            if (!mount.contains(section)) {
+                mount.appendChild(section);
+            }
         }
 
         // Export to PowerPoint
